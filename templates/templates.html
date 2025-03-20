@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Templates - Site Genius</title>
+        <link rel="stylesheet" href="/static/style.css">
+        <!-- Link correto para importar o FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <script defer src="/static/script.js"></script>
+    <style>
+        /* Estilos para os templates */
+        .template-list {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+}
+
+
+footer {
+    background: #1E2A38;
+    color: white;
+    padding: 15px 0;
+    margin-top: 40px;
+}
+
+footer .container {
+    max-width: 1200px;
+    margin: auto;
+    text-align: center;
+}
+
+/* Títulos das seções com linha sutil */
+.templates h2 {
+    font-size: 24px;
+    font-weight: 600;
+    text-align: center;
+    margin: 30px 0 20px 0;
+    padding-bottom: 8px; /* Dá um espaçamento antes da linha */
+    color: #1E2A38; /* Azul escuro sofisticado */
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+}
+
+/* Linha sutil abaixo do título */
+.templates h2::after {
+    content: "";
+    width: 100px;
+    height: 5px;
+    background: #1E2A38; /* Azul moderno */
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
+/* Estilo dos cards de templates */
+.template {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    width: 280px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+}
+
+.template:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+
+
+
+header {
+    background: #1E2A38;
+    color: white;
+    padding: 20px 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+header .container {
+    max-width: 1200px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+/* Estilização do Menu de Navegação */
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex; /* Mantém os itens alinhados na horizontal */
+}
+
+nav ul li {
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 500;
+    transition: 0.3s;
+    padding: 10px;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+}
+
+/* Ajuste de espaçamento para evitar sobreposição */
+main {
+    margin-top: 120px; /* Aumentado para garantir visibilidade */
+    padding: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-direction: column;
+    }
+
+    nav ul li {
+        margin: 5px 0;
+    }
+}
+
+/* Hero Section */
+.hero {
+    margin-top: 100px;
+    padding: 80px 20px;
+    background: url('https://source.unsplash.com/1600x900/?technology,website') center/cover no-repeat;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero h2 {
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.hero p {
+    font-size: 20px;
+    margin: 20px 0;
+}
+
+/* Botões aprimorados */
+.btn {
+    background: #6c757d; /* Azul mais vibrante */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.3s ease-in-out;
+}
+
+
+/* Botões premium em dourado */
+.btn.buy-premium {
+    background: #FFC107; /* Dourado para destacar */
+    color: #212529;
+}
+
+.btn.buy-premium:hover {
+    background: #E0A800;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+/* Estilos do Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 10px;
+    text-align: center;
+    position: relative;
+}
+
+.modal-actions {
+    margin-top: 10px;
+}
+
+iframe {
+    width: 100%;
+    height: 500px;
+    border: none;
+}
+
+    </style>
+    
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fa-solid fa-palette"></i> Escolha um Template</h1>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                    <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+                    <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
+                    <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="templates">
+            <h2><i class="fas fa-box-open"></i> Templates Gratuitos</h2>
+            <div class="template-list">
+                <div class="template" onclick="previewTemplate('/template/template1')">
+                    <h3><i class="fas fa-code"></i> Template Simples</h3>
+                    <button class="btn"><i class="fas fa-eye"></i> Visualizar</button>
+                </div>
+                <div class="template" onclick="previewTemplate('/template/template2')">
+                    <h3><i class="fas fa-laptop-code"></i> Template Moderno</h3>
+                    <button class="btn"><i class="fas fa-eye"></i> Visualizar</button>
+                </div>
+            </div>
+
+            <h2><i class="fas fa-lock"></i> Templates Premium</h2>
+            <div class="template-list premium">
+                <div class="template premium-locked">
+                    <h3><i class="fas fa-building"></i> Template Empresarial</h3>
+                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                        <i class="fas fa-credit-card"></i> Adquirir Premium
+                    </button>
+                </div>
+                <div class="template premium-locked">
+                    <h3><i class="fas fa-lightbulb"></i> Template Criativo</h3>
+                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                        <i class="fas fa-credit-card"></i> Adquirir Premium
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Modal para pré-visualização -->
+        <div id="previewModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closePreview()">&times;</span>
+                <iframe id="previewFrame"></iframe>
+                <div class="modal-actions">
+                    <button class="btn" onclick="downloadTemplate()"><i class="fas fa-download"></i> Usar este template</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function previewTemplate(templateURL) {
+            document.getElementById("previewFrame").src = templateURL;
+            document.getElementById("previewModal").style.display = "flex";
+        }
+
+        function closePreview() {
+            document.getElementById("previewModal").style.display = "none";
+            document.getElementById("previewFrame").src = "";
+        }
+
+        function downloadTemplate() {
+            const src = document.getElementById("previewFrame").src;
+            window.location.href = src;
+        }
+
+        function handlePremiumPurchase() {
+    fetch('/check-login')
+        .then(response => response.json())
+        .then(data => {
+            if (data.logged_in) {
+                buyPremium(); // Se estiver logado, inicia a compra do plano premium
+            } else {
+                alert("Você precisa estar logado para adquirir o plano Premium.");
+                window.location.href = "/login"; // Redireciona para a página de login
+            }
+        });
+}
+
+function buyPremium() {
+    fetch('/generate-payment', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.payment_url) {
+                window.location.href = data.payment_url; // Redireciona para pagamento
+            } else {
+                alert("Erro ao processar pagamento.");
+            }
+        });
+}
+    </script>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>

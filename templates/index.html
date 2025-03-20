@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Genius</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #f9f9f9;
+    color: #333;
+    text-align: center;
+}
+
+/* Cabeçalho */
+header {
+    background: #1E2A38;
+    color: white;
+    padding: 20px 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+header .container {
+    max-width: 1200px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+nav ul {
+    list-style: none;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Hero Section */
+.hero {
+    margin-top: 100px;
+    padding: 80px 20px;
+    background: url('https://source.unsplash.com/1600x900/?technology,website') center/cover no-repeat;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero h2 {
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.hero p {
+    font-size: 20px;
+    margin: 20px 0;
+}
+
+.btn {
+    background: #1E2A38;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 5px;
+    font-size: 18px;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #e68900;
+}
+
+/* Features Section */
+.features {
+    padding: 60px 20px;
+}
+
+.features h2 {
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.feature-list {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.feature-item {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    text-align: center;
+}
+
+.feature-item h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: #1E2A38;
+}
+
+.feature-item p {
+    font-size: 16px;
+}
+
+/* Rodapé */
+footer {
+    background: #1E2A38;
+    color: white;
+    padding: 15px 0;
+    margin-top: 40px;
+}
+
+footer .container {
+    max-width: 1200px;
+    margin: auto;
+    text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        margin-top: 10px;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 5px 0;
+    }
+
+    .hero {
+        padding: 60px 20px;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 18px;
+    }
+
+    .feature-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .feature-item {
+        width: 90%;
+    }
+}
+</style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                    <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+                    <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
+                    <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h2>Crie seu site facilmente!</h2>
+            <p>Escolha um template ou use nossa IA para criar um site personalizado em minutos.</p>
+            <a href="/templates" class="btn">Explorar Templates</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Por que escolher o Site Genius?</h2>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <h3><i class="fas fa-mouse-pointer"></i> Fácil de Usar</h3>
+                    <p>Sem necessidade de programação! Crie seu site com poucos cliques.</p>
+                </div>
+                <div class="feature-item">
+                    <h3><i class="fas fa-brain"></i> Inteligência Artificial</h3>
+                    <p>Nosso sistema IA personaliza seu site para atender suas necessidades. Ou seja basta digitar como quer o site e a IA cria para você.</p>
+                </div>
+                <div class="feature-item">
+                    <h3><i class="fas fa-bolt"></i> Rápido e Responsivo</h3>
+                    <p>Sites otimizados para carregar rápido e se adaptar a qualquer dispositivo.</p>
+                </div>
+                <div class="feature-item">
+                    <h3><i class="fas fa-tags"></i> O Melhor Preço</h3>
+                    <p>O site mais acessível do mercado, com planos que cabem no seu bolso.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>
