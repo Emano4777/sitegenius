@@ -264,19 +264,32 @@ iframe {
                 </div>
             </div>
 
-            <h2><i class="fas fa-lock"></i> Templates Premium</h2>
+            <<h2><i class="fas fa-lock"></i> Templates Premium</h2>
             <div class="template-list premium">
                 <div class="template premium-locked">
                     <h3><i class="fas fa-building"></i> Template Empresarial</h3>
-                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                        <i class="fas fa-credit-card"></i> Adquirir Premium
-                    </button>
+                    {% if is_premium %}
+                        <button class="btn" onclick="previewTemplate('/template/template3')">
+                            <i class="fas fa-eye"></i> Ver Template Premium
+                        </button>
+                    {% else %}
+                        <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                            <i class="fas fa-credit-card"></i> Adquirir Premium
+                        </button>
+                    {% endif %}
                 </div>
+            
                 <div class="template premium-locked">
                     <h3><i class="fas fa-lightbulb"></i> Template Criativo</h3>
-                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                        <i class="fas fa-credit-card"></i> Adquirir Premium
-                    </button>
+                    {% if is_premium %}
+                        <button class="btn" onclick="previewTemplate('/template/template4')">
+                            <i class="fas fa-eye"></i> Ver Template Premium
+                        </button>
+                    {% else %}
+                        <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                            <i class="fas fa-credit-card"></i> Adquirir Premium
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         </section>

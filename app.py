@@ -128,9 +128,17 @@ def register():
 @app.route('/check-login')
 def check_login():
     if 'user_id' in session:
-        return jsonify({"logged_in": True})
-    return jsonify({"logged_in": False})
+        return jsonify({
+            "logged_in": True,
+            "user_name": session.get('user_name', '')  # Retorna o nome do usuário se estiver logado
+        })
+    return jsonify({"logged_in": False, "user_name": ""})  # Retorna falso se não estiver logado
 
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()  # Remove todas as informações da sessão
+    return jsonify({"message": "Usuário deslogado com sucesso"}), 200
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -154,7 +162,7 @@ def login():
                 session['user_id'] = user[0]
                 session['user_name'] = user[1]
                 session['is_premium'] = user[3]
-                return redirect(url_for('templates'))
+                return redirect(url_for('home'))
             else:
                 return "Usuário ou senha incorretos", 401
         else:
@@ -165,10 +173,20 @@ def login():
 
 @app.route('/templates')
 def templates():
-    if 'user_id' not in session:  # Verifica se o usuário está logado
-        return redirect(url_for('login'))  # Redireciona para a página de login
-    
-    return render_template('templates.html')
+    if 'user_id' in session:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (session['user_id'],))
+        user_status = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user_status:
+            session['is_premium'] = user_status[0]  # Atualiza o status na sessão
+
+    is_premium = session.get('is_premium', False)
+    return render_template('templates.html', is_premium=is_premium)
+
 
 ## Rota para exibir os templates dinâmicos
 @app.route('/template/<template_name>')
@@ -216,4 +234,4 @@ def generate_site():
     return jsonify(site_data)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
