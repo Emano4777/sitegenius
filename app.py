@@ -162,9 +162,11 @@ def login():
     return render_template('login.html')
 
 
-# Rota para templates gratuitos e premium
 @app.route('/templates')
 def templates():
+    if 'user_id' not in session:  # Verifica se o usuário está logado
+        return redirect(url_for('login'))  # Redireciona para a página de login
+    
     return render_template('templates.html')
 
 ## Rota para exibir os templates dinâmicos
