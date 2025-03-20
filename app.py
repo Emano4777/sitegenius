@@ -8,7 +8,7 @@ import requests
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
-MERCADO_PAGO_ACCESS_TOKEN = "TEST-2694841338174545-032011-47a44a1e41293d41ed26c3769a2d3992-2342791238"
+MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
 
 
 @app.route('/')
@@ -43,13 +43,13 @@ def generate_payment():
                 "unit_price": 49.90  # Valor do plano premium
             }
         ],
-     "payer": {
-    "email": "emano4775@gmail.com"
-},
+    "payer": {
+        "email": "test_user_423840156@testuser.com"  # E-mail do comprador de teste
+    },
         "back_urls": {
-            "success": "http://127.0.0.1:5000/payment-success",
-            "failure": "http://127.0.0.1:5000/payment-failure"
-        },
+    "success": "https://sitegenius.vercel.app//payment-success",
+    "failure": "https://sitegenius.vercel.app/payment-failure"
+},
         "auto_return": "approved"
     }
 
@@ -71,7 +71,8 @@ def generate_payment():
             "status_code": response.status_code,
             "details": response.json()
         }), response.status_code
-    
+
+@app.route('/payment-success')   
 def payment_success():
     if 'user_id' in session:
         user_id = session['user_id']
