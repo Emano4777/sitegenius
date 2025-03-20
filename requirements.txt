@@ -1,0 +1,5 @@
+Flask
+requests
+bcrypt
+psycopg2
+gunicorn
