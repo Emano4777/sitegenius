@@ -328,15 +328,31 @@ def editar_template(template_id):
     cur = conn.cursor()
 
     if request.method == 'POST':
-        novo_html = request.form['custom_html']
+        dados = request.get_json()
+        novo_html = dados.get('html')
+        novo_css = dados.get('css')
+
+        html_completo = f"""
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>{novo_css}</style>
+        </head>
+        <body>{novo_html}</body>
+        </html>
+        """
+
         cur.execute("""
             UPDATE user_templates SET custom_html=%s
             WHERE id=%s AND user_id=%s
-        """, (novo_html, template_id, session['user_id']))
+        """, (html_completo, template_id, session['user_id']))
         conn.commit()
-        mensagem = "Template atualizado com sucesso!"
-    else:
-        mensagem = None
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Template atualizado com sucesso!"})
 
     cur.execute("SELECT custom_html FROM user_templates WHERE id=%s AND user_id=%s", (template_id, session['user_id']))
     site = cur.fetchone()
@@ -346,7 +362,7 @@ def editar_template(template_id):
     if not site:
         return "Template não encontrado ou acesso não permitido.", 404
 
-    return render_template('editar_template.html', html_atual=site[0], mensagem=mensagem)
+    return render_template('editar_template.html', html_atual=site[0], template_id=template_id)
 
 
 @app.route('/meus-templates')

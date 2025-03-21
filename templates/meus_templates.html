@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meus Templates</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -534,20 +535,7 @@ main {
                     <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
                     <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
     
-                    <!-- Ícone do usuário -->
-                    <li class="user-menu">
-                        <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
-                            <i class="fas fa-user user-icon"></i>
-                        </a>
-                        <ul class="dropdown-menu" id="user-dropdown">
-                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
-                                Bem-vindo, <span id="user-name-text"></span>
-                            </li>    
-                            <li><a href="/login" id="login-option">Entrar</a></li>
-                            <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
-                            <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-                        </ul>
-                    </li>
+                  
                 </ul>
             </nav>
     
@@ -564,20 +552,6 @@ main {
             <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
             <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
     
-                    <!-- ✅ Ícone do usuário no menu mobile -->
-<div class="mobile-user-menu">
-    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
-        <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
-    </a>
-    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
-        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-            Bem-vindo, <span id="mobile-username-text"></span>
-        </li>
-        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-        <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
-        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-    </ul>
-</div>
       
                     <button class="close-btn" onclick="closeMobileMenu()">
                         <i class="fas fa-times-circle"></i>
@@ -628,5 +602,15 @@ main {
     </div>
 {% endif %}
 </main>
+<script>
+    // Funções para abrir e fechar o menu mobile
+    function openMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'block';
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'none';
+    }
+</script>
 </body>
 </html>

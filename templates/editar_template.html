@@ -2,83 +2,97 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor Visual</title>
+    
+    <!-- CSS do GrapesJS -->
     <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
     <script src="https://unpkg.com/grapesjs"></script>
+
     <style>
         body, html { height: 100%; margin: 0; overflow: hidden; }
-        #editor { height: 100%; }
+        #editor { height: 100vh; width: 100%; }
+        #salvar-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: black;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 9999; /* Garante que fique acima do GrapesJS */
+}
 
-        .bottom-bar {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .save-btn {
-            background-color: black;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s;
-        }
-
-        .save-btn:hover {
-            background-color: #45a049;
-        }
-
-        .save-btn i {
-            margin-right: 5px;
-        }
+#salvar-btn:hover {
+    background-color: blue;
+}
     </style>
-
-    <!-- Font Awesome para ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
-    <div class="bottom-bar">
-        <button class="save-btn" onclick="salvar()">
-            <i class="fa-solid fa-check"></i> Salvar
-        </button>
-    </div>
+    <div id="editor"></div>
 
-    <div id="editor">{{ html_atual | safe }}</div>
-
+     
+    <button id="salvar-btn" onclick="salvarTemplate()">Salvar Template</button>
     <script>
-        const editor = grapesjs.init({
-            container: '#editor',
-            fromElement: true,
-            height: '100%',
-            storageManager: false,
-            plugins: ['gjs-preset-webpage'],
-            pluginsOpts: {
-                'gjs-preset-webpage': {}
-            }
+        document.addEventListener("DOMContentLoaded", function () {
+            const templateHTML = `{{ html_atual | safe }}`;
+
+            const editor = grapesjs.init({
+                container: "#editor",
+                height: "100%",
+                width: "auto",
+                storageManager: false,
+                fromElement: false,
+                plugins: ["gjs-preset-webpage"],
+                pluginsOpts: { "gjs-preset-webpage": {} }
+            });
+
+
+            // ✅ Carrega o template salvo no banco
+            editor.setComponents(templateHTML);
+
+            editor.on("component:selected", (model) => {
+    if (model.is("link")) {
+        editor.Panels.addButton("options", {
+            id: "edit-link",
+            className: "fa fa-link",
+            command: "edit-link",
+            attributes: { title: "Editar Link" }
         });
+    }
+});
 
-        function salvar() {
-            const html = editor.getHtml();
-            const css = editor.getCss();
-
-            fetch('/salvar-template', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ html: html, css: css })
-            })
-            .then(response => response.json())
-            .then(data => alert(data.message));
+editor.Commands.add("edit-link", {
+    run(editor, sender) {
+        sender && sender.set("active", false);
+        const selected = editor.getSelected();
+        if (selected && selected.is("link")) {
+            const newHref = prompt("Digite o novo link:", selected.getAttributes().href);
+            if (newHref !== null) {
+                selected.addAttributes({ href: newHref });
+            }
         }
+    }
+});
+            // ✅ Função para salvar o template atualizado
+            window.salvarTemplate = function () {
+                const html = editor.getHtml();
+                const css = editor.getCss();
+
+                fetch('/editar-template/{{ template_id }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ html: html, css: css })
+                })
+                .then(response => response.json())
+                .then(data => alert(data.message))
+                .catch(error => alert("Erro ao salvar o template!"));
+            };
+        });
     </script>
 </body>
 </html>
