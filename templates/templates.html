@@ -137,14 +137,15 @@ footer .container {
 }
 
 
-.dropdown-menu li a {
-    color: #333;
-    text-decoration: none;
-    font-size: 16px;
-    display: block;
+.dropdown-menu li a, 
+.mobile-dropdown-menu li a {
+    color: #333 !important; /* Cor escura garantida */
 }
-.dropdown-menu li a:hover {
-    background: #f0f0f0; /* Adiciona um fundo no hover */
+
+.dropdown-menu li a:hover, 
+.mobile-dropdown-menu li a:hover {
+    color: #fff !important; /* Texto branco para contraste no hover */
+    background: #333 !important; /* Fundo escuro no hover */
 }
 
 /* ✅ Exibir menu ao abrir */
@@ -245,12 +246,6 @@ footer .container {
     padding: 10px 15px;
 }
 
-.mobile-dropdown-menu li a {
-    color: #333;
-    text-decoration: none;
-    font-size: 16px;
-    display: block;
-}
 
 .mobile-dropdown-menu li:hover {
     background: #f0f0f0;
@@ -364,6 +359,14 @@ header .container {
     padding: 0 20px;
 }
 
+#meus-templates-option, #mobile-meus-templates-option {
+    color: black;
+    font-weight: 500;
+}
+
+#meus-templates-option:hover, #mobile-meus-templates-option:hover {
+    color: black;
+}
 /* Estilização do Menu de Navegação */
 nav ul {
     list-style: none;
@@ -462,7 +465,7 @@ main {
 .btn:hover {
     background: #0056b3;
 }
-/* Estilos do Modal */
+/* Modal inicialmente escondido */
 .modal {
     display: none;
     position: fixed;
@@ -471,23 +474,20 @@ main {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .modal-content {
-    background: black;
+    background: white;
     padding: 20px;
-    width: 90%;
-    max-width: 800px;
-    border-radius: 10px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 900px;
     text-align: center;
     position: relative;
-}
-
-.modal-actions {
-    margin-top: 10px;
 }
 
 iframe {
@@ -496,6 +496,42 @@ iframe {
     border: none;
 }
 
+.modal-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Botão de fechar */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    color: red;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: darkred;
+}
+
+/* Botão de fechar no modal */
+.close-btn {
+    background: red;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.close-btn:hover {
+    background: darkred;
+}
     </style>
     
 </head>
@@ -520,8 +556,9 @@ iframe {
                         <ul class="dropdown-menu" id="user-dropdown">
                             <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
                                 Bem-vindo, <span id="user-name-text"></span>
-                            </li>
+                            </li>    
                             <li><a href="/login" id="login-option">Entrar</a></li>
+                            <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
                             <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
                         </ul>
                     </li>
@@ -551,6 +588,7 @@ iframe {
             Bem-vindo, <span id="mobile-username-text"></span>
         </li>
         <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+        <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
         <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
     </ul>
 </div>
@@ -607,27 +645,69 @@ iframe {
         </section>
 
         <!-- Modal para pré-visualização -->
-        <div id="previewModal" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="closePreview()">&times;</span>
-                <iframe id="previewFrame"></iframe>
-                <div class="modal-actions">
-                    <button class="btn" onclick="downloadTemplate()"><i class="fas fa-download"></i> Usar este template</button>
-                </div>
-            </div>
+<div id="previewModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closePreview()"><i class="fas fa-times-circle"></i></span>
+        <iframe id="previewFrame"></iframe>
+        <div class="modal-actions">
+            <button class="btn" onclick="downloadTemplate()"><i class="fas fa-download"></i> Usar este template</button>
+            <button class="btn close-btn" onclick="closePreview()"><i class="fas fa-times"></i> Fechar</button>
         </div>
+    </div>
+</div>
+
     </main>
 
     <script>
-        function previewTemplate(templateURL) {
-            document.getElementById("previewFrame").src = templateURL;
-            document.getElementById("previewModal").style.display = "flex";
-        }
+            document.addEventListener("DOMContentLoaded", function() {
+    let previewModal = document.getElementById("previewModal");
 
-        function closePreview() {
-            document.getElementById("previewModal").style.display = "none";
-            document.getElementById("previewFrame").src = "";
-        }
+    if (previewModal) {
+        previewModal.style.display = "none";
+        console.log("✅ Modal ocultado no carregamento da página.");
+    }
+
+    // 🛑 Impede chamadas indesejadas para previewTemplate()
+    let iframe = document.getElementById("previewFrame");
+    if (iframe) {
+        iframe.src = "";
+    }
+});
+
+
+function previewTemplate(templateURL) {
+    console.log("🖼️ Tentando abrir preview para:", templateURL);
+
+    let modal = document.getElementById("previewModal");
+    let iframe = document.getElementById("previewFrame");
+
+    if (!modal || !iframe) {
+        console.error("⚠️ Erro: Modal ou iframe não encontrados.");
+        return;
+    }
+
+    // ✅ Confirma se o templateURL não é undefined ou vazio antes de abrir
+    if (typeof templateURL === "string" && templateURL.trim() !== "") {
+        iframe.src = templateURL; // Define o conteúdo do iframe
+        modal.style.display = "flex"; // Exibe o modal corretamente
+    } else {
+        console.warn("🚨 URL do template inválida, modal não será aberto.");
+    }
+}
+function closePreview() {
+    let modal = document.getElementById("previewModal");
+    let iframe = document.getElementById("previewFrame");
+
+    if (modal) {
+        modal.style.display = "none";
+    }
+
+    if (iframe) {
+        iframe.src = ""; // Remove o conteúdo ao fechar
+    }
+
+    console.log("❌ Modal fechado com sucesso.");
+}
 
         function downloadTemplate() {
     const src = document.getElementById("previewFrame").src;
@@ -638,7 +718,7 @@ iframe {
     .then(data => {
         if (data.success) {
             alert("Template vinculado com sucesso!");
-            window.location.href = '/editar-template';
+            window.location.href = '/editar-template/' + data.template_id; 
         } else {
             alert(data.message || "Erro ao vincular template");
         }
@@ -695,23 +775,28 @@ fetch('/check-login')
         let userNameText = document.getElementById('user-name-text');
         let loginOption = document.getElementById('login-option');
         let logoutOption = document.getElementById('logout-option');
+        let meusTemplatesOption = document.getElementById('meus-templates-option');
 
         let mobileUserNameElement = document.getElementById('mobile-user-name');
         let mobileUserNameText = document.getElementById('mobile-username-text');
         let mobileLoginOption = document.getElementById('mobile-login-option');
         let mobileLogoutOption = document.getElementById('mobile-logout-option');
         let mobileUserText = document.getElementById('mobile-user-name-text');
+        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
 
         if (data.logged_in) {
             loginOption.style.display = 'none';
             logoutOption.style.display = 'block';
+            meusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates"
+
             mobileLoginOption.style.display = 'none';
             mobileLogoutOption.style.display = 'block';
+            mobileMeusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" no mobile
 
             if (data.user_name) {
                 userNameText.textContent = data.user_name;
                 userNameElement.style.display = 'block';
-                
+
                 mobileUserNameText.textContent = data.user_name;
                 mobileUserNameElement.style.display = 'block';
                 mobileUserText.textContent = data.user_name; // Atualiza nome no menu mobile
@@ -719,15 +804,20 @@ fetch('/check-login')
         } else {
             loginOption.style.display = 'block';
             logoutOption.style.display = 'none';
+            meusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates"
+
             userNameElement.style.display = 'none';
 
             mobileLoginOption.style.display = 'block';
             mobileLogoutOption.style.display = 'none';
+            mobileMeusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates" no mobile
+
             mobileUserNameElement.style.display = 'none';
             mobileUserText.textContent = "Entrar"; // Reseta para "Entrar"
         }
     })
     .catch(error => console.error('Erro ao verificar login:', error));
+
 
 // ✅ Função para logout e redirecionamento
 function logout() {

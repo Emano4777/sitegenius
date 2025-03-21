@@ -2,16 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Site Genius</title>
-    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742503931/Captura_de_tela_2025-03-20_175110_bcu4sz.png">
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Meus Templates</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+    <style>
+       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
 * {
     margin: 0;
@@ -389,7 +383,88 @@ footer .container {
     display: block;
 }
 
+/* Simples solução */
+table {
+    margin-top: 120px; /* Ajuste conforme necessário */
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    border-collapse: collapse;
+}
 
+/* Estilos opcionais para sua tabela */
+table, th, td {
+    border: 1px solid #ccc;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+}
+
+main {
+    margin-top: 120px; /* espaço igual ou maior que a altura do header */
+}
+
+/* ✅ Estiliza a área de escolha do site */
+.site-list-container {
+    text-align: center;
+    margin-top: 30px;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ✅ Ajusta o título */
+.site-list-container h2 {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* ✅ Melhora a mensagem */
+.site-list-container p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+/* ✅ Estiliza os botões */
+.site-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ✅ Botão estilizado */
+.site-button {
+    display: block;
+    background: #1E2A38;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    transition: 0.3s;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.site-button:hover {
+    background: #e68900;
+    transform: scale(1.05);
+}
+
+/* ✅ Ícone ao lado do nome do site */
+.site-button i {
+    margin-right: 8px;
+}
 
 /* ✅ Responsividade */
 @media (max-width: 768px) {
@@ -442,9 +517,11 @@ footer .container {
    
 
 }
-</style>
+        
+    </style>
 </head>
 <body>
+
     <header>    
         <div class="container">
             <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
@@ -465,7 +542,7 @@ footer .container {
                         <ul class="dropdown-menu" id="user-dropdown">
                             <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
                                 Bem-vindo, <span id="user-name-text"></span>
-                            </li>
+                            </li>    
                             <li><a href="/login" id="login-option">Entrar</a></li>
                             <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
                             <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
@@ -497,12 +574,11 @@ footer .container {
             Bem-vindo, <span id="mobile-username-text"></span>
         </li>
         <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-        <li><a href="/meus-templates" id="mobile-meus-templates-option" style="display:none;">Meus Templates</a></li>
+        <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
         <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
     </ul>
 </div>
-
-            
+      
                     <button class="close-btn" onclick="closeMobileMenu()">
                         <i class="fas fa-times-circle"></i>
                     </button>
@@ -510,155 +586,47 @@ footer .container {
             </div>
     </header>
 
-
-    <section class="hero">
-        <div class="container">
-            <h2>Crie seu site facilmente!</h2>
-            <p>Escolha um template ou use nossa IA para criar um site personalizado em minutos.</p>
-            <a href="/templates" class="btn">Explorar Templates</a>
+<main>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Seu modelo do site - Template</th>
+            <th>Subdomínio</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for template in templates %}
+        <tr>
+            <td>{{ template[0] }}</td>
+            <td>{{ template[1] }}</td>
+            <td><a href="{{ url_for('site_usuario', subdomain=template[2]) }}" target="_blank">{{ template[2] }}</a></td>
+            <td>
+                <a class="btn" href="{{ url_for('editar_template', template_id=template[0]) }}">Editar</a>
+                <a class="btn" href="{{ url_for('meu_site') }}">Meu Site</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="4">Nenhum template encontrado.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if multiple_sites %}
+    <div class="site-list-container">
+        <h2><i class="fa-solid fa-globe"></i> Seus Sites</h2>
+        <p>Você tem mais de um site. Escolha um para visualizar:</p>
+        <div class="site-list">
+            {% for subdomain in templates %}
+                <a href="{{ url_for('site_usuario', subdomain=subdomain[2]) }}" target="_blank" class="site-button">
+                    <i class="fa-solid fa-arrow-right"></i> {{ subdomain[2] }}
+                </a>
+            {% endfor %}
         </div>
-    </section>
-
-    <section class="features">
-        <div class="container">
-            <h2>Por que escolher o Site Genius?</h2>
-            <div class="feature-list">
-                <div class="feature-item">
-                    <h3><i class="fas fa-mouse-pointer"></i> Fácil de Usar</h3>
-                    <p>Sem necessidade de programação! Crie seu site com poucos cliques.</p>
-                </div>
-                <div class="feature-item">
-                    <h3><i class="fas fa-brain"></i> Inteligência Artificial</h3>
-                    <p>Nosso sistema IA personaliza seu site para atender suas necessidades. Ou seja basta digitar como quer o site e a IA cria para você.</p>
-                </div>
-                <div class="feature-item">
-                    <h3><i class="fas fa-bolt"></i> Rápido e Responsivo</h3>
-                    <p>Sites otimizados para carregar rápido e se adaptar a qualquer dispositivo.</p>
-                </div>
-                <div class="feature-item">
-                    <h3><i class="fas fa-tags"></i> O Melhor Preço</h3>
-                    <p>O site mais acessível do mercado, com planos que cabem no seu bolso.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <script>
-            // Função para exibir/esconder o menu ao clicar no ícone do usuário
-            function toggleUserMenu(event) {
-    event.preventDefault();
-    let userMenu = document.querySelector('.user-menu');
-    userMenu.classList.toggle('open');
-}
-
-
-    // ✅ Função para exibir/esconder o menu no mobile
-function toggleMobileUserMenu(event) {
-    event.preventDefault();
-    let menu = document.getElementById('mobile-user-dropdown');
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-}
-// ✅ Verifica se o usuário está logado e exibe corretamente no desktop e mobile
-fetch('/check-login')
-    .then(response => response.json())
-    .then(data => {
-        let userNameElement = document.getElementById('user-name');
-        let userNameText = document.getElementById('user-name-text');
-        let loginOption = document.getElementById('login-option');
-        let logoutOption = document.getElementById('logout-option');
-        let meusTemplatesOption = document.getElementById('meus-templates-option'); // Novo elemento
-
-        let mobileUserNameElement = document.getElementById('mobile-user-name');
-        let mobileUserNameText = document.getElementById('mobile-username-text');
-        let mobileLoginOption = document.getElementById('mobile-login-option');
-        let mobileLogoutOption = document.getElementById('mobile-logout-option');
-        let mobileUserText = document.getElementById('mobile-user-name-text');
-        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option'); // Novo elemento mobile
-
-        if (data.logged_in) {
-            loginOption.style.display = 'none';
-            logoutOption.style.display = 'block';
-            meusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" (Desktop)
-
-            mobileLoginOption.style.display = 'none';
-            mobileLogoutOption.style.display = 'block';
-            mobileMeusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" (Mobile)
-
-            if (data.user_name) {
-                userNameText.textContent = data.user_name;
-                userNameElement.style.display = 'block';
-
-                mobileUserNameText.textContent = data.user_name;
-                mobileUserNameElement.style.display = 'block';
-                mobileUserText.textContent = data.user_name; // Atualiza nome no menu mobile
-            }
-        } else {
-            loginOption.style.display = 'block';
-            logoutOption.style.display = 'none';
-            meusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates" (Desktop)
-
-            userNameElement.style.display = 'none';
-
-            mobileLoginOption.style.display = 'block';
-            mobileLogoutOption.style.display = 'none';
-            mobileMeusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates" (Mobile)
-
-            mobileUserNameElement.style.display = 'none';
-            mobileUserText.textContent = "Entrar"; // Reseta para "Entrar"
-        }
-    })
-    .catch(error => console.error('Erro ao verificar login:', error));
-
-
-// ✅ Função para logout e redirecionamento
-function logout() {
-    fetch('/logout', { method: 'POST' })
-        .then(() => {
-            window.location.href = '/login'; // Redireciona para a página de login
-        });
-}
-
-// ✅ Fecha o dropdown se clicar fora dele (Desktop e Mobile)
-document.addEventListener('click', function(event) {
-    let userMenu = document.querySelector('.user-menu');
-    let userIcon = document.getElementById('user-profile');
-
-    let mobileUserMenu = document.querySelector('.mobile-user-menu');
-    let mobileUserIcon = document.getElementById('mobile-user-profile');
-
-    // Fecha menu desktop
-    if (!userIcon.contains(event.target) && !userMenu.contains(event.target)) {
-        userMenu.classList.remove('open');
-    }
-
-    // Fecha menu mobile
-    if (!mobileUserIcon.contains(event.target) && !mobileUserMenu.contains(event.target)) {
-        mobileUserMenu.classList.remove('open');
-    }
-});
-
-
-
-    document.getElementById('mobile-logout-option').addEventListener('click', function() {
-        fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
-    });
-
-    // Funções para abrir e fechar o menu mobile
-    function openMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'block';
-    }
-
-    function closeMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'none';
-    }
-
-
-    </script>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
-        </div>
-    </footer>
+    </div>
+{% endif %}
+</main>
 </body>
 </html>

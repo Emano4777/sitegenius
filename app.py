@@ -3,7 +3,7 @@ import os
 import psycopg2
 import bcrypt
 import requests
-
+import uuid
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -188,6 +188,9 @@ def templates():
     return render_template('templates.html', is_premium=is_premium)
 
 
+import uuid
+from flask import jsonify, session, redirect, url_for
+
 @app.route('/usar-template/<template_name>', methods=['POST'])
 def usar_template(template_name):
     if 'user_id' not in session:
@@ -196,30 +199,69 @@ def usar_template(template_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Verifica se o usuário já possui um template
-    cur.execute("SELECT id FROM user_templates WHERE user_id=%s", (session['user_id'],))
-    existing = cur.fetchone()
-    if existing:
-        return jsonify({"success": False, "message": "Você já possui um template."}), 400
-    
+    # Checa se usuário é premium
+    cur.execute("SELECT is_premium FROM users2 WHERE id=%s", (session['user_id'],))
+    user_status = cur.fetchone()
+    is_premium = user_status[0] if user_status else False
+
+    # Conta quantos templates o usuário já tem
+    cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id=%s", (session['user_id'],))
+    total_templates = cur.fetchone()[0]
+
+    # Se não for premium e já tiver template, bloqueia a criação
+    if not is_premium and total_templates >= 1:
+        cur.close()
+        conn.close()
+        return jsonify({"success": False, "message": "Usuários não Premium só podem criar 1 template."}), 403
+
     try:
         with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
             original_html = f.read()
     except:
+        cur.close()
+        conn.close()
         return jsonify({"success": False, "message": "Template não encontrado"}), 404
 
-    subdomain = f"user{session['user_id']}"
+    # Gera um subdomínio único
+    subdomain = f"user{session['user_id']}-{uuid.uuid4().hex[:6]}"
 
+    # Insere e retorna o ID do template recém-criado
     cur.execute("""
         INSERT INTO user_templates (user_id, template_name, custom_html, subdomain)
-        VALUES (%s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s) RETURNING id
     """, (session['user_id'], template_name, original_html, subdomain))
 
+    template_id = cur.fetchone()[0]  # Captura o ID recém-criado
     conn.commit()
     cur.close()
     conn.close()
 
-    return jsonify({"success": True, "message": "Template vinculado!"})
+    return jsonify({"success": True, "message": "Template vinculado!", "template_id": template_id})
+
+
+@app.route('/meu-site')
+def meu_site():
+    user_id = session.get('user_id')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, template_name, subdomain FROM user_templates WHERE user_id=%s", (user_id,))
+    subdomains = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    if len(subdomains) == 1:
+        # Se houver apenas um template, redireciona automaticamente
+        return redirect(url_for('site_usuario', subdomain=subdomains[0][2]))
+    elif len(subdomains) > 1:
+        # Retorna a página 'meus_templates.html' com a lista de sites
+        return render_template('meus_templates.html', templates=subdomains, multiple_sites=True)
+    else:
+        return "Você ainda não possui um site configurado.", 404
+
+
+
+
 
 @app.route('/site/<subdomain>')
 def site_usuario(subdomain):
@@ -236,8 +278,8 @@ def site_usuario(subdomain):
         return "Site não encontrado.", 404
 
 
-@app.route('/salvar-template', methods=['POST'])
-def salvar_template():
+@app.route('/salvar-template/<int:template_id>', methods=['POST'])
+def salvar_template(template_id):
     if 'user_id' not in session:
         return jsonify({"message": "Faça login primeiro"}), 401
 
@@ -260,18 +302,25 @@ def salvar_template():
     cur = conn.cursor()
     cur.execute("""
         UPDATE user_templates SET custom_html=%s
-        WHERE user_id=%s
-    """, (html_completo, session['user_id']))
+        WHERE id=%s AND user_id=%s
+    """, (html_completo, template_id, session['user_id']))
+
+    if cur.rowcount == 0:
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Template não encontrado ou acesso negado."}), 404
+
     conn.commit()
     cur.close()
     conn.close()
 
     return jsonify({"message": "Template salvo com sucesso!"})
 
+
     
 
-@app.route('/editar-template', methods=['GET', 'POST'])
-def editar_template():
+@app.route('/editar-template/<int:template_id>', methods=['GET', 'POST'])
+def editar_template(template_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
@@ -280,29 +329,42 @@ def editar_template():
 
     if request.method == 'POST':
         novo_html = request.form['custom_html']
-
         cur.execute("""
             UPDATE user_templates SET custom_html=%s
-            WHERE user_id=%s
-        """, (novo_html, session['user_id']))
-        
+            WHERE id=%s AND user_id=%s
+        """, (novo_html, template_id, session['user_id']))
         conn.commit()
         mensagem = "Template atualizado com sucesso!"
     else:
         mensagem = None
 
-    cur.execute("SELECT custom_html FROM user_templates WHERE user_id=%s", (session['user_id'],))
+    cur.execute("SELECT custom_html FROM user_templates WHERE id=%s AND user_id=%s", (template_id, session['user_id']))
     site = cur.fetchone()
     cur.close()
     conn.close()
 
     if not site:
-        return "Você ainda não escolheu um template.", 404
+        return "Template não encontrado ou acesso não permitido.", 404
 
     return render_template('editar_template.html', html_atual=site[0], mensagem=mensagem)
 
 
+@app.route('/meus-templates')
+def meus_templates():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
 
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, template_name, subdomain FROM user_templates WHERE user_id=%s
+    """, (session['user_id'],))
+    
+    templates = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    return render_template('meus_templates.html', templates=templates)
 
 
 ## Rota para exibir os templates dinâmicos
