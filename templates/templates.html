@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Templates - Site Genius</title>
+        <link rel="icon" type="image/png" href="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742503931/Captura_de_tela_2025-03-20_175110_bcu4sz.png">
         <link rel="stylesheet" href="/static/style.css">
         <!-- Link correto para importar o FontAwesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -17,11 +18,9 @@
     flex-wrap: wrap;
     margin-bottom: 40px;
 }
-
-
 footer {
-    background: #1E2A38;
-    color: white;
+    background: white;
+    color: black;
     padding: 15px 0;
     margin-top: 40px;
 }
@@ -48,6 +47,271 @@ footer .container {
     position: relative;
 }
 
+
+/* Ajuste no botão "Entrar" */
+#login-option {
+    color: #333 !important; /* Cor escura para melhor contraste */
+    font-size: 16px;
+    font-weight: bold; /* Deixa o texto mais visível */
+    padding: 10px 15px;
+    text-align: center;
+    display: block;
+}
+
+#login-option:hover {
+    background: #f0f0f0; /* Destaque ao passar o mouse */
+    border-radius: 5px;
+}
+
+#login-text {
+    margin-right: 8px;
+}
+
+/* ✅ Ajuste no menu do usuário */
+.user-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* ✅ Estilização do nome do usuário no dropdown */
+#user-name {
+    color: #333;
+    font-size: 16px;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    display: none; /* Inicialmente oculto */
+}
+
+.user-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: black;
+    font-size: 18px;
+}
+
+/* ✅ Garantindo que todos os itens do menu fiquem na mesma linha */
+.desktop-nav ul {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+}
+
+.desktop-nav ul li {
+    margin: 0 15px;
+}
+.user-icon {
+    font-size: 22px;
+    color: black;
+    margin-left: 15px;
+}
+
+/* ✅ Ajuste no dropdown */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: white;
+    list-style: none;
+    padding: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+
+/* ✅ Itens do dropdown */
+.dropdown-menu li {
+    padding: 10px 15px;
+    display: block;
+}
+
+
+.dropdown-menu li a {
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+    display: block;
+}
+.dropdown-menu li a:hover {
+    background: #f0f0f0; /* Adiciona um fundo no hover */
+}
+
+/* ✅ Exibir menu ao abrir */
+.user-menu.open .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+/* ✅ Efeito de exibição do dropdown */
+.user-menu:hover .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-menu li:hover {
+    background: #f0f0f0;
+}
+/* ✅ Menu Mobile */
+.mobile-menu-btn {
+    display: none;
+    font-size: 24px;
+    color: black;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-menu-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: 100vh;
+    background: #1E2A38;
+    box-shadow: -3px 0px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+
+.mobile-menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.mobile-menu-content a {
+    color: white;
+    font-size: 18px;
+    text-decoration: none;
+    padding: 12px 0;
+}
+
+.mobile-menu-content .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+/* ✅ Ajuste no menu do usuário no mobile */
+.mobile-user-menu {
+    position: relative;
+    width: 100%;
+    text-align: left;
+    padding: 10px 0;
+}
+
+.mobile-user-link {
+    color: black;
+    font-size: 18px;
+    text-decoration: none;
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.mobile-user-link i {
+    margin-right: 8px;
+}
+
+.mobile-dropdown-menu {
+    display: none;
+    background: black;
+    list-style: none;
+    padding: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    text-align: center;
+}
+
+.mobile-dropdown-menu li {
+    padding: 10px 15px;
+}
+
+.mobile-dropdown-menu li a {
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+    display: block;
+}
+
+.mobile-dropdown-menu li:hover {
+    background: #f0f0f0;
+}
+
+/* ✅ Exibir dropdown ao abrir */
+.mobile-user-menu.open .mobile-dropdown-menu {
+    display: block;
+}
+
+
+/* ✅ Responsividade */
+@media (max-width: 768px) {
+    .desktop-nav {
+        display: none;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        margin-top: 10px;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 5px 0;
+    }
+
+    .hero {
+        padding: 60px 20px;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 18px;
+    }
+
+    .feature-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .feature-item {
+        width: 90%;
+    }
+}
+
+
 /* Linha sutil abaixo do título */
 .templates h2::after {
     content: "";
@@ -62,7 +326,7 @@ footer .container {
 }
 /* Estilo dos cards de templates */
 .template {
-    background: white;
+    background: #f8f8f8   ;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
@@ -80,8 +344,8 @@ footer .container {
 
 
 header {
-    background: #1E2A38;
-    color: white;
+    background: white;
+    color: black;
     padding: 20px 0;
     position: fixed;
     width: 100%;
@@ -113,7 +377,7 @@ nav ul li {
 }
 
 nav ul li a {
-    color: white;
+    color: black;
     text-decoration: none;
     font-size: 18px;
     font-weight: 500;
@@ -213,7 +477,7 @@ main {
 }
 
 .modal-content {
-    background: white;
+    background: black;
     padding: 20px;
     width: 90%;
     max-width: 800px;
@@ -236,18 +500,66 @@ iframe {
     
 </head>
 <body>
-    <header>
+    <header>    
         <div class="container">
-            <h1><i class="fa-solid fa-palette"></i> Escolha um Template</h1>
-            <nav>
+            <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
+    
+            <!-- ✅ Navbar Desktop Corrigida -->
+            <nav class="desktop-nav">
                 <ul>
                     <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
                     <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
                     <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
                     <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+    
+                    <!-- Ícone do usuário -->
+                    <li class="user-menu">
+                        <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
+                            <i class="fas fa-user user-icon"></i>
+                        </a>
+                        <ul class="dropdown-menu" id="user-dropdown">
+                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
+                                Bem-vindo, <span id="user-name-text"></span>
+                            </li>
+                            <li><a href="/login" id="login-option">Entrar</a></li>
+                            <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
+    
+            <!-- ✅ Botão de menu mobile -->
+            <button class="mobile-menu-btn" onclick="openMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
+    </div>
+    <div class="mobile-menu-modal" id="mobileMenuModal">
+        <div class="mobile-menu-content">
+            <a href="/"><i class="fas fa-home"></i> Início</a>
+            <a href="/templates"><i class="fas fa-th"></i> Templates</a>
+            <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
+            <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
+    
+                    <!-- ✅ Ícone do usuário no menu mobile -->
+<div class="mobile-user-menu">
+    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+        <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
+    </a>
+    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+            Bem-vindo, <span id="mobile-username-text"></span>
+        </li>
+        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+    </ul>
+</div>
+      
+                    <button class="close-btn" onclick="closeMobileMenu()">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            </div>
     </header>
 
     <main>
@@ -318,9 +630,20 @@ iframe {
         }
 
         function downloadTemplate() {
-            const src = document.getElementById("previewFrame").src;
-            window.location.href = src;
+    const src = document.getElementById("previewFrame").src;
+    const templateName = src.split('/').pop();
+
+    fetch('/usar-template/' + templateName, { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Template vinculado com sucesso!");
+            window.location.href = '/editar-template';
+        } else {
+            alert(data.message || "Erro ao vincular template");
         }
+    });
+}
 
         function handlePremiumPurchase() {
     fetch('/check-login')
@@ -346,6 +669,105 @@ function buyPremium() {
             }
         });
 }
+
+
+function toggleUserMenu(event) {
+        event.preventDefault();
+        let menu = document.getElementById('user-dropdown');
+        if (menu.style.display === 'block') {
+            menu.style.display = 'none';  // Se já estiver aberto, fecha
+        } else {
+            menu.style.display = 'block'; // Se estiver fechado, abre
+        }
+    }
+
+    // ✅ Função para exibir/esconder o menu no mobile
+function toggleMobileUserMenu(event) {
+    event.preventDefault();
+    let menu = document.getElementById('mobile-user-dropdown');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+// ✅ Verifica se o usuário está logado e exibe corretamente no desktop e mobile
+fetch('/check-login')
+    .then(response => response.json())
+    .then(data => {
+        let userNameElement = document.getElementById('user-name');
+        let userNameText = document.getElementById('user-name-text');
+        let loginOption = document.getElementById('login-option');
+        let logoutOption = document.getElementById('logout-option');
+
+        let mobileUserNameElement = document.getElementById('mobile-user-name');
+        let mobileUserNameText = document.getElementById('mobile-username-text');
+        let mobileLoginOption = document.getElementById('mobile-login-option');
+        let mobileLogoutOption = document.getElementById('mobile-logout-option');
+        let mobileUserText = document.getElementById('mobile-user-name-text');
+
+        if (data.logged_in) {
+            loginOption.style.display = 'none';
+            logoutOption.style.display = 'block';
+            mobileLoginOption.style.display = 'none';
+            mobileLogoutOption.style.display = 'block';
+
+            if (data.user_name) {
+                userNameText.textContent = data.user_name;
+                userNameElement.style.display = 'block';
+                
+                mobileUserNameText.textContent = data.user_name;
+                mobileUserNameElement.style.display = 'block';
+                mobileUserText.textContent = data.user_name; // Atualiza nome no menu mobile
+            }
+        } else {
+            loginOption.style.display = 'block';
+            logoutOption.style.display = 'none';
+            userNameElement.style.display = 'none';
+
+            mobileLoginOption.style.display = 'block';
+            mobileLogoutOption.style.display = 'none';
+            mobileUserNameElement.style.display = 'none';
+            mobileUserText.textContent = "Entrar"; // Reseta para "Entrar"
+        }
+    })
+    .catch(error => console.error('Erro ao verificar login:', error));
+
+// ✅ Função para logout e redirecionamento
+function logout() {
+    fetch('/logout', { method: 'POST' })
+        .then(() => {
+            window.location.href = '/login'; // Redireciona para a página de login
+        });
+}
+
+// ✅ Fecha o dropdown se clicar fora dele (Desktop e Mobile)
+document.addEventListener('click', function(event) {
+    let userMenu = document.getElementById('user-dropdown');
+    let userIcon = document.getElementById('user-profile');
+
+    let mobileUserMenu = document.getElementById('mobile-user-dropdown');
+    let mobileUserIcon = document.getElementById('mobile-user-profile');
+
+    if (userMenu.style.display === 'block' && !userIcon.contains(event.target) && !userMenu.contains(event.target)) {
+        userMenu.style.display = 'none';
+    }
+
+    if (mobileUserMenu.style.display === 'block' && !mobileUserIcon.contains(event.target) && !mobileUserMenu.contains(event.target)) {
+        mobileUserMenu.style.display = 'none';
+    }
+});
+
+
+    document.getElementById('mobile-logout-option').addEventListener('click', function() {
+        fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
+    });
+
+    // Funções para abrir e fechar o menu mobile
+    function openMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'block';
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'none';
+    }
+
     </script>
 
     <footer>

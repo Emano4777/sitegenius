@@ -188,6 +188,123 @@ def templates():
     return render_template('templates.html', is_premium=is_premium)
 
 
+@app.route('/usar-template/<template_name>', methods=['POST'])
+def usar_template(template_name):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Faça login para usar o template."}), 401
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Verifica se o usuário já possui um template
+    cur.execute("SELECT id FROM user_templates WHERE user_id=%s", (session['user_id'],))
+    existing = cur.fetchone()
+    if existing:
+        return jsonify({"success": False, "message": "Você já possui um template."}), 400
+    
+    try:
+        with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
+            original_html = f.read()
+    except:
+        return jsonify({"success": False, "message": "Template não encontrado"}), 404
+
+    subdomain = f"user{session['user_id']}"
+
+    cur.execute("""
+        INSERT INTO user_templates (user_id, template_name, custom_html, subdomain)
+        VALUES (%s, %s, %s, %s)
+    """, (session['user_id'], template_name, original_html, subdomain))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"success": True, "message": "Template vinculado!"})
+
+@app.route('/site/<subdomain>')
+def site_usuario(subdomain):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT custom_html FROM user_templates WHERE subdomain=%s", (subdomain,))
+    site = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if site:
+        return site[0]
+    else:
+        return "Site não encontrado.", 404
+
+
+@app.route('/salvar-template', methods=['POST'])
+def salvar_template():
+    if 'user_id' not in session:
+        return jsonify({"message": "Faça login primeiro"}), 401
+
+    dados = request.get_json()
+    html_editado = dados.get('html')
+    css_editado = dados.get('css')
+
+    html_completo = f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <style>{css_editado}</style>
+    </head>
+    <body>{html_editado}</body>
+    </html>
+    """
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE user_templates SET custom_html=%s
+        WHERE user_id=%s
+    """, (html_completo, session['user_id']))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"message": "Template salvo com sucesso!"})
+
+    
+
+@app.route('/editar-template', methods=['GET', 'POST'])
+def editar_template():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        novo_html = request.form['custom_html']
+
+        cur.execute("""
+            UPDATE user_templates SET custom_html=%s
+            WHERE user_id=%s
+        """, (novo_html, session['user_id']))
+        
+        conn.commit()
+        mensagem = "Template atualizado com sucesso!"
+    else:
+        mensagem = None
+
+    cur.execute("SELECT custom_html FROM user_templates WHERE user_id=%s", (session['user_id'],))
+    site = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not site:
+        return "Você ainda não escolheu um template.", 404
+
+    return render_template('editar_template.html', html_atual=site[0], mensagem=mensagem)
+
+
+
+
+
 ## Rota para exibir os templates dinâmicos
 @app.route('/template/<template_name>')
 def show_template(template_name):

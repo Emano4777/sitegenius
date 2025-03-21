@@ -3,14 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Site Simples</title>
+    <title>Template Simples com Menu</title>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        h1 { color: #4CAF50; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #4c93af;
+            overflow: hidden;
+            padding: 10px 0;
+        }
+
+        .navbar a {
+            color: white;
+            padding: 14px 20px;
+            text-decoration: none;
+            text-align: center;
+            float: left;
+        }
+
+        .navbar a:hover {
+            background-color: #45a049;
+        }
+
+        .content {
+            padding: 20px;
+            text-align: center;
+            min-height: 200px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #f1f1f1;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            border-top: 1px solid #ddd;
+        }
     </style>
 </head>
 <body>
-    <h1>Bem-vindo ao Meu Site Simples</h1>
-    <p>Este é um modelo de site básico para você começar.</p>
+
+    <div class="navbar">
+        <a href="#">Início</a>
+        <a href="#">Editável</a>
+        <a href="#">Editável2</a>
+    </div>
+
+    <div class="content">
+        <h1>Conteúdo Editável</h1>
+        <p>Aqui você poderá colocar o conteúdo editado diretamente pela página administrativa.</p>
+    </div>
+
+    <div class="footer">
+        <p>Template Simples © 2025. Todos os direitos reservados.</p>
+    </div>
+
 </body>
 </html>

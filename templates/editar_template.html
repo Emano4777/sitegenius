@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor Visual</title>
+    <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/grapesjs"></script>
+    <style>
+        body, html { height: 100%; margin: 0; overflow: hidden; }
+        #editor { height: 100%; }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .save-btn {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s;
+        }
+
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+
+        .save-btn i {
+            margin-right: 5px;
+        }
+    </style>
+
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <div class="bottom-bar">
+        <button class="save-btn" onclick="salvar()">
+            <i class="fa-solid fa-check"></i> Salvar
+        </button>
+    </div>
+
+    <div id="editor">{{ html_atual | safe }}</div>
+
+    <script>
+        const editor = grapesjs.init({
+            container: '#editor',
+            fromElement: true,
+            height: '100%',
+            storageManager: false,
+            plugins: ['gjs-preset-webpage'],
+            pluginsOpts: {
+                'gjs-preset-webpage': {}
+            }
+        });
+
+        function salvar() {
+            const html = editor.getHtml();
+            const css = editor.getCss();
+
+            fetch('/salvar-template', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ html: html, css: css })
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message));
+        }
+    </script>
+</body>
+</html>
