@@ -187,10 +187,11 @@ def templates():
     is_premium = session.get('is_premium', False)
     return render_template('templates.html', is_premium=is_premium)
 
+@app.route('/template/<template_name>')
+def visualizar_template(template_name):
+    return render_template(f"{template_name}.html")
 
-import uuid
-from flask import jsonify, session, redirect, url_for
-
+    
 @app.route('/usar-template/<template_name>', methods=['POST'])
 def usar_template(template_name):
     if 'user_id' not in session:
@@ -224,19 +225,69 @@ def usar_template(template_name):
 
     # Gera um subdomínio único
     subdomain = f"user{session['user_id']}-{uuid.uuid4().hex[:6]}"
+    
+    # Define o nome da primeira página como "index"
+    page_name = 'index'
 
-    # Insere e retorna o ID do template recém-criado
+    # Insere o novo template com a página principal 'index'
     cur.execute("""
-        INSERT INTO user_templates (user_id, template_name, custom_html, subdomain)
-        VALUES (%s, %s, %s, %s) RETURNING id
-    """, (session['user_id'], template_name, original_html, subdomain))
+        INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING id
+    """, (session['user_id'], template_name, original_html, subdomain, page_name))
 
-    template_id = cur.fetchone()[0]  # Captura o ID recém-criado
+    template_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
 
-    return jsonify({"success": True, "message": "Template vinculado!", "template_id": template_id})
+    return jsonify({
+    "success": True,
+    "message": "Template vinculado!",
+    "template_id": template_id,
+    "page_name": page_name  # <-- adiciona isso aqui!
+})
+
+
+@app.route('/criar-subpagina/<int:template_id>/<new_page>', methods=['POST'])
+def criar_subpagina(template_id, new_page):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Faça login para criar uma subpágina."}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Pega o template original para puxar o template_name e subdomain
+    cur.execute("""
+        SELECT template_name, subdomain FROM user_templates 
+        WHERE id = %s AND user_id = %s LIMIT 1
+    """, (template_id, session['user_id']))
+
+    info = cur.fetchone()
+
+    if not info:
+        return jsonify({"success": False, "message": "Template não encontrado"}), 404
+
+    template_name, subdomain = info
+
+    try:
+        with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
+            html_base = f.read()
+    except:
+        return jsonify({"success": False, "message": "Arquivo base não encontrado"}), 500
+
+    # Cria a nova subpágina com conteúdo padrão (poderia ser outro template se quiser)
+    cur.execute("""
+        INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (session['user_id'], template_name, html_base, subdomain, new_page))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({"success": True, "message": f"Subpágina '{new_page}' criada!"})
+
 
 
 @app.route('/meu-site')
@@ -245,87 +296,221 @@ def meu_site():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, template_name, subdomain FROM user_templates WHERE user_id=%s", (user_id,))
-    subdomains = cur.fetchall()
+    cur.execute("""
+        SELECT id, template_name, subdomain, page_name
+        FROM user_templates 
+        WHERE user_id = %s
+    """, (user_id,))
+    
+    rows = cur.fetchall()
     cur.close()
     conn.close()
 
-    if len(subdomains) == 1:
-        # Se houver apenas um template, redireciona automaticamente
-        return redirect(url_for('site_usuario', subdomain=subdomains[0][2]))
-    elif len(subdomains) > 1:
-        # Retorna a página 'meus_templates.html' com a lista de sites
-        return render_template('meus_templates.html', templates=subdomains, multiple_sites=True)
-    else:
-        return "Você ainda não possui um site configurado.", 404
+    # Agrupando corretamente por subdomínio
+    templates = {}
+    for template_id, template_name, subdomain, page_name in rows:
+        if subdomain not in templates:
+            templates[subdomain] = {
+                'template_id': template_id,
+                'template_name': template_name,
+                'pages': []
+            }
+        templates[subdomain]['pages'].append(page_name)
+
+    return render_template('meus_templates.html', templates=templates, multiple_sites=(len(templates) > 1))
 
 
-
-
-
-@app.route('/site/<subdomain>')
-def site_usuario(subdomain):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT custom_html FROM user_templates WHERE subdomain=%s", (subdomain,))
-    site = cur.fetchone()
-    cur.close()
-    conn.close()
-
-    if site:
-        return site[0]
-    else:
-        return "Site não encontrado.", 404
-
-
-@app.route('/salvar-template/<int:template_id>', methods=['POST'])
-def salvar_template(template_id):
+    
+@app.route('/adicionar-pagina/<int:template_id>', methods=['POST'])
+def adicionar_pagina(template_id):
     if 'user_id' not in session:
-        return jsonify({"message": "Faça login primeiro"}), 401
+        return jsonify({'message': 'Usuário não autenticado'}), 401
 
-    dados = request.get_json()
-    html_editado = dados.get('html')
-    css_editado = dados.get('css')
+    data = request.get_json()
+    page_name = data.get('page_name')
+    html = data.get('html', '')
+    css = data.get('css', '')
+
+    if not page_name:
+        return jsonify({'message': 'Nome da página é obrigatório'}), 400
 
     html_completo = f"""
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
         <meta charset="UTF-8">
-        <style>{css_editado}</style>
+        <style>{css}</style>
     </head>
-    <body>{html_editado}</body>
+    <body>{html}</body>
     </html>
     """
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
-        UPDATE user_templates SET custom_html=%s
-        WHERE id=%s AND user_id=%s
-    """, (html_completo, template_id, session['user_id']))
 
-    if cur.rowcount == 0:
+    # 🔎 Recupera o subdomínio e o nome do template original pelo ID
+    cur.execute("""
+        SELECT template_name, subdomain FROM user_templates 
+        WHERE id = %s AND user_id = %s LIMIT 1
+    """, (template_id, session['user_id']))
+    template = cur.fetchone()
+
+    if not template:
         cur.close()
         conn.close()
-        return jsonify({"message": "Template não encontrado ou acesso negado."}), 404
+        return jsonify({'message': 'Template original não encontrado'}), 404
+
+    template_name, subdomain = template
+
+    # ✅ Insere a nova página com os dados herdados do template original
+    cur.execute("""
+        INSERT INTO user_templates (user_id, template_name, subdomain, page_name, custom_html)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (session['user_id'], template_name, subdomain, page_name, html_completo))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return jsonify({"message": "Template salvo com sucesso!"})
+    return jsonify({'message': f'Página "{page_name}" criada com sucesso!'})
 
 
+@app.route('/<subdomain>/<page_name>')
+def exibir_pagina(subdomain, page_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT custom_html FROM user_templates
+        WHERE subdomain = %s AND page_name = %s
+    """, (subdomain, page_name))
+
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not result:
+        return "Página não encontrada", 404
+
+    return result[0]
+
+
+@app.route('/<subdomain>')
+def exibir_site(subdomain):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT page_name FROM user_templates 
+        WHERE subdomain=%s
+    """, (subdomain,))
     
+    pages = [p[0] for p in cur.fetchall()]
+    cur.close()
+    conn.close()
 
-@app.route('/editar-template/<int:template_id>', methods=['GET', 'POST'])
-def editar_template(template_id):
+    return render_template('base.html', subdomain=subdomain, pages=pages)
+
+
+@app.route('/<subdomain>/<page_name>')
+def site_usuario(subdomain, page_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT custom_html FROM user_templates 
+        WHERE subdomain=%s AND page_name=%s
+    """, (subdomain, page_name))
+    site = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if site:
+        return site[0]  # Retorna o HTML da página específica do subdomínio
+    else:
+        return "Página não encontrada.", 404
+
+
+
+@app.route('/pagina-existe/<int:template_id>/<page_name>')
+def pagina_existe(template_id, page_name):
+    if 'user_id' not in session:
+        return jsonify({'existe': False})
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 🔎 Busca o subdomínio e nome do template com base no ID
+    cur.execute("""
+        SELECT subdomain, template_name FROM user_templates 
+        WHERE id = %s AND user_id = %s
+        LIMIT 1
+    """, (template_id, session['user_id']))
+    template_info = cur.fetchone()
+
+    if not template_info:
+        cur.close()
+        conn.close()
+        return jsonify({'existe': False})
+
+    subdomain, template_name = template_info
+
+    # ✅ Verifica se existe uma página com o mesmo user_id, subdomínio, e page_name
+    cur.execute("""
+        SELECT 1 FROM user_templates 
+        WHERE user_id=%s AND subdomain=%s AND page_name=%s
+    """, (session['user_id'], subdomain, page_name))
+    
+    resultado = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    return jsonify({'existe': bool(resultado)})
+
+
+@app.route('/listar-paginas/<int:template_id>')
+def listar_paginas(template_id):
+    if 'user_id' not in session:
+        return jsonify([])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT page_name FROM user_templates 
+        WHERE user_id = %s AND (
+            id = %s OR template_name IN (
+                SELECT template_name FROM user_templates WHERE id = %s
+            )
+        )
+    """, (session['user_id'], template_id, template_id))
+
+    paginas = [row[0] for row in cur.fetchall() if row[0]]  # ignora os NULLs
+    cur.close()
+    conn.close()
+
+    return jsonify(paginas)
+
+
+
+@app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
+def editar_pagina(template_id, page_name):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Primeiro, obtemos o template_name e subdomain com base no ID inicial (index)
+    cur.execute("""
+        SELECT template_name, subdomain FROM user_templates
+        WHERE id = %s AND user_id = %s
+        LIMIT 1
+    """, (template_id, session['user_id']))
+    info = cur.fetchone()
+
+    if not info:
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Template não encontrado"}), 404
+
+    template_name, subdomain = info
 
     if request.method == 'POST':
         dados = request.get_json()
@@ -344,43 +529,36 @@ def editar_template(template_id):
         </html>
         """
 
+        # Atualiza com base no combo user_id + template_name + subdomain + page_name
         cur.execute("""
-            UPDATE user_templates SET custom_html=%s
-            WHERE id=%s AND user_id=%s
-        """, (html_completo, template_id, session['user_id']))
+            UPDATE user_templates 
+            SET custom_html = %s
+            WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
+        """, (html_completo, session['user_id'], template_name, subdomain, page_name))
+
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({"message": "Template atualizado com sucesso!"})
+        return jsonify({"message": "Página atualizada com sucesso!"})
 
-    cur.execute("SELECT custom_html FROM user_templates WHERE id=%s AND user_id=%s", (template_id, session['user_id']))
-    site = cur.fetchone()
-    cur.close()
-    conn.close()
-
-    if not site:
-        return "Template não encontrado ou acesso não permitido.", 404
-
-    return render_template('editar_template.html', html_atual=site[0], template_id=template_id)
-
-
-@app.route('/meus-templates')
-def meus_templates():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db_connection()
-    cur = conn.cursor()
+    # GET: buscar o conteúdo da página que corresponde ao template atual
     cur.execute("""
-        SELECT id, template_name, subdomain FROM user_templates WHERE user_id=%s
-    """, (session['user_id'],))
-    
-    templates = cur.fetchall()
+        SELECT custom_html FROM user_templates 
+        WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
+    """, (session['user_id'], template_name, subdomain, page_name))
+
+    page_content = cur.fetchone()
     cur.close()
     conn.close()
 
-    return render_template('meus_templates.html', templates=templates)
+    if not page_content or not page_content[0]:
+        html_minimo = "<h1>Nova Página</h1><p>Comece a editar seu conteúdo aqui.</p>"
+        return render_template('editar_template.html', html_atual=html_minimo, template_id=template_id, page_name=page_name)
+
+    return render_template('editar_template.html', html_atual=page_content[0], template_id=template_id, page_name=page_name)
+
+
 
 
 ## Rota para exibir os templates dinâmicos

@@ -2,43 +2,154 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor Visual</title>
+
     
-    <!-- CSS do GrapesJS -->
-    <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/grapesjs"></script>
 
     <style>
-        body, html { height: 100%; margin: 0; overflow: hidden; }
-        #editor { height: 100vh; width: 100%; }
-        #salvar-btn {
+       body, html {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+}
+
+#editor {
+    height: 100vh;
+    width: 100%;
+    margin-top: 70px; /* espaço para a barra fixa */
+}
+
+/* Barra superior */
+#top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #1e2a38;
+    color: white;
+    padding: 10px 20px;
+    z-index: 9999;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Inputs e botões da barra */
+#top-bar input, #top-bar button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+}
+
+/* Campo de seleção de página */
+#top-bar input {
+    width: 220px;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* Botões padrão */
+#top-bar button {
+    background-color: #1e2a38;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+#top-bar button:hover {
+    background-color: #e68900;
+    color: white;
+    transform: scale(1.03);
+}
+
+/* Botão Salvar */
+#salvar-btn {
     position: fixed;
     bottom: 20px;
     left: 20px;
-    background-color: black;
+    background-color: #1e2a38;
     color: white;
     border: none;
     padding: 12px 20px;
     font-size: 16px;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    z-index: 9999; /* Garante que fique acima do GrapesJS */
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 #salvar-btn:hover {
-    background-color: blue;
+    background-color: #e68900;
 }
+
+/* Botão Nova Página */
+#nova-pagina-btn {
+    position: fixed;
+    bottom: 70px;
+    left: 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#nova-pagina-btn:hover {
+    background-color: #388E3C;
+}
+
+
+
     </style>
 </head>
+    
+<link href="https://cdnjs.cloudflare.com/ajax/libs/grapesjs/0.21.8/css/grapes.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/grapesjs/0.21.8/grapes.min.js"></script>
 <body>
 
     <div id="editor"></div>
 
-     
-    <button id="salvar-btn" onclick="salvarTemplate()">Salvar Template</button>
+    <div id="top-bar">
+        <button id="nova-pagina-btn">
+            <i class="fas fa-file-circle-plus"></i> Nova Página
+        </button>
+    
+        <input id="input-pagina" list="paginas-disponiveis" placeholder="Digite ou selecione uma página">
+        <datalist id="paginas-disponiveis"></datalist>
+    
+        <button id="confirmar-troca">
+            <i class="fas fa-right-to-bracket"></i> Ir para página
+        </button>
+    
+        <button id="salvar-btn" onclick="salvarTemplate()">
+            <i class="fas fa-save"></i> Salvar
+        </button>
+    </div>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("input-pagina").value = "{{ page_name }}";
             const templateHTML = `{{ html_atual | safe }}`;
 
             const editor = grapesjs.init({
@@ -65,6 +176,35 @@
         });
     }
 });
+   fetch(`/listar-paginas/{{ template_id }}`)
+        .then(res => res.json())
+        .then(paginas => {
+            const lista = document.getElementById('paginas-disponiveis');
+            paginas.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p;
+                lista.appendChild(option);
+            });
+        });
+
+    document.getElementById("confirmar-troca").addEventListener("click", function () {
+        const novaPagina = document.getElementById("input-pagina").value;
+        if (!novaPagina) {
+            alert("Escolha uma página!");
+            return;
+        }
+
+        fetch(`/pagina-existe/{{ template_id }}/${novaPagina}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.existe) {
+                    window.location.href = `/editar-template/{{ template_id }}/${novaPagina}`;
+                } else {
+                    alert("Essa página ainda não existe. Crie com o botão 'Nova Página'.");
+                }
+            });
+    });
+
 
 editor.Commands.add("edit-link", {
     run(editor, sender) {
@@ -78,20 +218,43 @@ editor.Commands.add("edit-link", {
         }
     }
 });
-            // ✅ Função para salvar o template atualizado
-            window.salvarTemplate = function () {
-                const html = editor.getHtml();
-                const css = editor.getCss();
 
-                fetch('/editar-template/{{ template_id }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ html: html, css: css })
-                })
-                .then(response => response.json())
-                .then(data => alert(data.message))
-                .catch(error => alert("Erro ao salvar o template!"));
-            };
+document.getElementById("nova-pagina-btn").addEventListener("click", function () {
+    const nomePagina = prompt("Digite o nome da nova página:");
+
+    if (!nomePagina) {
+        alert("Nome inválido!");
+        return;
+    }
+
+    fetch('/adicionar-pagina/{{ template_id }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page_name: nomePagina, html: '<h1>Novo Conteúdo</h1>', css: '' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        // Redireciona para a nova página no editor
+        window.location.href = `/editar-template/{{ template_id }}/${nomePagina}`;
+    })
+    .catch(error => alert("Erro ao criar a nova página."));
+});
+window.salvarTemplate = function () {
+    const html = editor.getHtml();
+    const css = editor.getCss();
+
+    const currentPage = document.getElementById("input-pagina").value || "{{ page_name }}";
+
+    fetch(`/editar-template/{{ template_id }}/${currentPage}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ html: html, css: css })
+    })
+    .then(response => response.json())
+    .then(data => alert(data.message))
+    .catch(error => alert("Erro ao salvar o template!"));
+};
         });
     </script>
 </body>

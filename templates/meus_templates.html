@@ -106,21 +106,25 @@ nav ul li a:hover {
     margin: 20px 0;
 }
 
+/* Botões Ações */
 .btn {
     background: #1E2A38;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 5px;
-    font-size: 18px;
+    color: white !important;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 500;
     display: inline-block;
-    margin-top: 10px;
-    transition: 0.3s;
+    margin: 5px 0;
+    transition: all 0.3s ease-in-out;
+    border: none;
 }
 
 .btn:hover {
     background: #e68900;
+    transform: scale(1.05);
+    color: white;
 }
 
 /* Features Section */
@@ -384,56 +388,81 @@ footer .container {
     display: block;
 }
 
-/* Simples solução */
+/* Tabela refinada */
 table {
-    margin-top: 120px; /* Ajuste conforme necessário */
+    margin-top: 120px;
     width: 100%;
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: white;
 }
 
-/* Estilos opcionais para sua tabela */
-table, th, td {
-    border: 1px solid #ccc;
+/* Cabeçalho da tabela */
+thead tr {
+    background-color: #1E2A38;
+    color: white;
+    text-transform: uppercase;
+    font-size: 14px;
+    letter-spacing: 0.5px;
 }
 
+/* Células */
 th, td {
-    padding: 10px;
+    padding: 15px 20px;
     text-align: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+td ul {
+    margin-top: 8px;
+}
+
+td a {
+    color: #1E2A38;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+tbody tr:hover {
+    background-color: #f9f9f9;
 }
 
 main {
     margin-top: 120px; /* espaço igual ou maior que a altura do header */
 }
 
-/* ✅ Estiliza a área de escolha do site */
+/* Container de sites */
 .site-list-container {
-    text-align: center;
-    margin-top: 30px;
-    background: #ffffff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
+    margin-top: 60px;
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-width: 700px;
     margin-left: auto;
     margin-right: auto;
+    text-align: center;
 }
 
-/* ✅ Ajusta o título */
 .site-list-container h2 {
-    font-size: 22px;
-    font-weight: bold;
-    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #1E2A38;
 }
 
-/* ✅ Melhora a mensagem */
 .site-list-container p {
     font-size: 16px;
-    color: #555;
-    margin-bottom: 20px;
+    color: #666;
+    margin-bottom: 25px;
 }
+
 
 /* ✅ Estiliza os botões */
 .site-list {
@@ -442,29 +471,101 @@ main {
     gap: 10px;
 }
 
-/* ✅ Botão estilizado */
+/* Estilo para coluna de Subdomínios */
+.subdomain-container {
+    text-align: left;
+    padding: 10px 0;
+}
+
+.subdomain-title {
+    font-weight: 600;
+    color: #1E2A38;
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+/* Lista de páginas */
+.subpages-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Mensagem de dica acima das páginas */
+.subpages-hint {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-style: italic;
+}
+
+.subpages-list li {
+    margin-bottom: 5px;
+}
+
+.subpages-list a {
+    text-decoration: none;
+    color: #1E2A38;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.subpages-list a:hover {
+    color: #e68900;
+    text-decoration: underline;
+}
+
+.subpages-list a i {
+    color: #1E2A38;
+    font-size: 14px;
+}
+
+
 .site-button {
-    display: block;
     background: #1E2A38;
     color: white;
     padding: 12px 20px;
-    border-radius: 5px;
-    text-decoration: none;
+    border-radius: 6px;
     font-size: 16px;
-    font-weight: bold;
-    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-block;
     transition: 0.3s;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 
 .site-button:hover {
     background: #e68900;
-    transform: scale(1.05);
+    transform: translateY(-2px);
 }
 
-/* ✅ Ícone ao lado do nome do site */
 .site-button i {
     margin-right: 8px;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    th, td {
+        padding: 12px 10px;
+        font-size: 14px;
+    }
+
+    .btn {
+        font-size: 13px;
+        padding: 8px 16px;
+    }
+
+    .site-button {
+        font-size: 15px;
+        padding: 10px 16px;
+    }
 }
 
 /* ✅ Responsividade */
@@ -561,46 +662,47 @@ main {
     </header>
 
 <main>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Seu modelo do site - Template</th>
-            <th>Subdomínio</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for template in templates %}
-        <tr>
-            <td>{{ template[0] }}</td>
-            <td>{{ template[1] }}</td>
-            <td><a href="{{ url_for('site_usuario', subdomain=template[2]) }}" target="_blank">{{ template[2] }}</a></td>
-            <td>
-                <a class="btn" href="{{ url_for('editar_template', template_id=template[0]) }}">Editar</a>
-                <a class="btn" href="{{ url_for('meu_site') }}">Meu Site</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="4">Nenhum template encontrado.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% if multiple_sites %}
-    <div class="site-list-container">
-        <h2><i class="fa-solid fa-globe"></i> Seus Sites</h2>
-        <p>Você tem mais de um site. Escolha um para visualizar:</p>
-        <div class="site-list">
-            {% for subdomain in templates %}
-                <a href="{{ url_for('site_usuario', subdomain=subdomain[2]) }}" target="_blank" class="site-button">
-                    <i class="fa-solid fa-arrow-right"></i> {{ subdomain[2] }}
-                </a>
+    <table>
+        <thead>
+            <tr>
+                <th>Seu modelo do site - Template</th>
+                <th>Subdomínio</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subdomain, data in templates.items() %}
+            <tr>
+                <td>{{ data.template_name }}</td>
+                <td>
+                    <div class="subdomain-container">
+                        <div class="subdomain-title">{{ subdomain }}</div>
+                        <p class="subpages-hint">
+                            <i class="fa-solid fa-eye"></i> Essas abaixo são as páginas do seu site. Clique para ver como estão ficando!
+                          </p>                          
+                          <ul class="subpages-list">
+                            {% for page in data.pages %}
+                            <li>
+                                <a href="{{ url_for('site_usuario', subdomain=subdomain, page_name=page) }}" target="_blank">
+                                    <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </td>                
+                <td>
+                    <a class="btn" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">Editar</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3">Nenhum template encontrado.</td> <!-- Era colspan="4" -->
+            </tr>
             {% endfor %}
-        </div>
-    </div>
-{% endif %}
+        </tbody>
+    </table>
+   
 </main>
 <script>
     // Funções para abrir e fechar o menu mobile

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecionar Página</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        h1 { margin-top: 20px; }
+        .page-list { list-style: none; padding: 0; }
+        .page-list li { margin: 10px 0; }
+        .edit-btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #1E2A38;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .edit-btn:hover {
+            background: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Escolha a Página para Editar</h1>
+    <ul class="page-list">
+        {% for page in pages %}
+            <li><a href="{{ url_for('editar_pagina', template_id=template_id, page_name=page) }}" class="edit-btn">Editar {{ page }}</a></li>
+        {% endfor %}
+    </ul>
+    
+    <h2>Adicionar Nova Página</h2>
+    <input type="text" id="novaPagina" placeholder="Nome da Página">
+    <button onclick="adicionarPagina()">Criar Página</button>
+    
+    <script>
+        function adicionarPagina() {
+            const nomePagina = document.getElementById("novaPagina").value.trim();
+            if (!nomePagina) {
+                alert("Digite um nome para a página!");
+                return;
+            }
+    
+            fetch('/adicionar-pagina/{{ template_id }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ page_name: nomePagina, html: "<h1>Novo Conteúdo</h1>" })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload(); // Recarrega a página para exibir a nova página adicionada
+            })
+            .catch(error => alert("Erro ao adicionar a página."));
+        }
+    </script>
+    
+
+</body>
+</html>

@@ -558,7 +558,7 @@ iframe {
                                 Bem-vindo, <span id="user-name-text"></span>
                             </li>    
                             <li><a href="/login" id="login-option">Entrar</a></li>
-                            <li><a href="/meus-templates" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
+                            <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
                             <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
                         </ul>
                     </li>
@@ -588,7 +588,7 @@ iframe {
             Olá, <span id="mobile-username-text"></span>
         </li>
         <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-        <li><a href="/meus-templates" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
+        <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
         <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
     </ul>
 </div>
@@ -599,7 +599,6 @@ iframe {
                 </div>
             </div>
     </header>
-
     <main>
         <section class="templates">
             <h2><i class="fas fa-box-open"></i> Templates Gratuitos</h2>
@@ -718,7 +717,7 @@ function closePreview() {
     .then(data => {
         if (data.success) {
             alert("Template vinculado com sucesso!");
-            window.location.href = '/editar-template/' + data.template_id; 
+            window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name; 
         } else {
             alert(data.message || "Erro ao vincular template");
         }
