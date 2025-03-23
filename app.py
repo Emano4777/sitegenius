@@ -367,9 +367,28 @@ def meu_site():
     
 @app.route('/adicionar-pagina/<int:template_id>', methods=['POST'])
 def adicionar_pagina(template_id):
-    if 'user_id' not in session:
-        return jsonify({'message': 'Usuário não autenticado'}), 401
+    user_id = session.get('user_id')
 
+    # 🧠 Se a sessão estiver vazia, tenta usar o session_token
+    if not user_id:
+        token = request.cookies.get('session_token')
+        if not token:
+            return jsonify({'message': 'Usuário não autenticado'}), 401
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users2 WHERE session_token = %s", (token,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user:
+            user_id = user[0]
+            session['user_id'] = user_id  # restaura na sessão
+        else:
+            return jsonify({'message': 'Token inválido'}), 401
+
+    # 🧠 Continua com a lógica normal
     data = request.get_json()
     page_name = data.get('page_name')
     html = data.get('html', '')
@@ -392,11 +411,10 @@ def adicionar_pagina(template_id):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # 🔎 Recupera o subdomínio e o nome do template original pelo ID
     cur.execute("""
         SELECT template_name, subdomain FROM user_templates 
         WHERE id = %s AND user_id = %s LIMIT 1
-    """, (template_id, session['user_id']))
+    """, (template_id, user_id))
     template = cur.fetchone()
 
     if not template:
@@ -406,17 +424,17 @@ def adicionar_pagina(template_id):
 
     template_name, subdomain = template
 
-    # ✅ Insere a nova página com os dados herdados do template original
     cur.execute("""
         INSERT INTO user_templates (user_id, template_name, subdomain, page_name, custom_html)
         VALUES (%s, %s, %s, %s, %s)
-    """, (session['user_id'], template_name, subdomain, page_name, html_completo))
+    """, (user_id, template_name, subdomain, page_name, html_completo))
 
     conn.commit()
     cur.close()
     conn.close()
 
     return jsonify({'message': f'Página "{page_name}" criada com sucesso!'})
+
 
 
 @app.route('/<subdomain>/<page_name>')
@@ -475,18 +493,35 @@ def site_usuario(subdomain, page_name):
 
 @app.route('/pagina-existe/<int:template_id>/<page_name>')
 def pagina_existe(template_id, page_name):
-    if 'user_id' not in session:
-        return jsonify({'existe': False})
+    user_id = session.get('user_id')
+
+    # Tentativa de recuperar user_id via session_token
+    if not user_id:
+        token = request.cookies.get('session_token')
+        if not token:
+            return jsonify({'existe': False})
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users2 WHERE session_token = %s", (token,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+        
+        if user:
+            user_id = user[0]
+            session['user_id'] = user_id
+        else:
+            return jsonify({'existe': False})
 
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # 🔎 Busca o subdomínio e nome do template com base no ID
     cur.execute("""
         SELECT subdomain, template_name FROM user_templates 
         WHERE id = %s AND user_id = %s
         LIMIT 1
-    """, (template_id, session['user_id']))
+    """, (template_id, user_id))
     template_info = cur.fetchone()
 
     if not template_info:
@@ -496,11 +531,10 @@ def pagina_existe(template_id, page_name):
 
     subdomain, template_name = template_info
 
-    # ✅ Verifica se existe uma página com o mesmo user_id, subdomínio, e page_name
     cur.execute("""
         SELECT 1 FROM user_templates 
         WHERE user_id=%s AND subdomain=%s AND page_name=%s
-    """, (session['user_id'], subdomain, page_name))
+    """, (user_id, subdomain, page_name))
     
     resultado = cur.fetchone()
     cur.close()
@@ -509,10 +543,28 @@ def pagina_existe(template_id, page_name):
     return jsonify({'existe': bool(resultado)})
 
 
+
 @app.route('/listar-paginas/<int:template_id>')
 def listar_paginas(template_id):
-    if 'user_id' not in session:
-        return jsonify([])
+    user_id = session.get('user_id')
+
+    if not user_id:
+        token = request.cookies.get('session_token')
+        if not token:
+            return jsonify([])
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users2 WHERE session_token = %s", (token,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user:
+            user_id = user[0]
+            session['user_id'] = user_id
+        else:
+            return jsonify([])
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -523,9 +575,9 @@ def listar_paginas(template_id):
                 SELECT template_name FROM user_templates WHERE id = %s
             )
         )
-    """, (session['user_id'], template_id, template_id))
+    """, (user_id, template_id, template_id))
 
-    paginas = [row[0] for row in cur.fetchall() if row[0]]  # ignora os NULLs
+    paginas = [row[0] for row in cur.fetchall() if row[0]]
     cur.close()
     conn.close()
 
