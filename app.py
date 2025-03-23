@@ -163,6 +163,9 @@ def logout():
     session.clear()  # Remove todas as informações da sessão
     return jsonify({"message": "Usuário deslogado com sucesso"}), 200
 
+import uuid
+from flask import make_response
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -174,24 +177,42 @@ def login():
         cur.execute("SELECT id, nome, senha::TEXT, is_premium FROM users2 WHERE email = %s", (email,))
         user = cur.fetchone()
 
-        cur.close()
-        conn.close()
-
         if user:
-            senha_hash = bytes.fromhex(user[2][2:]).decode()  # Decodifica do formato bytea
-            print(f"Senha armazenada no banco (decodificada): {senha_hash}")
+            senha_hash = bytes.fromhex(user[2][2:]).decode()
 
             if bcrypt.checkpw(senha.encode('utf-8'), senha_hash.encode('utf-8')):
-                session['user_id'] = user[0]
+                user_id = user[0]
+                session['user_id'] = user_id
                 session['user_name'] = user[1]
                 session['is_premium'] = user[3]
-                return redirect(url_for('home'))
+
+                # 🔐 Gerar session_token único
+                session_token = str(uuid.uuid4())
+
+                # Salvar no banco
+                cur.execute("UPDATE users2 SET session_token = %s WHERE id = %s", (session_token, user_id))
+                conn.commit()
+                print(f"Atualizando session_token para o user_id {user_id}: {session_token}")
+
+                # 🔁 Criar resposta com cookie
+                resp = make_response(redirect(url_for('home')))
+                resp.set_cookie('session_token', session_token, samesite='None', secure=True)
+
+                cur.close()
+                conn.close()
+                return resp
+
             else:
+                cur.close()
+                conn.close()
                 return "Usuário ou senha incorretos", 401
         else:
+            cur.close()
+            conn.close()
             return "Usuário não encontrado", 404
 
     return render_template('login.html')
+
 
 
 @app.route('/templates')
