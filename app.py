@@ -6,6 +6,7 @@ import requests
 import uuid
 from flask_cors import CORS
 import logging
+from flask_session import Session
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -20,6 +21,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
+
 
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
@@ -634,5 +636,7 @@ def generate_site():
     site_data = {"message": "IA irá gerar um site personalizado com base nos dados enviados"}
     return jsonify(site_data)
 
+
+Session(app)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
