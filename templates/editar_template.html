@@ -194,16 +194,20 @@
             return;
         }
 
-        fetch(`/pagina-existe/{{ template_id }}/${novaPagina}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.existe) {
-                    window.location.href = `/editar-template/{{ template_id }}/${novaPagina}`;
-                } else {
-                    alert("Essa página ainda não existe. Crie com o botão 'Nova Página'.");
-                }
-            });
-    });
+        fetch(`${window.location.origin}/pagina-existe/{{ template_id }}/${novaPagina}`, {
+        method: 'GET',
+        credentials: 'include' // Adiciona os cookies da sessão
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.existe) {
+            window.location.href = `/editar-template/{{ template_id }}/${novaPagina}`;
+        } else {
+            alert("Essa página ainda não existe. Crie com o botão 'Nova Página'.");
+        }
+    })
+    .catch(err => alert("Erro ao verificar a página."));
+});
 
 
 editor.Commands.add("edit-link", {
