@@ -6,7 +6,6 @@ import requests
 import uuid
 from flask_cors import CORS
 import logging
-from flask_session import Session
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -22,7 +21,6 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 
-Session(app)
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
