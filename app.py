@@ -6,7 +6,6 @@ import requests
 import uuid
 from flask_cors import CORS
 import logging
-from flask_session import Session
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -17,8 +16,7 @@ CORS(app, supports_credentials=True)
 # Configurações para rodar no Vercel (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_TYPE'] = 'filesystem'
+
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 
@@ -516,10 +514,30 @@ def listar_paginas(template_id):
 
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
 def editar_pagina(template_id, page_name):
-    if 'user_id' not in session:
-        if request.method == 'POST':
-            return jsonify({"message": "Sessão expirada"}), 401
-        return redirect(url_for('login'))
+    user_id = session.get('user_id')
+
+    # 🔐 Alternativa: verifica o token de sessão se não tiver 'user_id'
+    if not user_id:
+        token = request.cookies.get('session_token')
+        if token:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("SELECT id FROM users2 WHERE session_token = %s", (token,))
+            user = cur.fetchone()
+            cur.close()
+            conn.close()
+
+            if user:
+                user_id = user[0]
+                session['user_id'] = user_id  # ✅ Reativa sessão
+            else:
+                if request.method == 'POST':
+                    return jsonify({"message": "Sessão expirada"}), 401
+                return redirect(url_for('login'))
+        else:
+            if request.method == 'POST':
+                return jsonify({"message": "Sessão expirada"}), 401
+            return redirect(url_for('login'))
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -637,6 +655,5 @@ def generate_site():
     return jsonify(site_data)
 
 
-Session(app)
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
