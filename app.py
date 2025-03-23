@@ -7,9 +7,13 @@ import uuid
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
-app.secret_key = os.urandom(24)
 
+app.secret_key = os.urandom(24)
+CORS(app, supports_credentials=True)
+
+# Configurações para rodar no Vercel (HTTPS)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
 
 
