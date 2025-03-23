@@ -246,12 +246,12 @@ window.salvarTemplate = function () {
 
     const currentPage = document.getElementById("input-pagina").value || "{{ page_name }}";
 
-    fetch(`/editar-template/{{ template_id }}/${currentPage}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ html: html, css: css })
-    })
+    fetch(`${window.location.origin}/editar-template/{{ template_id }}/${currentPage}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ html: html, css: css })
+})
     .then(response => response.json())
     .then(data => alert(data.message))
     .catch(error => alert("Erro ao salvar o template!"));

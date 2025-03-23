@@ -4,8 +4,10 @@ import psycopg2
 import bcrypt
 import requests
 import uuid
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
 app.secret_key = os.urandom(24)
 
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
