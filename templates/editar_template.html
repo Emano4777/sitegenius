@@ -263,6 +263,7 @@ window.salvarTemplate = function () {
         body: JSON.stringify({ html: html, css: css })
     })
     .then(response => {
+        console.log("Status da resposta:", response.status);
         if (response.status === 401) {
             alert("Sessão expirada. Faça login novamente.");
             window.location.href = "/login"; // ajuste se sua rota for diferente
@@ -280,10 +281,12 @@ window.salvarTemplate = function () {
             alert(data.message);
         }
     })
-    .catch(error => {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar o template! Veja o console.");
-    });
+    .catch(async error => {
+    const response = error.response || error;
+    const text = await (response.text?.() || "Erro desconhecido");
+    console.error("Erro ao salvar:", text);
+    alert("Erro ao salvar:\n" + text);
+});
 };
 });
     </script>

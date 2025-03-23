@@ -503,6 +503,7 @@ def listar_paginas(template_id):
 
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
 def editar_pagina(template_id, page_name):
+    user_id = session.get('user_id')
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
