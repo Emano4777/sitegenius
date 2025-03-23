@@ -249,6 +249,7 @@ window.salvarTemplate = function () {
     fetch(`/editar-template/{{ template_id }}/${currentPage}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ html: html, css: css })
     })
     .then(response => response.json())
