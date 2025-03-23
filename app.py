@@ -503,8 +503,9 @@ def listar_paginas(template_id):
 
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
 def editar_pagina(template_id, page_name):
-    user_id = session.get('user_id')
     if 'user_id' not in session:
+        if request.method == 'POST':
+            return jsonify({"message": "Sessão expirada"}), 401
         return redirect(url_for('login'))
 
     conn = get_db_connection()
@@ -521,7 +522,9 @@ def editar_pagina(template_id, page_name):
     if not info:
         cur.close()
         conn.close()
-        return jsonify({"message": "Template não encontrado"}), 404
+        if request.method == 'POST':
+            return jsonify({"message": "Template não encontrado"}), 404
+        return redirect(url_for('meu_site'))
 
     template_name, subdomain = info
 
@@ -570,6 +573,7 @@ def editar_pagina(template_id, page_name):
         return render_template('editar_template.html', html_atual=html_minimo, template_id=template_id, page_name=page_name)
 
     return render_template('editar_template.html', html_atual=page_content[0], template_id=template_id, page_name=page_name)
+
 
 
 
