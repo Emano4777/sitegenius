@@ -227,11 +227,12 @@ document.getElementById("nova-pagina-btn").addEventListener("click", function ()
         return;
     }
 
-    fetch('/adicionar-pagina/{{ template_id }}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ page_name: nomePagina, html: '<h1>Novo Conteúdo</h1>', css: '' })
-    })
+    fetch(`${window.location.origin}/adicionar-pagina/{{ template_id }}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ page_name: nomePagina, html: '<h1>Novo Conteúdo</h1>', css: '' })
+})
     .then(response => response.json())
     .then(data => {
         alert(data.message);
