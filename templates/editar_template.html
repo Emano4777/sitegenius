@@ -250,18 +250,42 @@ window.salvarTemplate = function () {
     const css = editor.getCss();
 
     const currentPage = document.getElementById("input-pagina").value || "{{ page_name }}";
+    const templateId = "{{ template_id }}";
 
-    fetch(`${window.location.origin}/editar-template/{{ template_id }}/${currentPage}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ html: html, css: css })
-})
-    .then(response => response.json())
-    .then(data => alert(data.message))
-    .catch(error => alert("Erro ao salvar o template!"));
+    const url = `${window.location.origin}/editar-template/${templateId}/${currentPage}`;
+
+    console.log("Salvando página:", currentPage, "na URL:", url);
+
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // importante manter isso para enviar cookies
+        body: JSON.stringify({ html: html, css: css })
+    })
+    .then(response => {
+        if (response.status === 401) {
+            alert("Sessão expirada. Faça login novamente.");
+            window.location.href = "/login"; // ajuste se sua rota for diferente
+            return;
+        }
+
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text); });
+        }
+
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.message) {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar o template! Veja o console.");
+    });
 };
-        });
+});
     </script>
 </body>
 </html>
