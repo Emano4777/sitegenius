@@ -150,13 +150,13 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             fetch('/verificar-sessao', {
-  credentials: 'include'
-})
-.then(res => {
-    if (res.status === 401) {
-        alert("Sua sessão expirou. Redirecionando para o login...");
-        window.location.href = "/login";
-    }
+        credentials: 'include'
+        })
+        .then(res => {
+            if (res.status === 401) {
+                alert("Sua sessão expirou. Redirecionando para o login...");
+                window.location.href = "/login";
+            }
 });
             document.getElementById("input-pagina").value = "{{ page_name }}";
             const templateHTML = `{{ html_atual | safe }}`;

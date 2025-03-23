@@ -5,33 +5,27 @@ import bcrypt
 import requests
 import uuid
 from flask_cors import CORS
-from flask_session import Session
 import logging
-
-# Configura logs
+from flask_session import Session
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
-# Chave de sessão
 app.secret_key = os.urandom(24)
-
-# Permite CORS com cookies
 CORS(app, supports_credentials=True)
 
-# Configuração de sessão para funcionar corretamente no Vercel
-app.config.update({
-    'SESSION_TYPE': 'filesystem',
-    'SESSION_PERMANENT': False,
-    'SESSION_USE_SIGNER': True,
-    'SESSION_COOKIE_NAME': 'session',
-    'SESSION_COOKIE_SAMESITE': 'None',
-    'SESSION_COOKIE_SECURE': True
-})
+# Configurações para rodar no Vercel (HTTPS)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 
-# Inicializa o gerenciador de sessão
 Session(app)
 
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
 
 
@@ -100,7 +94,8 @@ def generate_payment():
 def verificar_sessao():
     if 'user_id' in session:
         return jsonify({"ok": True})
-    return jsonify({"ok": False}), 401    
+    return jsonify({"ok": False}), 401
+    
 
 @app.route('/payment-success')   
 def payment_success():
