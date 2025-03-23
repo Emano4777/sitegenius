@@ -24,7 +24,7 @@ def home():
 @app.route('/generate-payment', methods=['POST'])
 def generate_payment():
     if 'user_id' not in session:
-        return jsonify({"message": "Você precisa estar logado para pagar."}), 401
+        return jsonify({"message": "Você precisa estar logado para pagarr."}), 401
 
     user_id = session['user_id']
 
