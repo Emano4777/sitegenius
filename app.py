@@ -235,8 +235,6 @@ def templates():
 def visualizar_template(template_name):
     return render_template(f"{template_name}.html")
 
-    
-from bs4 import BeautifulSoup
 
 @app.route('/usar-template/<template_name>', methods=['POST'])
 def usar_template(template_name):
