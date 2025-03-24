@@ -236,29 +236,48 @@ def visualizar_template(template_name):
     return render_template(f"{template_name}.html")
 
     
+from bs4 import BeautifulSoup
+
 @app.route('/usar-template/<template_name>', methods=['POST'])
 def usar_template(template_name):
-    if 'user_id' not in session:
-        return jsonify({"success": False, "message": "Faça login para usar o template."}), 401
-    
+    user_id = session.get('user_id')
+
+    if not user_id:
+        token = request.cookies.get('session_token')
+        if not token:
+            return jsonify({"success": False, "message": "Faça login para usar o template."}), 401
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id FROM users2 WHERE session_token = %s", (token,))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user:
+            user_id = user[0]
+            session['user_id'] = user_id
+        else:
+            return jsonify({"success": False, "message": "Sessão inválida. Faça login novamente."}), 401
+
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Checa se usuário é premium
-    cur.execute("SELECT is_premium FROM users2 WHERE id=%s", (session['user_id'],))
+    # Checa se o usuário é premium
+    cur.execute("SELECT is_premium FROM users2 WHERE id=%s", (user_id,))
     user_status = cur.fetchone()
     is_premium = user_status[0] if user_status else False
 
     # Conta quantos templates o usuário já tem
-    cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id=%s", (session['user_id'],))
+    cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id=%s", (user_id,))
     total_templates = cur.fetchone()[0]
 
-    # Se não for premium e já tiver template, bloqueia a criação
     if not is_premium and total_templates >= 1:
         cur.close()
         conn.close()
         return jsonify({"success": False, "message": "Usuários não Premium só podem criar 1 template."}), 403
 
+    # Lê o HTML do template original
     try:
         with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
             original_html = f.read()
@@ -267,18 +286,20 @@ def usar_template(template_name):
         conn.close()
         return jsonify({"success": False, "message": "Template não encontrado"}), 404
 
-    # Gera um subdomínio único
-    subdomain = f"user{session['user_id']}-{uuid.uuid4().hex[:6]}"
-    
-    # Define o nome da primeira página como "index"
+    # Extrai apenas o conteúdo do <body>
+    soup = BeautifulSoup(original_html, 'html.parser')
+    body_content = soup.body.decode_contents() if soup.body else original_html
+
+    # Gera subdomínio único
+    subdomain = f"user{user_id}-{uuid.uuid4().hex[:6]}"
     page_name = 'index'
 
-    # Insere o novo template com a página principal 'index'
+    # Insere o template personalizado com apenas o conteúdo do body
     cur.execute("""
         INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
         VALUES (%s, %s, %s, %s, %s)
         RETURNING id
-    """, (session['user_id'], template_name, original_html, subdomain, page_name))
+    """, (user_id, template_name, body_content, subdomain, page_name))
 
     template_id = cur.fetchone()[0]
     conn.commit()
@@ -286,11 +307,12 @@ def usar_template(template_name):
     conn.close()
 
     return jsonify({
-    "success": True,
-    "message": "Template vinculado!",
-    "template_id": template_id,
-    "page_name": page_name  # <-- adiciona isso aqui!
-})
+        "success": True,
+        "message": "Template vinculado!",
+        "template_id": template_id,
+        "page_name": page_name
+    })
+
 
 
 @app.route('/criar-subpagina/<int:template_id>/<new_page>', methods=['POST'])
@@ -583,13 +605,11 @@ def listar_paginas(template_id):
 
     return jsonify(paginas)
 
-
-
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
 def editar_pagina(template_id, page_name):
     user_id = session.get('user_id')
 
-    # 🔐 Alternativa: verifica o token de sessão se não tiver 'user_id'
+    # Verifica sessão via cookie alternativo, se necessário
     if not user_id:
         token = request.cookies.get('session_token')
         if token:
@@ -602,7 +622,7 @@ def editar_pagina(template_id, page_name):
 
             if user:
                 user_id = user[0]
-                session['user_id'] = user_id  # ✅ Reativa sessão
+                session['user_id'] = user_id
             else:
                 if request.method == 'POST':
                     return jsonify({"message": "Sessão expirada"}), 401
@@ -615,12 +635,13 @@ def editar_pagina(template_id, page_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Primeiro, obtemos o template_name e subdomain com base no ID inicial (index)
+    # 🔍 Agora buscamos o template certo que pertence ao usuário e tem o page_name correto
     cur.execute("""
-        SELECT template_name, subdomain FROM user_templates
-        WHERE id = %s AND user_id = %s
-        LIMIT 1
-    """, (template_id, session['user_id']))
+        SELECT template_name, subdomain, custom_html 
+        FROM user_templates
+        WHERE id = %s AND page_name = %s AND user_id = %s
+    """, (template_id, page_name, user_id))
+
     info = cur.fetchone()
 
     if not info:
@@ -630,7 +651,7 @@ def editar_pagina(template_id, page_name):
             return jsonify({"message": "Template não encontrado"}), 404
         return redirect(url_for('meu_site'))
 
-    template_name, subdomain = info
+    template_name, subdomain, html_salvo = info
 
     if request.method == 'POST':
         dados = request.get_json()
@@ -649,12 +670,12 @@ def editar_pagina(template_id, page_name):
         </html>
         """
 
-        # Atualiza com base no combo user_id + template_name + subdomain + page_name
+        # ✅ Atualiza com base apenas no ID da página
         cur.execute("""
             UPDATE user_templates 
             SET custom_html = %s
-            WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
-        """, (html_completo, session['user_id'], template_name, subdomain, page_name))
+            WHERE id = %s
+        """, (html_completo, template_id))
 
         conn.commit()
         cur.close()
@@ -662,21 +683,13 @@ def editar_pagina(template_id, page_name):
 
         return jsonify({"message": "Página atualizada com sucesso!"})
 
-    # GET: buscar o conteúdo da página que corresponde ao template atual
-    cur.execute("""
-        SELECT custom_html FROM user_templates 
-        WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
-    """, (session['user_id'], template_name, subdomain, page_name))
-
-    page_content = cur.fetchone()
     cur.close()
     conn.close()
 
-    if not page_content or not page_content[0]:
-        html_minimo = "<h1>Nova Página</h1><p>Comece a editar seu conteúdo aqui.</p>"
-        return render_template('editar_template.html', html_atual=html_minimo, template_id=template_id, page_name=page_name)
+    if not html_salvo:
+        html_salvo = "<h1>Nova Página</h1><p>Comece a editar seu conteúdo aqui.</p>"
 
-    return render_template('editar_template.html', html_atual=page_content[0], template_id=template_id, page_name=page_name)
+    return render_template('editar_template.html', html_atual=html_salvo, template_id=template_id, page_name=page_name)
 
 
 
