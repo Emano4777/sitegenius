@@ -615,6 +615,39 @@ def listar_paginas(template_id):
 
     return jsonify(paginas)
 
+@app.route('/preco')
+def preco():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    is_premium = bool(result[0]) if result else False
+
+    cur.close()
+    conn.close()
+    print("🧪 is_premium do banco:", result[0], type(result[0]))
+    return render_template('preco.html', is_premium=is_premium)
+
+@app.context_processor
+def inject_user_status():
+    is_premium = False
+    if 'user_id' in session:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (session['user_id'],))
+        result = cur.fetchone()
+        if result:
+            is_premium = result[0]
+        cur.close()
+        conn.close()
+    return dict(is_premium=is_premium)
+
+
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
 def editar_pagina(template_id, page_name):
     user_id = session.get('user_id')

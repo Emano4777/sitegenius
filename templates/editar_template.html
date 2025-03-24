@@ -204,6 +204,86 @@
         });
     }
 });
+// Componente customizado: Botão Navegação Interna
+editor.BlockManager.add('botao-navegacao', {
+    label: '<i class="fas fa-link"></i> Ir para Página',
+    category: 'Navegação',
+    content: {
+        type: 'botao-navegacao',
+        content: 'Ir para Sobre',
+        attributes: { class: 'btn' },
+        pageTarget: 'sobre' // default
+    }
+});
+
+// Tipo do componente
+editor.DomComponents.addType('botao-navegacao', {
+    model: {
+        defaults: {
+            tagName: 'a',
+            attributes: { href: '/template/sobre' },
+            pageTarget: 'sobre',
+            content: 'Ir para Sobre',
+            droppable: false,
+            traits: [
+                {
+                    type: 'text',
+                    label: 'Texto',
+                    name: 'content'
+                },
+                {
+                    type: 'text',
+                    label: 'Página Destino',
+                    name: 'pageTarget'
+                }
+            ]
+        },
+
+        init() {
+            this.on('change:pageTarget', this.updateHref);
+            this.on('change:content', this.updateContent);
+        },
+
+        updateHref() {
+            const page = this.get('pageTarget');
+            this.addAttributes({ href: `/template/${page}` });
+        },
+
+        updateContent() {
+            const text = this.get('content');
+            this.set('content', text);
+        }
+    }
+});
+editor.on('load', () => {
+    const canvasDoc = editor.Canvas.getDocument();
+
+    canvasDoc.addEventListener('click', function (e) {
+        const target = e.target;
+        if (target.tagName === 'A' && target.getAttribute('href')) {
+            const href = target.getAttribute('href');
+
+            if (href.startsWith('/template/')) {
+                e.preventDefault(); // Impede o link de sair do editor
+
+                const novaPagina = href.split('/template/')[1];
+
+                fetch(`${window.location.origin}/pagina-existe/{{ template_id }}/${novaPagina}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.existe) {
+                        window.location.href = `/editar-template/{{ template_id }}/${novaPagina}`;
+                    } else {
+                        alert("Essa página ainda não existe. Crie com o botão 'Nova Página'.");
+                    }
+                });
+            }
+        }
+    });
+});
    fetch(`/listar-paginas/{{ template_id }}`)
         .then(res => res.json())
         .then(paginas => {

@@ -388,7 +388,27 @@ footer .container {
 .mobile-user-menu.open .mobile-dropdown-menu {
     display: block;
 }
+.floating-premium-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: gold;
+    color: black;
+    font-weight: bold;
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-size: 16px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 999;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
 
+.floating-premium-btn:hover {
+    background: #e0b800;
+    transform: scale(1.05);
+}
 
 
 /* ✅ Responsividade */
@@ -439,12 +459,12 @@ footer .container {
         width: 90%;
     }
 
-   
+
 
 }
 </style>
 </head>
-<body>
+<body> 
     <header>    
         <div class="container">
             <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
@@ -500,6 +520,7 @@ footer .container {
         <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Meus Templates</a></li>
         <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
     </ul>
+
 </div>
 
             
@@ -542,7 +563,11 @@ footer .container {
             </div>
         </div>
     </section>
-
+    {% if not is_premium %}
+    <a href="/preco" class="floating-premium-btn">
+        <i class="fas fa-gem"></i> Vantagens Premium
+    </a>
+    {% endif %}
     <script>
             // Função para exibir/esconder o menu ao clicar no ícone do usuário
             function toggleUserMenu(event) {

@@ -528,14 +528,81 @@ iframe {
     cursor: pointer;
     transition: 0.3s;
 }
+.template.premium-locked {
+    position: relative;
+    border: 2px solid gold;
+    background: #fff8e1;
+}
+
+.template.premium-locked::before {
+    content: "PREMIUM";
+    position: absolute;
+    top: 10px;
+    left: -10px;
+    background: gold;
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 0 5px 5px 0;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
 
 .close-btn:hover {
     background: darkred;
+}
+.floating-premium-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: gold;
+    color: black;
+    font-weight: bold;
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-size: 16px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    z-index: 999;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.banner-rotativo {
+    width: 100%;
+    background: linear-gradient(90deg, #ffe259, #ffa751);
+    color: #222;
+    font-size: 18px;
+    padding: 12px 0;
+    text-align: center;
+    font-weight: 600;
+    animation: pulse 4s infinite ease-in-out;
+    position: relative;
+    top: -20px;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        background-color: #ffc107;
+    }
+    50% {
+        background-color: #ffb300;
+    }
+}
+
+.floating-premium-btn:hover {
+    background: #e0b800;
+    transform: scale(1.05);
 }
     </style>
     
 </head>
 <body>
+    {% if not is_premium %}
+    <a href="/preco" class="floating-premium-btn">
+        <i class="fas fa-gem"></i> Vantagens Premium
+    </a>
+    {% endif %}
     <header>    
         <div class="container">
             <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
@@ -600,47 +667,115 @@ iframe {
             </div>
     </header>
     <main>
+        <div class="banner-rotativo">
+            💎 Torne-se Premium e desbloqueie todos os templates exclusivos! <a href="/preco" style="color: #000; text-decoration: underline;">Veja os benefícios</a>
+        </div>
         <section class="templates">
-            <h2><i class="fas fa-box-open"></i> Templates Gratuitos</h2>
+            <h2><i class="fas fa-box-open"></i> Templates disponiveis</h2>
             <div class="template-list">
-                <div class="template" onclick="previewTemplate('/template/template1')">
+                <div class="template">
                     <h3><i class="fas fa-code"></i> Template Simples</h3>
-                    <button class="btn"><i class="fas fa-eye"></i> Visualizar</button>
+                
+                    <!-- Botão de Visualizar -->
+                    <button class="btn" onclick="previewTemplate('/template/template1')">
+                        <i class="fas fa-eye"></i> Visualizar
+                    </button>
+                
+                    <!-- Botão de Detalhes -->
+                    <button class="btn" onclick="toggleDetalhes('detalhes-template1')">
+                        <i class="fas fa-info-circle"></i> Detalhes
+                    </button>
+                
+                    <!-- Painel oculto com informações -->
+                    <div id="detalhes-template1" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                        <p><strong>Ideal para:</strong> Portfólios e páginas pessoais</p>
+                        <p><strong>Recursos:</strong> Layout responsivo, HTML básico, carregamento rápido</p>
+                        <p><strong>Diferencial:</strong> Leve, direto ao ponto e fácil de personalizar</p>
+                    </div>
                 </div>
-                <div class="template" onclick="previewTemplate('/template/template2')">
+                
+                <div class="template">
                     <h3><i class="fas fa-laptop-code"></i> Template Moderno</h3>
-                    <button class="btn"><i class="fas fa-eye"></i> Visualizar</button>
-                </div>
-            </div>
-
-            <<h2><i class="fas fa-lock"></i> Templates Premium</h2>
-            <div class="template-list premium">
-                <div class="template premium-locked">
-                    <h3><i class="fas fa-building"></i> Template Empresarial</h3>
-                    {% if is_premium %}
-                        <button class="btn" onclick="previewTemplate('/template/template3')">
-                            <i class="fas fa-eye"></i> Ver Template Premium
-                        </button>
-                    {% else %}
-                        <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                            <i class="fas fa-credit-card"></i> Adquirir Premium
-                        </button>
-                    {% endif %}
-                </div>
+                
+                    <!-- Botão de Visualizar -->
+                    <button class="btn" onclick="previewTemplate('/template/template2')">
+                        <i class="fas fa-eye"></i> Visualizar
+                    </button>
+                
+                    <!-- Botão de Detalhes -->
+                    <button class="btn" onclick="toggleDetalhes('detalhes-template2')">
+                        <i class="fas fa-info-circle"></i> Detalhes
+                    </button>
+                
+                    <!-- Painel oculto com informações -->
+                    <div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                        <p><strong>Ideal para:</strong> Startups, agências e projetos tecnológicos.</p>
+                        <p><strong>Inclui:</strong> Menu moderno, seção de serviços, depoimentos e rodapé com redes sociais.</p>
+                        <p><strong>Diferencial:</strong> Design responsivo, visual clean e fácil de editar no editor visual.</p>
+                    </div>
+                </div>                
+            <div class="template premium-locked">
+                <h3><i class="fas fa-lock"></i> Template Empresarial</h3>
             
-                <div class="template premium-locked">
-                    <h3><i class="fas fa-lightbulb"></i> Template Criativo</h3>
-                    {% if is_premium %}
-                        <button class="btn" onclick="previewTemplate('/template/template4')">
-                            <i class="fas fa-eye"></i> Ver Template Premium
-                        </button>
-                    {% else %}
-                        <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                            <i class="fas fa-credit-card"></i> Adquirir Premium
-                        </button>
-                    {% endif %}
+                <!-- 🔘 Botão premium ou visualizar -->
+                {% if is_premium %}
+                    <button class="btn" onclick="previewTemplate('/template/template3')">
+                        <i class="fas fa-eye"></i> Ver Template Premium
+                    </button>
+                {% else %}
+                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                        <i class="fas fa-credit-card"></i> Adquirir Premium
+                    </button>
+                    <div style="text-align: center; margin: 30px auto;">
+                        <a href="/preco" class="btn buy-premium" style="font-size: 20px; padding: 15px 25px;">
+                            <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
+                        </a>
+                    </div>
+                {% endif %}
+            
+                <!-- 🔽 Botão de detalhes -->
+                <button class="btn" onclick="toggleDetalhes('detalhes-template3')">
+                    <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+            
+                <!-- 🔽 Painel de detalhes oculto -->
+                <div id="detalhes-template3" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                    <p><strong>Ideal para:</strong> Empresas que precisam de um site institucional elegante.</p>
+                    <p><strong>Inclui:</strong> Banner com chamada de ação, formulário de contato, integração com WhatsApp e mapa da empresa.</p>
+                    <p><strong>Diferencial:</strong> Layout corporativo profissional e moderno, pronto para conversão de clientes.</p>
                 </div>
             </div>
+            
+            <div class="template premium-locked">
+                <h3><i class="fas fa-lock"></i> Template Criativo</h3>
+            
+                {% if is_premium %}
+                    <button class="btn" onclick="previewTemplate('/template/template4')">
+                        <i class="fas fa-eye"></i> Ver Template Premium
+                    </button>
+                {% else %}
+                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                        <i class="fas fa-credit-card"></i> Adquirir Premium
+                    </button>
+                    <div style="text-align: center; margin: 30px auto;">
+                        <a href="/preco" class="btn buy-premium" style="font-size: 20px; padding: 15px 25px;">
+                            <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
+                        </a>
+                    </div>
+                {% endif %}
+            
+                <!-- 🔽 Botão de detalhes -->
+                <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
+                    <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+            
+                <!-- 🔽 Painel de detalhes oculto -->
+                <div id="detalhes-template4" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                    <p><strong>Ideal para:</strong> Artistas, designers, freelancers e criadores de conteúdo.</p>
+                    <p><strong>Inclui:</strong> Seção de portfólio, blog pessoal, botão flutuante de contato e design ousado.</p>
+                    <p><strong>Diferencial:</strong> Visual criativo com animações suaves e layout disruptivo.</p>
+                </div>
+            </div>            
         </section>
 
         <!-- Modal para pré-visualização -->
@@ -691,6 +826,15 @@ function previewTemplate(templateURL) {
         modal.style.display = "flex"; // Exibe o modal corretamente
     } else {
         console.warn("🚨 URL do template inválida, modal não será aberto.");
+    }
+}
+
+function toggleDetalhes(id) {
+    const div = document.getElementById(id);
+    if (div.style.display === "none" || div.style.display === "") {
+        div.style.display = "block";
+    } else {
+        div.style.display = "none";
     }
 }
 function closePreview() {

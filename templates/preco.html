@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Vantagens Premium</title>
+        <link rel="icon" type="image/png" href="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742503931/Captura_de_tela_2025-03-20_175110_bcu4sz.png">
+        <link rel="stylesheet" href="/static/style.css">
+        <!-- Link correto para importar o FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <script defer src="/static/script.js"></script>
+    <style>
+      
+footer {
+    background: white;
+    color: black;
+    padding: 15px 0;
+    margin-top: 40px;
+}
+
+footer .container {
+    max-width: 1200px;
+    margin: auto;
+    text-align: center;
+}
+/* Ajuste no botão "Entrar" */
+#login-option {
+    color: #333 !important; /* Cor escura para melhor contraste */
+    font-size: 16px;
+    font-weight: bold; /* Deixa o texto mais visível */
+    padding: 10px 15px;
+    text-align: center;
+    display: block;
+}
+
+#login-option:hover {
+    background: #f0f0f0; /* Destaque ao passar o mouse */
+    border-radius: 5px;
+}
+
+#login-text {
+    margin-right: 8px;
+}
+
+/* ✅ Ajuste no menu do usuário */
+.user-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+/* ✅ Estilização do nome do usuário no dropdown */
+#user-name {
+    color: #333;
+    font-size: 16px;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    display: none; /* Inicialmente oculto */
+}
+
+.user-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: black;
+    font-size: 18px;
+}
+
+/* ✅ Garantindo que todos os itens do menu fiquem na mesma linha */
+.desktop-nav ul {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+}
+
+.desktop-nav ul li {
+    margin: 0 15px;
+}
+.user-icon {
+    font-size: 22px;
+    color: black;
+    margin-left: 15px;
+}
+
+/* ✅ Ajuste no dropdown */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: white;
+    list-style: none;
+    padding: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+
+/* ✅ Itens do dropdown */
+.dropdown-menu li {
+    padding: 10px 15px;
+    display: block;
+}
+
+
+.dropdown-menu li a, 
+.mobile-dropdown-menu li a {
+    color: #333 !important; /* Cor escura garantida */
+}
+
+.dropdown-menu li a:hover, 
+.mobile-dropdown-menu li a:hover {
+    color: #fff !important; /* Texto branco para contraste no hover */
+    background: #333 !important; /* Fundo escuro no hover */
+}
+
+/* ✅ Exibir menu ao abrir */
+.user-menu.open .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+/* ✅ Efeito de exibição do dropdown */
+.user-menu:hover .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-menu li:hover {
+    background: #f0f0f0;
+}
+/* ✅ Menu Mobile */
+.mobile-menu-btn {
+    display: none;
+    font-size: 24px;
+    color: black;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-menu-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: 100vh;
+    background: #1E2A38;
+    box-shadow: -3px 0px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+
+.mobile-menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.mobile-menu-content a {
+    color: white;
+    font-size: 18px;
+    text-decoration: none;
+    padding: 12px 0;
+}
+
+.mobile-menu-content .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+/* ✅ Ajuste no menu do usuário no mobile */
+.mobile-user-menu {
+    position: relative;
+    width: 100%;
+    text-align: left;
+    padding: 10px 0;
+}
+
+.mobile-user-link {
+    color: white;
+    font-size: 18px;
+    text-decoration: none;
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.mobile-user-link i {
+    margin-right: 8px;
+}
+
+.mobile-dropdown-menu {
+    display: none;
+    background: white;
+    list-style: none;
+    padding: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    text-align: center;
+}
+
+.mobile-dropdown-menu li {
+    padding: 10px 15px;
+}
+
+
+.mobile-dropdown-menu li:hover {
+    background: #f0f0f0;
+}
+
+/* ✅ Exibir dropdown ao abrir */
+.mobile-user-menu.open .mobile-dropdown-menu {
+    display: block;
+}
+
+
+/* ✅ Responsividade */
+@media (max-width: 768px) {
+    .desktop-nav {
+        display: none;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        margin-top: 10px;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 5px 0;
+    }
+
+    .hero {
+        padding: 60px 20px;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 18px;
+    }
+
+    .feature-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .feature-item {
+        width: 90%;
+    }
+}
+
+
+/* Linha sutil abaixo do título */
+.templates h2::after {
+    content: "";
+    width: 100px;
+    height: 5px;
+    background: #1E2A38; /* Azul moderno */
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
+/* Estilo dos cards de templates */
+.template {
+    background: #f8f8f8   ;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    width: 280px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s;
+}
+
+.template:hover {
+    transform: scale(1.03);
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+
+
+
+header {
+    background: white;
+    color: black;
+    padding: 20px 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+header .container {
+    max-width: 1200px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+#meus-templates-option, #mobile-meus-templates-option {
+    color: black;
+    font-weight: 500;
+}
+
+#meus-templates-option:hover, #mobile-meus-templates-option:hover {
+    color: black;
+}
+/* Estilização do Menu de Navegação */
+nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex; /* Mantém os itens alinhados na horizontal */
+}
+
+nav ul li {
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: black;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 500;
+    transition: 0.3s;
+    padding: 10px;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+}
+
+/* Ajuste de espaçamento para evitar sobreposição */
+main {
+    margin-top: 120px; /* Aumentado para garantir visibilidade */
+    padding: 20px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        flex-direction: column;
+    }
+
+    nav ul li {
+        margin: 5px 0;
+    }
+}
+
+/* Hero Section */
+.hero {
+    margin-top: 100px;
+    padding: 80px 20px;
+    background: url('https://source.unsplash.com/1600x900/?technology,website') center/cover no-repeat;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero h2 {
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.hero p {
+    font-size: 20px;
+    margin: 20px 0;
+}
+
+/* Botões aprimorados */
+.btn {
+    background: #6c757d; /* Azul mais vibrante */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.3s ease-in-out;
+}
+
+
+/* Botões premium em dourado */
+.btn.buy-premium {
+    background: #FFC107; /* Dourado para destacar */
+    color: #212529;
+}
+
+.btn.buy-premium:hover {
+    background: #E0A800;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+/* Modal inicialmente escondido */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 900px;
+    text-align: center;
+    position: relative;
+}
+
+iframe {
+    width: 100%;
+    height: 500px;
+    border: none;
+}
+
+.modal-actions {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Botão de fechar */
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    color: red;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: darkred;
+}
+
+/* Botão de fechar no modal */
+.close-btn {
+    background: red;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.template.premium-locked {
+    position: relative;
+    border: 2px solid gold;
+    background: #fff8e1;
+}
+
+.template.premium-locked::before {
+    content: "PREMIUM";
+    position: absolute;
+    top: 10px;
+    left: -10px;
+    background: gold;
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 0 5px 5px 0;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.close-btn:hover {
+    background: darkred;
+}
+
+/* 🔹 Seção Hero */
+.premium-info .hero {
+    background: linear-gradient(120deg, #0d47a1, #42a5f5);
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.premium-info .hero h2 {
+    font-size: 36px;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px #00000066;
+}
+
+.premium-info .hero p {
+    font-size: 18px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* 🔹 Seção de Benefícios */
+.premium-info .benefits .template {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.premium-info .benefits .template:hover {
+    background: #f9f9f9;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.premium-info .benefits h3 {
+    color: #0d47a1;
+}
+
+/* 🔹 Planos Premium */
+.premium-info .plans h2 {
+    font-size: 28px;
+    color: #1e2a38;
+    margin-bottom: 20px;
+}
+
+.premium-info .plans .template {
+    padding: 25px 20px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.premium-info .plans .template:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.premium-info .plans h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.premium-info .plans p {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.premium-info .plans ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.premium-info .plans ul li {
+    margin-bottom: 8px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.premium-info .plans ul li::before {
+    content: "🔥";
+    margin-right: 10px;
+    font-size: 16px;
+}
+
+/* Ajustes gerais */
+@media (max-width: 768px) {
+    .premium-info .plans .template {
+        width: 100%;
+    }
+
+    .premium-info .benefits .template {
+        width: 100%;
+    }
+
+    .premium-info .hero h2 {
+        font-size: 28px;
+    }
+}
+
+    </style>
+    
+</head>
+<body>
+    <header>    
+        <div class="container">
+            <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
+    
+            <!-- ✅ Navbar Desktop Corrigida -->
+            <nav class="desktop-nav">
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                    <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+                    <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
+                    <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+    
+                    <!-- Ícone do usuário -->
+                    <li class="user-menu">
+                        <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
+                            <i class="fas fa-user user-icon"></i>
+                        </a>
+                        <ul class="dropdown-menu" id="user-dropdown">
+                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
+                                Bem-vindo, <span id="user-name-text"></span>
+                            </li>    
+                            <li><a href="/login" id="login-option">Entrar</a></li>
+                            <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
+                            <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+    
+            <!-- ✅ Botão de menu mobile -->
+            <button class="mobile-menu-btn" onclick="openMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+    <div class="mobile-menu-modal" id="mobileMenuModal">
+        <div class="mobile-menu-content">
+            <a href="/"><i class="fas fa-home"></i> Início</a>
+            <a href="/templates"><i class="fas fa-th"></i> Templates</a>
+            <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
+            <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
+    
+                    <!-- ✅ Ícone do usuário no menu mobile -->
+<div class="mobile-user-menu">
+    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+        <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
+    </a>
+    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+            Olá, <span id="mobile-username-text"></span>
+        </li>
+        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+        <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
+        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+    </ul>
+</div>
+      
+                    <button class="close-btn" onclick="closeMobileMenu()">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            </div>
+    </header>
+    <main class="premium-info">
+        <section class="hero">
+            <h2>💎 Vantagens Exclusivas do Plano Premium</h2>
+            <p>Desbloqueie todo o poder do Site Genius com recursos avançados e templates profissionais.</p>
+        </section>
+    
+        <section class="benefits" style="margin-top: 40px;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
+                <div class="template" style="max-width: 320px;">
+                    <h3><i class="fas fa-paint-brush"></i> Templates Profissionais</h3>
+                    <p>Acesse designs modernos, responsivos e prontos para converter visitantes em clientes.</p>
+                </div>
+                <div class="template" style="max-width: 320px;">
+                    <h3><i class="fas fa-bolt"></i> Edição Avançada</h3>
+                    <p>Recursos exclusivos de edição para criar páginas únicas com facilidade.</p>
+                </div>
+                <div class="template" style="max-width: 320px;">
+                    <h3><i class="fas fa-headset"></i> Suporte Prioritário</h3>
+                    <p>Atendimento rápido e dedicado para usuários premium.</p>
+                </div>
+            </div>
+        </section>
+    
+        <section class="plans" style="margin-top: 60px;">
+            <h2 style="text-align: center;">📦 Planos Premium</h2>
+            <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-top: 30px;">
+    
+                <div class="template" style="max-width: 300px; background: #e9f5ff;">
+                    <h3>Plano Mensal</h3>
+                    <p><strong>Ainda não disponível</strong></p>
+                    <ul style="text-align: left;">
+                        <li>✔ Acesso a todos os templates premium</li>
+                        <li>✔ Suporte prioritário</li>
+                        <li>✔ Atualizações frequentes</li>
+                    </ul>
+                    <a href="/generate-payment?plano=mensal" class="btn buy-premium" style="margin-top: 10px;">Assinar</a>
+                </div>
+    
+                <div class="template" style="max-width: 300px; background: #fff2cc;">
+                    <h3>Plano Trimestral</h3>
+                    <p><strong>Ainda não disponível</strong></p>
+                    <ul style="text-align: left;">
+                        <li>✔ Tudo do plano mensal</li>
+                        <li>✔ Economia de 15%</li>
+                    </ul>
+                    <a href="/generate-payment?plano=trimestral" class="btn buy-premium" style="margin-top: 10px;">Assinar</a>
+                </div>
+    
+                <div class="template" style="max-width: 300px; background: #d4edda;">
+                    <h3>Plano Anual</h3>
+                    <p><strong>Ainda não disponível</strong></p>
+                    <ul style="text-align: left;">
+                        <li>✔ Tudo do plano trimestral</li>
+                        <li>✔ Economia de 25%</li>
+                        <li>✔ Suporte técnico personalizado</li>
+                    </ul>
+                    <a href="/generate-payment?plano=anual" class="btn buy-premium" style="margin-top: 10px;">Assinar</a>
+                </div>
+    
+            </div>
+        </section>
+    </main>
