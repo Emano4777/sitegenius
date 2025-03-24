@@ -166,7 +166,8 @@
             alert("Sua sessão expirou. Redirecionando para o login...");
             window.location.href = "/login";
         }
-});
+});    
+
         document.getElementById("input-pagina").value = "{{ page_name }}";
 
         const rawHtml = document.getElementById("template-content").textContent;
@@ -181,6 +182,11 @@
             plugins: ["gjs-preset-webpage"],
             pluginsOpts: { "gjs-preset-webpage": {} }
         });
+        
+         
+  
+
+
 
         // ✅ Carrega o template salvo no banco
         const parser = new DOMParser();
@@ -190,10 +196,12 @@
         const styleContent = Array.from(doc.head?.querySelectorAll('style') || [])
             .map(style => style.innerHTML)
             .join("\n");
-
+       
+           
         editor.setComponents(bodyContent);
         editor.setStyle(styleContent);
-
+     
+          
             editor.on("component:selected", (model) => {
     if (model.is("link")) {
         editor.Panels.addButton("options", {
@@ -204,6 +212,33 @@
         });
     }
 });
+
+
+editor.on("component:selected", (model) => {
+    if (model && model.get('tagName') === 'form') {
+        const traits = model.get('traits').map(trait => trait.name);
+        
+        // Adiciona somente se ainda não estiver lá
+        if (!traits.includes('action')) {
+            model.addTrait([
+                {
+                    type: 'text',
+                    label: 'E-mail de recebimento (FormSubmit)',
+                    name: 'action',
+                    placeholder: 'https://formsubmit.co/seuemail@exemplo.com'
+                },
+                {
+                    type: 'text',
+                    label: 'Método',
+                    name: 'method',
+                    placeholder: 'POST'
+                }
+            ]);
+        }
+    }
+});
+
+
 // Componente customizado: Botão Navegação Interna
 editor.BlockManager.add('botao-navegacao', {
     label: '<i class="fas fa-link"></i> Ir para Página',
@@ -256,8 +291,9 @@ editor.DomComponents.addType('botao-navegacao', {
     }
 });
 editor.on('load', () => {
-    const canvasDoc = editor.Canvas.getDocument();
 
+    const canvasDoc = editor.Canvas.getDocument();
+     
     canvasDoc.addEventListener('click', function (e) {
         const target = e.target;
         if (target.tagName === 'A' && target.getAttribute('href')) {

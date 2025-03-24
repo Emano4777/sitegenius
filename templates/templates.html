@@ -676,8 +676,7 @@ iframe {
                 <div class="template">
                     <h3><i class="fas fa-code"></i> Template Simples</h3>
                 
-                    <!-- Botão de Visualizar -->
-                    <button class="btn" onclick="previewTemplate('/template/template1')">
+                    <button class="btn" onclick="previewTemplate('/template-preview/template1/index')">
                         <i class="fas fa-eye"></i> Visualizar
                     </button>
                 
@@ -810,24 +809,41 @@ iframe {
 
 
 function previewTemplate(templateURL) {
-    console.log("🖼️ Tentando abrir preview para:", templateURL);
+    console.log("🖼️ Abrindo preview:", templateURL);
 
     let modal = document.getElementById("previewModal");
     let iframe = document.getElementById("previewFrame");
 
     if (!modal || !iframe) {
-        console.error("⚠️ Erro: Modal ou iframe não encontrados.");
+        console.error("⚠️ Modal ou iframe não encontrados.");
         return;
     }
 
-    // ✅ Confirma se o templateURL não é undefined ou vazio antes de abrir
-    if (typeof templateURL === "string" && templateURL.trim() !== "") {
-        iframe.src = templateURL; // Define o conteúdo do iframe
-        modal.style.display = "flex"; // Exibe o modal corretamente
-    } else {
-        console.warn("🚨 URL do template inválida, modal não será aberto.");
-    }
+    iframe.onload = function () {
+        try {
+            // 🧠 Extrai automaticamente o nome do template da URL
+            const currentURL = new URL(iframe.src, window.location.origin);
+            const pathParts = currentURL.pathname.split('/');
+            const templateName = pathParts[2]; // /template-preview/template1/index → "template1"
+
+            const links = iframe.contentDocument.querySelectorAll('a[href^="/template/"]');
+            links.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const parts = link.getAttribute('href').split('/');
+                    const page = parts[2]; // /template/sobre → "sobre"
+                    iframe.src = `/template-preview/${templateName}/${page}`;
+                });
+            });
+        } catch (err) {
+            console.warn("⚠️ Erro ao acessar links dentro do iframe:", err);
+        }
+    };
+
+    iframe.src = templateURL;
+    modal.style.display = "flex";
 }
+
 
 function toggleDetalhes(id) {
     const div = document.getElementById(id);
@@ -854,8 +870,10 @@ function closePreview() {
 
         function downloadTemplate() {
     const src = document.getElementById("previewFrame").src;
-    const templateName = src.split('/').pop();
+    const parts = src.split('/');
+    const templateName = parts[parts.indexOf('template-preview') + 1]; // Ex: /template-preview/template1/index
 
+    console.log("Usando template:", templateName);
     fetch('/usar-template/' + templateName, { method: 'POST' })
     .then(response => response.json())
     .then(data => {

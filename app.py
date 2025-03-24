@@ -240,7 +240,6 @@ def templates():
 def visualizar_template(template_name):
     return render_template(f"{template_name}.html")
 
-
 @app.route('/usar-template/<template_name>', methods=['POST'])
 def usar_template(template_name):
     user_id = session.get('user_id')
@@ -278,39 +277,47 @@ def usar_template(template_name):
         conn.close()
         return jsonify({"success": False, "message": "Usuários não Premium só podem criar 1 modelo."}), 403
 
-    try:
-        with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
-            original_html = f.read()
+    # 🔁 Lê as páginas da tabela template_pages (agora com html e css)
+    cur.execute("""
+        SELECT page_name, html, css
+        FROM template_pages
+        WHERE template_name = %s
+    """, (template_name,))
+    paginas = cur.fetchall()
 
-            html_body, css = extrair_html_css_do_template(original_html)
+    if not paginas:
+        cur.close()
+        conn.close()
+        return jsonify({"success": False, "message": "Template não encontrado."}), 404
 
-            html_completo = f"""<!DOCTYPE html>
+    subdomain = f"user{user_id}-{uuid.uuid4().hex[:6]}"
+    template_id = None
+
+    for idx, (page_name, html_content, css_content) in enumerate(paginas):
+        # Monta HTML completo com CSS embutido
+        html_completo = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>{css}</style>
+    <style>{css_content}</style>
 </head>
 <body>
-{html_body}
+{html_content}
 </body>
 </html>
 """
-    except Exception as e:
-        cur.close()
-        conn.close()
-        return jsonify({"success": False, "message": f"Erro ao ler o template: {str(e)}"}), 500
+        cur.execute("""
+            INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
+        """, (user_id, template_name, html_completo, subdomain, page_name))
 
-    subdomain = f"user{user_id}-{uuid.uuid4().hex[:6]}"
-    page_name = 'index'
+        if idx == 0:
+            template_id = cur.fetchone()[0]
+        else:
+            cur.fetchone()  # só consome o retorno
 
-    cur.execute("""
-        INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING id
-    """, (user_id, template_name, html_completo, subdomain, page_name))
-
-    template_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
@@ -319,9 +326,40 @@ def usar_template(template_name):
         "success": True,
         "message": "Template vinculado!",
         "template_id": template_id,
-        "page_name": page_name
+        "page_name": 'index'
     })
 
+
+
+@app.route('/template-preview/<template_name>/<page>')
+def template_preview(template_name, page):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT html, css FROM template_pages
+        WHERE template_name = %s AND page_name = %s
+    """, (template_name, page))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not result:
+        return "<h2>❌ Página não encontrada.</h2>", 404
+
+    html, css = result
+    html_completo = f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>{css}</style>
+</head>
+<body>
+{html}
+</body>
+</html>
+"""
+    return html_completo
 
 
 
