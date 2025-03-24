@@ -6,6 +6,9 @@ import requests
 import uuid
 from flask_cors import CORS
 import logging
+import re
+from bs4 import BeautifulSoup
+
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -25,6 +28,11 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
+# Conexão com o Banco de Dados
+
+
+def get_db_connection():
+    return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
 
 
 @app.route('/')
@@ -118,9 +126,6 @@ def payment_success():
     return "Usuário não autenticado", 401
 
 
-# Conexão com o Banco de Dados
-def get_db_connection():
-    return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
 
 # Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
@@ -261,16 +266,13 @@ def usar_template(template_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Verifica se o usuário é premium
     cur.execute("SELECT is_premium FROM users2 WHERE id=%s", (user_id,))
     user_status = cur.fetchone()
     is_premium = user_status[0] if user_status else False
 
-    # Conta quantos templates o usuário já tem
     cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id=%s", (user_id,))
     total_templates = cur.fetchone()[0]
 
-    # Se não for premium e já tiver template, bloqueia a criação
     if not is_premium and total_templates >= 1:
         cur.close()
         conn.close()
@@ -279,21 +281,34 @@ def usar_template(template_name):
     try:
         with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
             original_html = f.read()
-    except:
+
+            html_body, css = extrair_html_css_do_template(original_html)
+
+            html_completo = f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>{css}</style>
+</head>
+<body>
+{html_body}
+</body>
+</html>
+"""
+    except Exception as e:
         cur.close()
         conn.close()
-        return jsonify({"success": False, "message": "Template não encontrado"}), 404
+        return jsonify({"success": False, "message": f"Erro ao ler o template: {str(e)}"}), 500
 
-    # Gera subdomínio único
     subdomain = f"user{user_id}-{uuid.uuid4().hex[:6]}"
     page_name = 'index'
 
-    # Insere o novo template com a página principal
     cur.execute("""
         INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
         VALUES (%s, %s, %s, %s, %s)
         RETURNING id
-    """, (user_id, template_name, original_html, subdomain, page_name))
+    """, (user_id, template_name, html_completo, subdomain, page_name))
 
     template_id = cur.fetchone()[0]
     conn.commit()
@@ -604,7 +619,6 @@ def listar_paginas(template_id):
 def editar_pagina(template_id, page_name):
     user_id = session.get('user_id')
 
-    # Verifica sessão via cookie alternativo, se necessário
     if not user_id:
         token = request.cookies.get('session_token')
         if token:
@@ -630,12 +644,11 @@ def editar_pagina(template_id, page_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # 🔍 Agora buscamos o template certo que pertence ao usuário e tem o page_name correto
     cur.execute("""
-        SELECT template_name, subdomain, custom_html 
+        SELECT template_name, subdomain, custom_html, page_name 
         FROM user_templates
-        WHERE id = %s AND page_name = %s AND user_id = %s
-    """, (template_id, page_name, user_id))
+        WHERE id = %s AND user_id = %s
+    """, (template_id, user_id))
 
     info = cur.fetchone()
 
@@ -646,7 +659,7 @@ def editar_pagina(template_id, page_name):
             return jsonify({"message": "Template não encontrado"}), 404
         return redirect(url_for('meu_site'))
 
-    template_name, subdomain, html_salvo = info
+    template_name, subdomain, html_salvo, page_name = info  # ⚠️ aqui ajustado
 
     if request.method == 'POST':
         dados = request.get_json()
@@ -665,7 +678,6 @@ def editar_pagina(template_id, page_name):
         </html>
         """
 
-        # ✅ Atualiza com base apenas no ID da página
         cur.execute("""
             UPDATE user_templates 
             SET custom_html = %s
@@ -686,8 +698,22 @@ def editar_pagina(template_id, page_name):
 
     return render_template('editar_template.html', html_atual=html_salvo, template_id=template_id, page_name=page_name)
 
+def extrair_html_css_do_template(html):
+    soup = BeautifulSoup(html, 'html.parser')
 
+    # Extrai o conteúdo da tag <style>
+    styles = soup.find_all("style")
+    css = "\n".join(style.get_text() for style in styles)
 
+    # Remove as tags <style> do corpo
+    for style in styles:
+        style.decompose()
+
+    # Pega o conteúdo do body
+    body = soup.body
+    body_html = body.decode_contents() if body else soup.decode_contents()
+
+    return body_html.strip(), css.strip()
 
 
 ## Rota para exibir os templates dinâmicos

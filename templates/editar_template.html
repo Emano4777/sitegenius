@@ -147,6 +147,9 @@
             <i class="fas fa-save"></i> Salvar
         </button>
     </div>
+    <script id="template-content" type="application/json">
+        {{ html_atual | tojson | safe }}
+    </script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             fetch('/verificar-sessao', {
@@ -158,22 +161,32 @@
             window.location.href = "/login";
         }
 });
-            document.getElementById("input-pagina").value = "{{ page_name }}";
-            const templateHTML = `{{ html_atual | safe }}`;
+        document.getElementById("input-pagina").value = "{{ page_name }}";
 
-            const editor = grapesjs.init({
-                container: "#editor",
-                height: "100%",
-                width: "auto",
-                storageManager: false,
-                fromElement: false,
-                plugins: ["gjs-preset-webpage"],
-                pluginsOpts: { "gjs-preset-webpage": {} }
-            });
+        const rawHtml = document.getElementById("template-content").textContent;
+        const templateHTML = JSON.parse(rawHtml);
 
+        const editor = grapesjs.init({
+            container: "#editor",
+            height: "100%",
+            width: "auto",
+            storageManager: false,
+            fromElement: false,
+            plugins: ["gjs-preset-webpage"],
+            pluginsOpts: { "gjs-preset-webpage": {} }
+        });
 
-            // ✅ Carrega o template salvo no banco
-            editor.setComponents(templateHTML);
+        // ✅ Carrega o template salvo no banco
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(templateHTML, "text/html");
+
+        const bodyContent = doc.body?.innerHTML || '';
+        const styleContent = Array.from(doc.head?.querySelectorAll('style') || [])
+            .map(style => style.innerHTML)
+            .join("\n");
+
+        editor.setComponents(bodyContent);
+        editor.setStyle(styleContent);
 
             editor.on("component:selected", (model) => {
     if (model.is("link")) {
