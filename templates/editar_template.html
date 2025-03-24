@@ -147,6 +147,12 @@
             <i class="fas fa-save"></i> Salvar
         </button>
     </div>
+    <script>
+        
+        const TEMPLATE_ID = "{{ template_id }}";
+        const PAGE_NAME = "{{ page_name }}";
+        console.log("TEMPLATE_ID:", TEMPLATE_ID);
+    </script>
     <script id="template-content" type="application/json">
         {{ html_atual | tojson | safe }}
     </script>

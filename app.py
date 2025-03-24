@@ -644,22 +644,43 @@ def editar_pagina(template_id, page_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # 🧠 Pega o template_name e subdomain original com base no template_id
     cur.execute("""
-        SELECT template_name, subdomain, custom_html, page_name 
+        SELECT template_name, subdomain 
         FROM user_templates
         WHERE id = %s AND user_id = %s
+        LIMIT 1
     """, (template_id, user_id))
 
-    info = cur.fetchone()
+    template_info = cur.fetchone()
 
-    if not info:
+    if not template_info:
         cur.close()
         conn.close()
         if request.method == 'POST':
             return jsonify({"message": "Template não encontrado"}), 404
         return redirect(url_for('meu_site'))
 
-    template_name, subdomain, html_salvo, page_name = info  # ⚠️ aqui ajustado
+    template_name, subdomain = template_info
+
+    # 🔎 Busca a página específica com base no template_name + subdomain + page_name
+    cur.execute("""
+        SELECT custom_html 
+        FROM user_templates
+        WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
+        LIMIT 1
+    """, (user_id, template_name, subdomain, page_name))
+
+    pagina_info = cur.fetchone()
+
+    if not pagina_info:
+        cur.close()
+        conn.close()
+        if request.method == 'POST':
+            return jsonify({"message": "Página não encontrada"}), 404
+        return redirect(url_for('meu_site'))
+
+    html_salvo = pagina_info[0]
 
     if request.method == 'POST':
         dados = request.get_json()
@@ -681,8 +702,8 @@ def editar_pagina(template_id, page_name):
         cur.execute("""
             UPDATE user_templates 
             SET custom_html = %s
-            WHERE id = %s
-        """, (html_completo, template_id))
+            WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
+        """, (html_completo, user_id, template_name, subdomain, page_name))
 
         conn.commit()
         cur.close()
@@ -696,7 +717,11 @@ def editar_pagina(template_id, page_name):
     if not html_salvo:
         html_salvo = "<h1>Nova Página</h1><p>Comece a editar seu conteúdo aqui.</p>"
 
-    return render_template('editar_template.html', html_atual=html_salvo, template_id=template_id, page_name=page_name)
+    return render_template('editar_template.html',
+                           html_atual=html_salvo,
+                           template_id=template_id,
+                           page_name=page_name)
+
 
 def extrair_html_css_do_template(html):
     soup = BeautifulSoup(html, 'html.parser')
