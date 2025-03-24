@@ -263,7 +263,7 @@ def usar_template(template_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Checa se o usuário é premium
+    # Verifica se o usuário é premium
     cur.execute("SELECT is_premium FROM users2 WHERE id=%s", (user_id,))
     user_status = cur.fetchone()
     is_premium = user_status[0] if user_status else False
@@ -272,12 +272,12 @@ def usar_template(template_name):
     cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id=%s", (user_id,))
     total_templates = cur.fetchone()[0]
 
+    # Se não for premium e já tiver template, bloqueia a criação
     if not is_premium and total_templates >= 1:
         cur.close()
         conn.close()
-        return jsonify({"success": False, "message": "Usuários não Premium só podem criar 1 template."}), 403
+        return jsonify({"success": False, "message": "Usuários não Premium só podem criar 1 modelo."}), 403
 
-    # Lê o HTML do template original
     try:
         with open(f'templates/{template_name}.html', 'r', encoding='utf-8') as f:
             original_html = f.read()
@@ -286,20 +286,16 @@ def usar_template(template_name):
         conn.close()
         return jsonify({"success": False, "message": "Template não encontrado"}), 404
 
-    # Extrai apenas o conteúdo do <body>
-    soup = BeautifulSoup(original_html, 'html.parser')
-    body_content = soup.body.decode_contents() if soup.body else original_html
-
     # Gera subdomínio único
     subdomain = f"user{user_id}-{uuid.uuid4().hex[:6]}"
     page_name = 'index'
 
-    # Insere o template personalizado com apenas o conteúdo do body
+    # Insere o novo template com a página principal
     cur.execute("""
         INSERT INTO user_templates (user_id, template_name, custom_html, subdomain, page_name)
         VALUES (%s, %s, %s, %s, %s)
         RETURNING id
-    """, (user_id, template_name, body_content, subdomain, page_name))
+    """, (user_id, template_name, original_html, subdomain, page_name))
 
     template_id = cur.fetchone()[0]
     conn.commit()
@@ -312,6 +308,7 @@ def usar_template(template_name):
         "template_id": template_id,
         "page_name": page_name
     })
+
 
 
 
