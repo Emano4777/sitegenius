@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fale com a sua loja</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+      color: #333;
+    }
+
+    .navbar {
+      background-color: #1a1a1a;
+      overflow: hidden;
+      padding: 12px 0;
+    }
+
+    .navbar a {
+      color: white;
+      padding: 14px 22px;
+      text-decoration: none;
+      float: left;
+      transition: background-color 0.3s;
+    }
+
+    .navbar a:hover {
+      background-color: #444;
+    }
+
+    .navbar a i {
+      margin-right: 6px;
+    }
+
+    .section {
+      padding: 50px 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .section h1 {
+      color: #1a1a1a;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .contact-info {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .contact-info p {
+      font-size: 1.1em;
+      margin: 10px 0;
+    }
+
+    .contact-info i {
+      color: #1a1a1a;
+      margin-right: 10px;
+    }
+
+    form {
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      background-color: #f8f8f8;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .form-group i {
+      color: #1a1a1a;
+      margin-right: 10px;
+      font-size: 1.2em;
+      width: 30px;
+      text-align: center;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      border: none;
+      background: transparent;
+      font-size: 1em;
+      width: 100%;
+      padding: 8px 0;
+      outline: none;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+      color: #1a1a1a;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      background-color: #1a1a1a;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #444;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 25px;
+      background-color: #eaeaea;
+      border-top: 1px solid #ccc;
+      margin-top: 50px;
+    }
+
+    .footer i {
+      color: #1a1a1a;
+      margin-right: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .navbar a {
+        float: none;
+        display: block;
+        text-align: center;
+      }
+
+      .form-group {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/template/index"><i class="fas fa-home"></i> Início</a>
+    <a href="/template/sobre"><i class="fas fa-tshirt"></i> Sobre</a>
+    <a href="/template/contato"><i class="fas fa-envelope"></i> Contato</a>
+  </nav>
+
+  <section class="section">
+    <h1><i class="fas fa-comments"></i> Fale com a nossa loja</h1>
+
+    <div class="contact-info">
+      <p><i class="fas fa-phone"></i> Atendimento: (XX) XXXX-XXXX</p>
+      <p><i class="fas fa-envelope"></i> contato@sualoja.com.br</p>
+      <p><i class="fas fa-clock"></i> Segunda a Sábado - 9h às 20h</p>
+      <p><i class="fas fa-map-marker-alt"></i> Rua Fashion, 456 - Bairro Estilo, Sua Cidade - UF</p>
+    </div>
+
+    <form action="https://formsubmit.co/seuemail@exemplo.com" method="POST">
+      <label for="nome">Seu nome completo</label>
+      <div class="form-group">
+        <i class="fas fa-user"></i>
+        <input type="text" id="nome" name="nome" required placeholder="Digite seu nome" />
+      </div>
+
+      <label for="email">Seu e-mail</label>
+      <div class="form-group">
+        <i class="fas fa-envelope"></i>
+        <input type="email" id="email" name="email" required placeholder="Digite seu e-mail" />
+      </div>
+
+      <label for="mensagem">Sua mensagem</label>
+      <div class="form-group">
+        <i class="fas fa-comment-dots"></i>
+        <textarea id="mensagem" name="mensagem" rows="5" required placeholder="Digite sua mensagem aqui..."></textarea>
+      </div>
+
+      <button type="submit"><i class="fas fa-paper-plane"></i> Enviar mensagem</button>
+
+      <input type="hidden" name="_captcha" value="false">
+      <input type="hidden" name="_template" value="table">
+    </form>
+  </section>
+
+  <div class="footer">
+    <p><i class="fas fa-shopping-bag"></i> Nome da sua loja © 2025</p>
+  </div>
+
+</body>
+</html>

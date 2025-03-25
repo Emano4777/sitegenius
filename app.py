@@ -337,6 +337,9 @@ def usar_template(template_name):
 
 @app.route('/template-preview/<template_name>/<page>')
 def template_preview(template_name, page):
+    from bs4 import BeautifulSoup
+    import re
+
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
@@ -351,6 +354,26 @@ def template_preview(template_name, page):
         return "<h2>❌ Página não encontrada.</h2>", 404
 
     html, css = result
+
+    soup = BeautifulSoup(html, 'html.parser')
+
+    for a in soup.find_all('a', href=True):
+        href = a['href'].strip()
+
+        # Caso 1: /template/sobre
+        if href.startswith('/template/'):
+            page_name = href.split('/template/')[-1]
+            a['href'] = f'/template-preview/{template_name}/{page_name}'
+
+        # Caso 2: /{{sub}}/sobre
+        elif re.match(r'/\{\{.*\}\}/.+', href):  # detecta /{{sub}}/sobre
+            parts = href.split('/')
+            if len(parts) >= 3:
+                page_name = parts[2]
+                a['href'] = f'/template-preview/{template_name}/{page_name}'
+
+    html_corrigido = str(soup)
+
     html_completo = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -359,7 +382,7 @@ def template_preview(template_name, page):
     <style>{css}</style>
 </head>
 <body>
-{html}
+{html_corrigido}
 </body>
 </html>
 """
@@ -819,7 +842,7 @@ def extrair_html_css_do_template(html):
 ## Rota para exibir os templates dinâmicos
 @app.route('/template/<template_name>')
 def show_template(template_name):
-    premium_templates = ["template3", "template4"]
+    premium_templates = ["template5", "template6"]
 
     # Bloqueia templates premium se o usuário não for pagante
     if template_name in premium_templates and not session.get('is_premium'):

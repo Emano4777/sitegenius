@@ -581,6 +581,7 @@ iframe {
     top: -20px;
 }
 
+
 @keyframes pulse {
     0%, 100% {
         background-color: #ffc107;
@@ -673,31 +674,61 @@ iframe {
         <section class="templates">
             <h2><i class="fas fa-box-open"></i> Templates disponiveis</h2>
             <div class="template-list">
-                <div class="template">
-                    <h3><i class="fas fa-code"></i> Template Simples</h3>
-                
-                    <button class="btn" onclick="previewTemplate('/template-preview/template1/index')">
-                        <i class="fas fa-eye"></i> Visualizar
-                    </button>
-                
-                    <!-- Botão de Detalhes -->
-                    <button class="btn" onclick="toggleDetalhes('detalhes-template1')">
-                        <i class="fas fa-info-circle"></i> Detalhes
-                    </button>
-                
-                    <!-- Painel oculto com informações -->
-                    <div id="detalhes-template1" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-                        <p><strong>Ideal para:</strong> Portfólios e páginas pessoais</p>
-                        <p><strong>Recursos:</strong> Layout responsivo, HTML básico, carregamento rápido</p>
-                        <p><strong>Diferencial:</strong> Leve, direto ao ponto e fácil de personalizar</p>
-                    </div>
+                <div class="template" style="
+                background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
+                background-size: cover;
+                background-position: center;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                margin-bottom: 30px;
+            ">
+            
+                <h3 style="text-shadow: 1px 1px 4px rgba(0,0,0,0.8);">
+                    <i class="fas fa-globe-americas"></i> Template Agência de Viagem
+                </h3>
+            
+                <button class="btn" onclick="previewTemplate('/template-preview/template1/index')">
+                    <i class="fas fa-eye"></i> Visualizar
+                </button>
+            
+                <button class="btn" onclick="toggleDetalhes('detalhes-template1')">
+                    <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+            
+                <div id="detalhes-template1" style="
+                    display: none;
+                    text-align: left;
+                    margin-top: 10px;
+                    background: rgba(255, 255, 255, 0.85);
+                    padding: 10px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    color: #333;
+                    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+                ">
+                    <p><strong>Ideal para:</strong> Agências de Viagem, Turismo e Guias</p>
+                    <p><strong>Recursos:</strong> Visual impactante, seções informativas, responsivo e editável</p>
+                    <p><strong>Diferencial:</strong> Pronto para destacar pacotes, depoimentos e diferenciais da empresa</p>
                 </div>
-                
-                <div class="template">
-                    <h3><i class="fas fa-laptop-code"></i> Template Moderno</h3>
+            </div>
+            <div class="template" style="
+            background-image: url('https://images.unsplash.com/photo-1567958451986-2de427a4a0be?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        ">
+                    <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: #080808;">
+                        <i class="fas fa-tshirt"></i> Template Loja de Roupas
+                    </h3>
                 
                     <!-- Botão de Visualizar -->
-                    <button class="btn" onclick="previewTemplate('/template/template2')">
+                    <button class="btn" onclick="previewTemplate('/template-preview/template2/index')">
                         <i class="fas fa-eye"></i> Visualizar
                     </button>
                 
@@ -707,12 +738,12 @@ iframe {
                     </button>
                 
                     <!-- Painel oculto com informações -->
-                    <div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-                        <p><strong>Ideal para:</strong> Startups, agências e projetos tecnológicos.</p>
-                        <p><strong>Inclui:</strong> Menu moderno, seção de serviços, depoimentos e rodapé com redes sociais.</p>
-                        <p><strong>Diferencial:</strong> Design responsivo, visual clean e fácil de editar no editor visual.</p>
+                    <div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                        <p><strong>Ideal para:</strong> Lojas de roupas, boutiques, brechós e vitrines de moda.</p>
+                        <p><strong>Inclui:</strong> Vitrine com produtos, layout responsivo, seção de destaques e depoimentos de clientes.</p>
+                        <p><strong>Diferencial:</strong> Visual moderno, navegação intuitiva e fácil personalização para destacar sua coleção.</p>
                     </div>
-                </div>                
+                </div>           
             <div class="template premium-locked">
                 <h3><i class="fas fa-lock"></i> Template Empresarial</h3>
             
@@ -819,30 +850,45 @@ function previewTemplate(templateURL) {
         return;
     }
 
-    iframe.onload = function () {
-        try {
-            // 🧠 Extrai automaticamente o nome do template da URL
-            const currentURL = new URL(iframe.src, window.location.origin);
-            const pathParts = currentURL.pathname.split('/');
-            const templateName = pathParts[2]; // /template-preview/template1/index → "template1"
+    // Remove listener anterior se já existir
+    iframe.removeEventListener("load", iframe.__previewHandler);
 
-            const links = iframe.contentDocument.querySelectorAll('a[href^="/template/"]');
-            links.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const parts = link.getAttribute('href').split('/');
-                    const page = parts[2]; // /template/sobre → "sobre"
-                    iframe.src = `/template-preview/${templateName}/${page}`;
-                });
+    // Define o novo listener
+    iframe.__previewHandler = function () {
+    try {
+        const currentURL = new URL(iframe.src, window.location.origin);
+        const pathParts = currentURL.pathname.split('/');
+        const templateName = pathParts[2]; // /template-preview/template1/index
+
+        // Seleciona todos os <a> que apontam para /template/*
+        const links = iframe.contentDocument.querySelectorAll('a[href^="/template/"]');
+        links.forEach(link => {
+            const hrefParts = link.getAttribute('href').split('/');
+            const pageName = hrefParts[2];
+
+            // Corrige o href para preview
+            link.setAttribute('href', `/template-preview/${templateName}/${pageName}`);
+
+            // Garante que clique atualize o iframe sem recarregar a página
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                iframe.src = `/template-preview/${templateName}/${pageName}`;
             });
-        } catch (err) {
-            console.warn("⚠️ Erro ao acessar links dentro do iframe:", err);
-        }
-    };
+        });
+
+        console.log("✅ Preview interativo ativado.");
+    } catch (err) {
+        console.warn("⚠️ Erro ao acessar links dentro do iframe:", err);
+    }
+};
+
+    // Adiciona o novo listener
+    iframe.addEventListener("load", iframe.__previewHandler);
 
     iframe.src = templateURL;
     modal.style.display = "flex";
 }
+
 
 
 function toggleDetalhes(id) {
