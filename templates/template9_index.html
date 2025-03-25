@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetShop Amor & Patas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #fefefe;
+      color: #333;
+    }
+
+    header {
+      background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943212/Fotografar_Pet_Center_SEO_gdfs4k.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.6);
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 3rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 2rem 1rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    h2 {
+      color: #e76f51;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .servicos, .produtos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #fff4e6;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .card i {
+      font-size: 2rem;
+      color: #e76f51;
+      margin-bottom: 0.5rem;
+    }
+
+    .agendamento {
+      text-align: center;
+      background-color: #ffedd5;
+      padding: 2rem;
+      border-radius: 10px;
+    }
+
+    .agendamento input, .agendamento textarea {
+      width: 100%;
+      padding: 0.7rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .agendamento button {
+      padding: 0.7rem 2rem;
+      background-color: #e76f51;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .whatsapp {
+      display: block;
+      width: fit-content;
+      margin: 2rem auto 0;
+      padding: 1rem 2rem;
+      background-color: #25d366;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    footer {
+      background-color: #eee;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><i class="fas fa-paw"></i> PetShop Amor & Patas</h1>
+  </header>
+
+  <div class="container">
+    <!-- Serviços -->
+    <section>
+      <h2>Nossos Serviços</h2>
+      <div class="servicos">
+        <div class="card">
+          <i class="fas fa-cut"></i>
+          <h3>Banho & Tosa</h3>
+          <p>Cuidados especiais com carinho e produtos hipoalergênicos.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-stethoscope"></i>
+          <h3>Consulta Veterinária</h3>
+          <p>Atendimento clínico com veterinários especializados.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-dog"></i>
+          <h3>Creche para Pets</h3>
+          <p>Ambiente seguro e divertido para seu pet brincar o dia todo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Produtos -->
+    <section>
+      <h2>Produtos em Destaque</h2>
+      <div class="produtos">
+        <div class="card">
+          <i class="fas fa-bone"></i>
+          <h3>Rações Premium</h3>
+          <p>Alimentação balanceada para todas as fases.</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-tshirt"></i>
+          <h3>Roupinhas</h3>
+          <p>Estilo e conforto para seu pet ficar ainda mais fofo!</p>
+        </div>
+        <div class="card">
+          <i class="fas fa-syringe"></i>
+          <h3>Vermífugos e Suplementos</h3>
+          <p>Saúde em primeiro lugar, com os melhores produtos veterinários.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+        <h2>Nossos Clientes Felizes</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943534/download_1_ppmeg8.jpg" alt="Pet 1" style="border-radius: 10px; width: 100%;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943534/download_2_xcav8t.jpg" alt="Pet 2" style="border-radius: 10px; width: 100%;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943534/download_3_aziibg.jpg" alt="Pet 3" style="border-radius: 10px; width: 100%;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943535/download_j452gq.jpg" alt="Pet 4" style="border-radius: 10px; width: 100%;">
+        </div>
+      </section>
+    
+    <!-- WhatsApp Direto -->
+    <a class="whatsapp" href="https://wa.me/5511999999999" target="_blank">
+      <i class="fab fa-whatsapp"></i> Fale conosco pelo WhatsApp
+    </a>
+  </div>
+
+  <section>
+    <h2>O Que Estão Dizendo</h2>
+    <div style="background: #fff9f0; padding: 1rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); max-width: 700px; margin: auto;">
+      <p style="font-style: italic;">“Levo meu cachorro há anos e o atendimento é sempre incrível!”</p>
+      <p><strong>— Ana Paula</strong></p>
+      <hr style="margin: 1rem 0;">
+      <p style="font-style: italic;">“Banho, tosa e até roupinhas com ótimo preço. Amo!”</p>
+      <p><strong>— Marcos T.</strong></p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Horário de Funcionamento</h2>
+    <p style="text-align: center;"><strong>Seg a Sex:</strong> 08h às 18h<br><strong>Sábados:</strong> 08h às 14h</p>
+  </section>
+  
+  <section>
+    <h2>Estamos Aqui</h2>
+    <div style="text-align: center;">
+      <iframe src="https://www.google.com/maps?q=Petshop+São+Paulo&output=embed" width="100%" height="250" style="border:0; border-radius: 10px;"></iframe>
+    </div>
+  </section>
+  
+  <footer>
+    <p>© 2025 PetShop Amor & Patas - Todos os direitos reservados</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Restaurante Gourmet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #fdfdfd;
+      --text: #333;
+    }
+
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #f1f1f1;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    header {
+      background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940180/101-organize-seu-restaurante-com-simpliza-800x500-1-959x615_x8iwwn.jpg');
+      background-size: cover;
+      background-position: center;
+      height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      text-align: center;
+      padding: 2rem;
+    }
+
+    header h1 {
+      font-size: 3rem;
+      font-weight: 700;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #d62828;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 999;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .menu {
+      margin-bottom: 2rem;
+    }
+
+    .menu h2 {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      color: #d62828;
+      text-align: center;
+    }
+
+    .menu-item {
+      display: flex;
+      gap: 1rem;
+      background-color: #fff0f0;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border-left: 5px solid #d62828;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      align-items: center;
+      transition: transform 0.3s ease;
+    }
+
+    .menu-item:hover {
+      transform: scale(1.02);
+    }
+
+    .menu-item img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .menu-item .info {
+      flex: 1;
+    }
+
+    .menu-item .info span {
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .menu-item .info p {
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .menu-item .info strong {
+      color: #222;
+    }
+
+    .whatsapp-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: fit-content;
+      margin: 2rem auto 0;
+      padding: 1rem 2rem;
+      background-color: #25d366;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .whatsapp-button:hover {
+      background-color: #1eb15e;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background-color: #eee;
+      margin-top: 3rem;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 3rem;
+    }
+
+    .gallery img {
+      width: 100%;
+      border-radius: 10px;
+      height: 120px;
+      object-fit: cover;
+    }
+
+    .status-aberto {
+      background-color: #dff0d8;
+      color: #3c763d;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 2rem;
+    }
+
+    .status-fechado {
+      background-color: #f2dede;
+      color: #a94442;
+      text-align: center;
+      padding: 1rem;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .menu-item {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .menu-item img {
+        width: 100%;
+        height: auto;
+      }
+    }
+</style>
+  </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+  <header>
+    <h1>Bem-vindo ao Restaurante Sabor & Arte</h1>
+  </header>
+
+  <div class="container">
+    <section class="menu">
+      <h2>Cardápio</h2>
+  
+      <!-- Pratos principais -->
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940457/espaguete-com-molho-a-bolonhesa-ou-ragu-bolognese-1_f5lrk2.jpg" alt="Spaghetti à Bolonhesa">
+        <div class="info">
+          <span>Spaghetti à Bolonhesa</span>
+          <p>Macarrão com molho de carne e parmesão.</p>
+          <strong>R$ 29,90</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940458/bf1e20a4462b71e3cc4cece2a8c96ac8_XL_xjsapj.jpg" alt="Hambúrguer Artesanal">
+        <div class="info">
+          <span>Hambúrguer Artesanal</span>
+          <p>Pão brioche, carne 180g, queijo cheddar e molho da casa.</p>
+          <strong>R$ 25,00</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940458/salada-caesar-para-2-pessoas_fb3e2r.jpg" alt="Salada Caesar">
+        <div class="info">
+          <span>Salada Caesar</span>
+          <p>Alface americana, frango grelhado, parmesão e croutons.</p>
+          <strong>R$ 22,00</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+      <!-- Novos pratos -->
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940795/pizza-marguerita-com-mozzarella-de-bufala-780x782_nhsdb4.jpg" alt="Pizza Marguerita">
+        <div class="info">
+          <span>Pizza Marguerita</span>
+          <p>Molho de tomate, mussarela, tomate fresco e manjericão.</p>
+          <strong>R$ 34,90</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940909/file-mignon-grelhado-freres_x4yhov.jpg" alt="Filé Mignon Grelhado">
+        <div class="info">
+          <span>Filé Mignon Grelhado</span>
+          <p>Acompanha arroz branco e legumes salteados.</p>
+          <strong>R$ 44,90</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+      <!-- Bebidas -->
+      <h2 style="margin-top: 3rem;">Bebidas</h2>
+  
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940908/images_1_jcoxfp.jpg" alt="Suco Natural de Laranja">
+        <div class="info">
+          <span>Suco Natural de Laranja</span>
+          <p>Suco fresco, sem adição de açúcar.</p>
+          <strong>R$ 9,00</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+      <div class="menu-item">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940910/Sem_t_tulo_ngthcp.jpg" alt="Refrigerante Lata">
+        <div class="info">
+          <span>Refrigerante Lata</span>
+          <p>Coca-Cola, Guaraná, Pepsi ou Sprite.</p>
+          <strong>R$ 6,00</strong>
+          <button class="add-to-cart" data-nome="Spaghetti à Bolonhesa" data-preco="29.90">
+            <i class="fas fa-plus-circle"></i> Adicionar
+          </button>
+          
+        </div>
+      </div>
+  
+    </section>
+     <!-- Galeria de Fotos -->
+     <section class="gallery">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742941737/ambiente-externo-restaurante_gj8z8n.jpg" alt="Ambiente 1">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742941736/images_2_jreidh.jpg" alt="Cozinha">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742941737/RANKING-9_llgz8y.webp" alt="Chef">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1742941737/cantinella_fhhnyh.jpg" alt="Jantar">
+      </section>
+
+    <section id="carrinho" style="margin-top: 3rem;">
+        <h2 style="text-align: center;">🛒 Carrinho</h2>
+        <ul id="lista-carrinho" style="list-style: none; padding: 0; margin: 1rem 0;"></ul>
+        <p id="total" style="text-align: center; font-weight: bold;"></p>
+        <div style="text-align: center;">
+          <a id="link-whats" href="#" target="_blank" class="whatsapp-button" style="margin-top: 1rem;">
+            <i class="fab fa-whatsapp"></i> Finalizar Pedido
+          </a>
+        </div>
+      </section>
+      
+  
+    <!-- Avaliações (extra!) -->
+    <section style="margin-top: 4rem;">
+      <h2 style="text-align: center; color: #444;">O que estão dizendo?</h2>
+      <div style="margin-top: 1rem; text-align: center; font-style: italic; color: #666;">
+        <p>“Melhor hambúrguer artesanal que já comi! Atendimento rápido e eficiente.”</p>
+        <p>— João M.</p>
+        <br>
+        <p>“A salada Caesar é maravilhosa! Ingredientes frescos e bem servida.”</p>
+        <p>— Aline S.</p>
+      </div>
+    </section>
+
+   <!-- QR Code do Cardápio -->
+<section style="text-align: center; margin-top: 4rem;">
+    <h2 style="color: #444;">Acesse o Cardápio Digital</h2>
+    <p style="margin-bottom: 1rem;">Escaneie com a câmera do seu celular:</p>
+    <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://seusite.com/cardapio&size=150x150" alt="QR Code Cardápio" style="border: 8px solid #eee; border-radius: 10px;">
+  </section>
+  
+  <footer>
+    <p>© 2025 Restaurante Sabor & Arte - Todos os direitos reservados</p>
+  </footer>
+  <script>
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+    }
+
+    // Exibir se está aberto ou fechado
+    const statusDiv = document.createElement('div');
+statusDiv.id = 'status';
+document.querySelector('.container').insertBefore(statusDiv, document.querySelector('.menu'));
+
+const hora = new Date().getHours();
+const aberto = hora >= 11 && hora < 23;
+statusDiv.className = aberto ? 'status-aberto' : 'status-fechado';
+statusDiv.innerText = aberto
+  ? 'Estamos abertos! Faça seu pedido 🍽️'
+  : 'Estamos fechados no momento. Volte mais tarde 😴';
+
+
+  const carrinho = [];
+const listaCarrinho = document.getElementById('lista-carrinho');
+const totalEl = document.getElementById('total');
+const linkWhats = document.getElementById('link-whats');
+
+document.querySelectorAll('.add-to-cart').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const nome = btn.dataset.nome;
+    const preco = parseFloat(btn.dataset.preco);
+    carrinho.push({ nome, preco });
+    atualizarCarrinho();
+  });
+});
+
+function atualizarCarrinho() {
+  listaCarrinho.innerHTML = '';
+  let total = 0;
+  carrinho.forEach((item, i) => {
+    total += item.preco;
+    const li = document.createElement('li');
+    li.innerText = `${item.nome} - R$ ${item.preco.toFixed(2)}`;
+    listaCarrinho.appendChild(li);
+  });
+
+  totalEl.innerText = `Total: R$ ${total.toFixed(2)}`;
+  const mensagem = encodeURIComponent(
+    carrinho.map(i => `• ${i.nome} - R$ ${i.preco.toFixed(2)}`).join('\n') +
+    `\n\nTotal: R$ ${total.toFixed(2)}`
+  );
+  linkWhats.href = `https://wa.me/5511999999999?text=${mensagem}`;
+}
+
+// Bloquear envio se o carrinho estiver vazio
+linkWhats.addEventListener('click', (e) => {
+  if (carrinho.length === 0) {
+    e.preventDefault();
+    alert('Adicione ao menos um item ao carrinho antes de finalizar o pedido.');
+  }
+});
+
+  </script>
+</body>
+</html>

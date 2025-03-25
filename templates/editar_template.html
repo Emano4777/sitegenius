@@ -120,7 +120,15 @@
     background-color: #388E3C;
 }
 
+#voltar-site-btn {
+    background-color: #777;
+    color: white;
+    font-weight: bold;
+}
 
+#voltar-site-btn:hover {
+    background-color: #555;
+}
 
     </style>
 </head>
@@ -135,7 +143,11 @@
         <button id="nova-pagina-btn">
             <i class="fas fa-file-circle-plus"></i> Nova Página
         </button>
-    
+
+        <button id="voltar-site-btn">
+            <i class="fas fa-arrow-left"></i> Voltar para Meus Templates
+        </button>
+        
         <input id="input-pagina" list="paginas-disponiveis" placeholder="Digite ou selecione uma página">
         <datalist id="paginas-disponiveis"></datalist>
     
@@ -167,6 +179,9 @@
             window.location.href = "/login";
         }
 });    
+document.getElementById("voltar-site-btn").addEventListener("click", function () {
+    window.location.href = "/meu-site";
+});
 
         document.getElementById("input-pagina").value = "{{ page_name }}";
 
@@ -185,7 +200,7 @@
         
          
   
-
+       
 
 
         // ✅ Carrega o template salvo no banco
@@ -237,6 +252,7 @@ editor.on("component:selected", (model) => {
         }
     }
 });
+
 
 
 // Componente customizado: Botão Navegação Interna
