@@ -18,6 +18,11 @@
     flex-wrap: wrap;
     margin-bottom: 40px;
 }
+.template {
+  flex: 1 1 300px;
+  max-width: 350px;
+  width: 100%;
+}
 footer {
     background: white;
     color: black;
@@ -801,69 +806,257 @@ iframe {
                             <p><strong>Inclui:</strong> Layout com horários, serviços oferecidos e botão flutuante para agendamento via WhatsApp.</p>
                             <p><strong>Diferencial:</strong> Estilo elegante, direto ao ponto e adaptado para dispositivos móveis. Destaque para fotos, equipe e identidade da barbearia.</p>
                         </div>
-                    </div>         
-            <div class="template premium-locked">
-                <h3><i class="fas fa-lock"></i> Template Empresarial</h3>
-            
-                <!-- 🔘 Botão premium ou visualizar -->
-                {% if is_premium %}
-                    <button class="btn" onclick="previewTemplate('/template/template3')">
-                        <i class="fas fa-eye"></i> Ver Template Premium
+                    </div>        
+                    <div class="template" style="
+                    background-image: url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80');
+                    background-size: cover;
+                    background-position: center;
+                    color: white;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                    margin-bottom: 30px;
+                ">
+                    <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: #fff;">
+                        <i class="fas fa-dumbbell"></i> Template Personal Trainer
+                    </h3>
+                
+                    <!-- Botão de Visualizar -->
+                    <button class="btn" onclick="previewTemplate('/template-preview/template4/index')">
+                        <i class="fas fa-eye"></i> Visualizar
                     </button>
-                {% else %}
-                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                        <i class="fas fa-credit-card"></i> Adquirir Premium
+                
+                    <!-- Botão de Detalhes -->
+                    <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
+                        <i class="fas fa-info-circle"></i> Detalhes
                     </button>
-                    <div style="text-align: center; margin: 30px auto;">
-                        <a href="/preco" class="btn buy-premium" style="font-size: 20px; padding: 15px 25px;">
-                            <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
-                        </a>
+                
+                    <!-- Painel oculto com informações -->
+                    <div id="detalhes-template4" style="
+                        display: none;
+                        text-align: left;
+                        margin-top: 10px;
+                        background: rgba(255,255,255,0.95);
+                        padding: 10px;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        color: #333;
+                        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+                    ">
+                        <p><strong>Ideal para:</strong> Personal trainers, coaches fitness, assessorias esportivas e academias individuais.</p>
+                        <p><strong>Inclui:</strong> Agenda de treinos, planos de serviços, integração com WhatsApp, botão de agendamento e galeria de resultados dos alunos.</p>
+                        <p><strong>Diferencial:</strong> Visual motivacional, foco em conversão, responsivo para celular e ideal para divulgar sua metodologia de forma prática.</p>
                     </div>
-                {% endif %}
+                </div>   
+                <div class="template" style="
+                 background-image: url('https://plus.unsplash.com/premium_photo-1670505062582-fdaa83c23c9e?auto=format&fit=crop&w=1600&q=80');
+                background-size: cover;
+                background-position: center;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                margin-bottom: 30px;
+            ">
+                <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: white;">
+                    <i class="fas fa-dumbbell"></i> Template Academia
+                </h3>
+                <!-- Botão de Visualizar -->
+                <button class="btn" onclick="previewTemplate('/template-preview/template5/index')">
+                    <i class="fas fa-eye"></i> Visualizar
+                </button>
             
-                <!-- 🔽 Botão de detalhes -->
-                <button class="btn" onclick="toggleDetalhes('detalhes-template3')">
+                <!-- Botão de Detalhes -->
+                <button class="btn" onclick="toggleDetalhes('detalhes-template5')">
                     <i class="fas fa-info-circle"></i> Detalhes
                 </button>
             
-                <!-- 🔽 Painel de detalhes oculto -->
-                <div id="detalhes-template3" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-                    <p><strong>Ideal para:</strong> Empresas que precisam de um site institucional elegante.</p>
-                    <p><strong>Inclui:</strong> Banner com chamada de ação, formulário de contato, integração com WhatsApp e mapa da empresa.</p>
-                    <p><strong>Diferencial:</strong> Layout corporativo profissional e moderno, pronto para conversão de clientes.</p>
+                <!-- Painel oculto com informações -->
+                <div id="detalhes-template5" style="
+                    display: none;
+                    text-align: left;
+                    margin-top: 10px;
+                    background: rgba(255,255,255,0.95);
+                    padding: 10px;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    color: #333;
+                    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+                ">
+                    <p><strong>Ideal para:</strong> Academias de bairro, centros de treino, box de crossfit e redes fitness.</p>
+                    <p><strong>Inclui:</strong> Página com horários de aulas, planos mensais, integração com WhatsApp, tour da academia, depoimentos de alunos e botão de matrícula.</p>
+                    <p><strong>Diferencial:</strong> Layout imersivo, com foco em agendamentos rápidos e destaque para áreas como musculação, funcional e HIIT. 100% responsivo e otimizado para conversão.</p>
                 </div>
+            </div>      
+            <div class="template" style="
+            background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1742926827/depositphotos_29597191-stock-illustration-vector-set-of-20-white_kvmaui.jpg');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+          ">
+            <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: white;">
+              <i class="fas fa-heart"></i> Template SexyShop
+            </h3>
+          
+            <!-- Botão de Visualizar -->
+            <button class="btn" onclick="previewTemplate('/template-preview/template6/index')">
+              <i class="fas fa-eye"></i> Visualizar
+            </button>
+          
+            <!-- Botão de Detalhes -->
+            <button class="btn" onclick="toggleDetalhes('detalhes-template6')">
+              <i class="fas fa-info-circle"></i> Detalhes
+            </button>
+          
+            <!-- Painel oculto com informações -->
+            <div id="detalhes-template6" style="
+              display: none;
+              text-align: left;
+              margin-top: 10px;
+              background: rgba(255,255,255,0.95);
+              padding: 10px;
+              border-radius: 6px;
+              font-size: 14px;
+              color: #333;
+              box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+            ">
+              <p><strong>Ideal para:</strong> Lojas sensuais, boutiques eróticas, e empreendimentos focados em prazer e bem-estar.</p>
+              <p><strong>Inclui:</strong> Página com vitrine de produtos, agendamento discreto de consultorias, integração com WhatsApp, descrições sensuais e layout atrativo.</p>
+              <p><strong>Diferencial:</strong> Visual provocante, linguagem ousada e moderna, 100% responsivo e focado em conversão com destaque para produtos e serviços de bem-estar íntimo.</p>
             </div>
+          </div>
+
+          <div class="template" style="
+          background-image: url('https://plus.unsplash.com/premium_photo-1681992176054-e2f410194b02?auto=format&fit=crop&w=1974&q=80');
+          background-size: cover;
+          background-position: center;
+          color: white;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+          margin-bottom: 30px;
+        ">
+          <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: white;">
+            <i class="fas fa-heart"></i> Template Construtora
+          </h3>
+        
+          <!-- Botão de Visualizar -->
+          <button class="btn" onclick="previewTemplate('/template-preview/template7/index')">
+            <i class="fas fa-eye"></i> Visualizar
+          </button>
+        
+          <!-- Botão de Detalhes -->
+          <button class="btn" onclick="toggleDetalhes('detalhes-template7')">
+            <i class="fas fa-info-circle"></i> Detalhes
+          </button>
+        
+          <!-- Painel oculto com informações -->
+          <div id="detalhes-template7" style="
+            display: none;
+            text-align: left;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+          ">
+            <p><strong>Ideal para:</strong> Lojas sensuais, boutiques eróticas, e empreendimentos focados em prazer e bem-estar.</p>
+            <p><strong>Inclui:</strong> Página com vitrine de produtos, agendamento discreto de consultorias, integração com WhatsApp, descrições sensuais e layout atrativo.</p>
+            <p><strong>Diferencial:</strong> Visual provocante, linguagem ousada e moderna, 100% responsivo e focado em conversão com destaque para produtos e serviços de bem-estar íntimo.</p>
+          </div>
+        </div>
+             
+                    <div class="template premium-locked" style="width: 100%; max-width: 350px; margin: auto;">
+                        <h3 style="font-size: 1.3em;">
+                          <i class="fas fa-lock"></i> Template Empresarial
+                        </h3>
+                      
+                        <!-- 🔘 Botão premium ou visualizar -->
+                        {% if is_premium %}
+                          <button class="btn" onclick="previewTemplate('/template/template3')">
+                            <i class="fas fa-eye"></i> Ver Template Premium
+                          </button>
+                        {% else %}
+                          <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                            <i class="fas fa-credit-card"></i> Adquirir Premium
+                          </button>
+                          <div style="text-align: center; margin: 20px 0;">
+                            <a href="/preco" class="btn buy-premium" style="font-size: 16px; padding: 12px 18px; display: inline-block;">
+                              <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
+                            </a>
+                          </div>
+                        {% endif %}
+                      
+                        <!-- 🔽 Botão de detalhes -->
+                        <button class="btn" onclick="toggleDetalhes('detalhes-template3')">
+                          <i class="fas fa-info-circle"></i> Detalhes
+                        </button>
+                      
+                        <!-- 🔽 Painel de detalhes oculto -->
+                        <div id="detalhes-template3" style="
+                          display: none;
+                          text-align: left;
+                          margin-top: 10px;
+                          background: #fff;
+                          padding: 10px;
+                          border-radius: 6px;
+                          font-size: 14px;
+                          color: #333;
+                          box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+                        ">
+                          <p><strong>Ideal para:</strong> Empresas que precisam de um site institucional elegante.</p>
+                          <p><strong>Inclui:</strong> Banner com chamada de ação, formulário de contato, integração com WhatsApp e mapa da empresa.</p>
+                          <p><strong>Diferencial:</strong> Layout corporativo profissional e moderno, pronto para conversão de clientes.</p>
+                        </div>
+                      </div>
             
-            <div class="template premium-locked">
-                <h3><i class="fas fa-lock"></i> Template Criativo</h3>
-            
-                {% if is_premium %}
-                    <button class="btn" onclick="previewTemplate('/template/template4')">
-                        <i class="fas fa-eye"></i> Ver Template Premium
-                    </button>
-                {% else %}
-                    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                        <i class="fas fa-credit-card"></i> Adquirir Premium
-                    </button>
-                    <div style="text-align: center; margin: 30px auto;">
-                        <a href="/preco" class="btn buy-premium" style="font-size: 20px; padding: 15px 25px;">
-                            <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
-                        </a>
-                    </div>
-                {% endif %}
-            
-                <!-- 🔽 Botão de detalhes -->
-                <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
-                    <i class="fas fa-info-circle"></i> Detalhes
-                </button>
-            
-                <!-- 🔽 Painel de detalhes oculto -->
-                <div id="detalhes-template4" style="display: none; text-align: left; margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; font-size: 14px; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-                    <p><strong>Ideal para:</strong> Artistas, designers, freelancers e criadores de conteúdo.</p>
-                    <p><strong>Inclui:</strong> Seção de portfólio, blog pessoal, botão flutuante de contato e design ousado.</p>
-                    <p><strong>Diferencial:</strong> Visual criativo com animações suaves e layout disruptivo.</p>
-                </div>
-            </div>            
+                      <div class="template premium-locked" style="width: 100%; max-width: 350px; margin: auto;">
+                        <h3 style="font-size: 1.3em;">
+                          <i class="fas fa-lock"></i> Template Criativo
+                        </h3>
+                      
+                        {% if is_premium %}
+                          <button class="btn" onclick="previewTemplate('/template/template4')">
+                            <i class="fas fa-eye"></i> Ver Template Premium
+                          </button>
+                        {% else %}
+                          <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+                            <i class="fas fa-credit-card"></i> Adquirir Premium
+                          </button>
+                          <div style="text-align: center; margin: 20px 0;">
+                            <a href="/preco" class="btn buy-premium" style="font-size: 16px; padding: 12px 18px;">
+                              <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
+                            </a>
+                          </div>
+                        {% endif %}
+                      
+                        <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
+                          <i class="fas fa-info-circle"></i> Detalhes
+                        </button>
+                      
+                        <div id="detalhes-template4" style="
+                          display: none;
+                          text-align: left;
+                          margin-top: 10px;
+                          background: #fff;
+                          padding: 10px;
+                          border-radius: 6px;
+                          font-size: 14px;
+                          color: #333;
+                          box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+                        ">
+                          <p><strong>Ideal para:</strong> Artistas, designers, freelancers e criadores de conteúdo.</p>
+                          <p><strong>Inclui:</strong> Seção de portfólio, blog pessoal, botão flutuante de contato e design ousado.</p>
+                          <p><strong>Diferencial:</strong> Visual criativo com animações suaves e layout disruptivo.</p>
+                        </div>
+                      </div>
+                               
         </section>
 
         <!-- Modal para pré-visualização -->

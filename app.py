@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify,make_response
 import os
 import psycopg2
 import bcrypt
@@ -8,6 +8,7 @@ from flask_cors import CORS
 import logging
 import re
 from bs4 import BeautifulSoup
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -168,11 +169,10 @@ def logout():
     session.clear()  # Remove todas as informações da sessão
     return jsonify({"message": "Usuário deslogado com sucesso"}), 200
 
-import uuid
-from flask import make_response
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    erro = None
+
     if request.method == 'POST':
         email = request.form['email']
         senha = request.form['senha']
@@ -191,32 +191,26 @@ def login():
                 session['user_name'] = user[1]
                 session['is_premium'] = user[3]
 
-                # 🔐 Gerar session_token único
                 session_token = str(uuid.uuid4())
-
-                # Salvar no banco
                 cur.execute("UPDATE users2 SET session_token = %s WHERE id = %s", (session_token, user_id))
                 conn.commit()
-                print(f"Atualizando session_token para o user_id {user_id}: {session_token}")
 
-                # 🔁 Criar resposta com cookie
                 resp = make_response(redirect(url_for('home')))
                 resp.set_cookie('session_token', session_token, samesite='None', secure=True)
 
                 cur.close()
                 conn.close()
                 return resp
-
             else:
-                cur.close()
-                conn.close()
-                return "Usuário ou senha incorretos", 401
+                erro = "Usuário ou senha incorretos"
         else:
-            cur.close()
-            conn.close()
-            return "Usuário não encontrado", 404
+            erro = "Usuário não encontrado"
 
-    return render_template('login.html')
+        cur.close()
+        conn.close()
+
+    return render_template('login.html', erro=erro)
+
 
 
 
@@ -825,7 +819,7 @@ def extrair_html_css_do_template(html):
 ## Rota para exibir os templates dinâmicos
 @app.route('/template/<template_name>')
 def show_template(template_name):
-    premium_templates = ["template5", "template6"]
+    premium_templates = ["template10", "template11"]
 
     # Bloqueia templates premium se o usuário não for pagante
     if template_name in premium_templates and not session.get('is_premium'):

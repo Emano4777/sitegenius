@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sexy Shop - Desejos & Prazer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #fbe7f1;
+    }
+    .navbar {
+      background-color: #ff4b91;
+      display: flex;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      margin: 0 1rem;
+      font-weight: bold;
+    }
+    .hero {
+      text-align: center;
+      padding: 3rem 1rem;
+      background-color: #ffb6c1;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      text-align: center;
+      margin: 2rem 0 1rem;
+      color: #d6336c;
+    }
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      padding: 2rem;
+    }
+    .product {
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .product img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+    .product h3 {
+      margin: 1rem 0;
+      color: #333;
+    }
+    .agendamento {
+      background-color: #fff0f5;
+      padding: 2rem;
+      text-align: center;
+    }
+    .agendamento form {
+      display: flex;
+      flex-direction: column;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .agendamento input, .agendamento textarea, .agendamento button {
+      margin: 0.5rem 0;
+      padding: 0.7rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .agendamento button {
+      background-color: #ff4b91;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="/template/index"><i class="fas fa-home"></i> Início</a>
+    <a href="/template/sobre"><i class="fas fa-dumbbell"></i> Sobre</a>
+  </nav>
+
+  <section class="hero">
+    <h1>Bem-vindo ao Mundo do Prazer</h1>
+    <p>Descubra produtos que despertam todos os seus sentidos</p>
+  </section>
+
+  <h2 class="section-title">Nossos Produtos</h2>
+  <section class="products">
+    <div class="product">
+      <img src="https://plus.unsplash.com/premium_photo-1726676074721-ec567dd0a61c?q=80&w=1170&auto=format&fit=crop" alt="Produto 1">
+      <h3>Kit Sensual Completo</h3>
+    </div>
+    <div class="product">
+      <img src="https://images.unsplash.com/photo-1598719830762-055a6665a463?q=80&w=1287&auto=format&fit=crop" alt="Produto 2">
+      <h3>Calcinha sexy</h3>
+    </div>
+    <div class="product">
+      <img src="https://images.unsplash.com/photo-1600493032840-dad658cb90e6?q=80&w=2010&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Produto 3">
+      <h3>Massageador Relaxante</h3>
+    </div>
+  </section>
+  <h2 class="section-title">Agende um Atendimento Especial</h2>
+  <section class="agendamento">
+    <form action="https://formsubmit.co/email@example.com" method="POST">
+      <input type="text" name="nome" placeholder="Seu nome" required>
+      <input type="email" name="email" placeholder="Seu e-mail" required>
+      <input type="tel" name="telefone" placeholder="Seu telefone" required>
+      <textarea name="mensagem" placeholder="Mensagem ou serviço desejado"></textarea>
+      <button type="submit">Agendar</button>
+    </form>
+  </section>
+
+</body>
+</html>

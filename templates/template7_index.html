@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Construtora Concretiza+</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f4;
+    }
+    .navbar {
+      background-color: #1f2937;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+    .navbar a {
+      color: #ffffff;
+      text-decoration: none;
+      margin: 0 1rem;
+      font-weight: bold;
+    }
+    .navbar i {
+      margin-right: 6px;
+    }
+    .hero {
+      background-image: url('https://plus.unsplash.com/premium_photo-1681992176054-e2f410194b02?q=80&w=1974&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      color: white;
+      text-align: center;
+      padding: 5rem 2rem;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+    }
+    .hero p {
+      font-size: 1.3rem;
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    }
+    .section {
+      padding: 2rem;
+      text-align: center;
+    }
+    .section h2 {
+      color: #1f2937;
+      margin-bottom: 1rem;
+    }
+    .galeria {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .galeria img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .orcamento-form {
+      background-color: #e5e7eb;
+      padding: 2rem;
+      max-width: 600px;
+      margin: 2rem auto;
+      border-radius: 10px;
+    }
+    .orcamento-form form {
+      display: flex;
+      flex-direction: column;
+    }
+    .orcamento-form input,
+    .orcamento-form textarea,
+    .orcamento-form button {
+      margin: 0.5rem 0;
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    .orcamento-form button {
+      background-color: #1f2937;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div>
+      <a href="/template/index"><i class="fas fa-home"></i> Início</a>
+      <a href="/template/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <h1>Construindo com Excelência</h1>
+    <p>Projetos residenciais, comerciais e industriais com qualidade garantida.</p>
+  </section>
+  <section class="section">
+    <h2>Galeria de Obras</h2>
+    <div class="galeria">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1742928431/Mestre-de-Obras-Quais-as-fun%C3%A7%C3%B5es-do-profissional-que-atua-nessa-%C3%A1rea-scaled_nipg8r.jpg" alt="Obra 1">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1742928676/19150824_48545_GD_kjss7h.jpg" alt="Obra 2">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1742928681/gestao-de-obras-na-construcao-civil_elnnea.jpg" alt="Obra 3">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1742928533/construcao-industrial-1024x540_w7ipoy.webp" alt="Obra 4">
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Solicite um Orçamento</h2>
+    <div class="orcamento-form">
+      <form action="https://formsubmit.co/email@example.com" method="POST">
+        <input type="text" name="nome" placeholder="Seu nome" required>
+        <input type="email" name="email" placeholder="Seu e-mail" required>
+        <input type="tel" name="telefone" placeholder="Seu telefone" required>
+        <textarea name="mensagem" placeholder="Descreva seu projeto..." rows="5"></textarea>
+        <button type="submit">Enviar Orçamento</button>
+      </form>
+    </div>
+  </section>
+</body>
+</html>

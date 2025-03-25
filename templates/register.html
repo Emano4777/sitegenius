@@ -1,83 +1,166 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro - Site Genius</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro - SiteGenius</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(to right, #fce3ec, #e0f7fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .register-container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .register-container i {
+      font-size: 3rem;
+      color: #ff9800;
+      margin-bottom: 1rem;
+    }
+    h2 {
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 0.8rem;
+      margin-top: 1rem;
+      background-color: #1f2937;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .error {
+      color: #d32f2f;
+      background-color: #fdecea;
+      padding: 0.7rem;
+      border: 1px solid #f5c6cb;
+      border-radius: 6px;
+      margin-top: 1rem;
+    }
+    .footer-text {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: #777;
+    }
+    .register-container a {
+      display: block;
+      margin-top: 1rem;
+      text-decoration: none;
+      color: #1f2937;
+      font-weight: bold;
+    }
+    .register-container a:hover {
+      text-decoration: underline;
+    }
 
-        .register-container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            text-align: center;
-        }
+    .login-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
 
-        .register-container h2 {
-            color: #1E2A38;
-            margin-bottom: 20px;
-        }
+.login-header i {
+  font-size: 2rem;
+  color: #ff9800;
+}
 
-        .register-container input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+.login-header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
+}
 
-        .register-container button {
-            width: 100%;
-            padding: 10px;
-            background: #1E2A38;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
 
-        .register-container button:hover {
-            background: #16202b;
-        }
+@media (max-width: 480px) {
+  .register-container {
+    padding: 1.5rem;
+    margin: 1rem;
+    width: 90%;
+  }
 
-        .register-container a {
-            display: block;
-            margin-top: 15px;
-            text-decoration: none;
-            color: #1E2A38;
-            font-weight: bold;
-        }
+  .login-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 
-        .register-container a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  .login-header h2 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .login-header i {
+    font-size: 2.2rem;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  button {
+    font-size: 1rem;
+  }
+}
+  </style>
 </head>
 <body>
-    <div class="register-container">
-        <h2><i class="fa-solid fa-user-plus"></i> Criar Conta</h2>
-        <form action="/register" method="post">
-            <input type="text" name="nome" placeholder="Nome" required>
-            <input type="email" name="email" placeholder="Email" required>
-            <input type="password" name="senha" placeholder="Senha" required>
-            <button type="submit"><i class="fa-solid fa-user-check"></i> Cadastrar</button>
-        </form>
-        <a href="/login">Já tem conta? Faça login</a>
+
+  <div class="register-container">
+    <div class="login-header">
+    <i class="fa-solid fa-user-plus"></i>
+    <h2>Criar Conta no SiteGenius</h2>
+</div>
+    <form method="POST">
+      <input type="text" name="nome" placeholder="Nome completo" required>
+      <input type="email" name="email" placeholder="E-mail" required>
+      <input type="password" name="senha" placeholder="Senha" required>
+      <button type="submit">
+        <i class="fa-solid fa-user-check" style="font-size: 0.9rem; margin-right: 9px;"></i> 
+        Cadastrar
+      </button>
+
+      {% if erro %}
+        <div class="error">
+          {{ erro }}
+        </div>
+      {% endif %}
+    </form>
+
+    <a href="/login">Já tem conta? Faça login</a>
+
+    <div class="footer-text">
+      © 2025 SiteGenius · Todos os direitos reservados
     </div>
+  </div>
+
 </body>
 </html>
