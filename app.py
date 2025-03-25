@@ -240,6 +240,8 @@ def templates():
 def visualizar_template(template_name):
     return render_template(f"{template_name}.html")
 
+
+
 @app.route('/usar-template/<template_name>', methods=['POST'])
 def usar_template(template_name):
     user_id = session.get('user_id')
@@ -294,6 +296,9 @@ def usar_template(template_name):
     template_id = None
 
     for idx, (page_name, html_content, css_content) in enumerate(paginas):
+        # 🔁 Substitui placeholder pelo subdomínio real
+        html_content = html_content.replace("{{sub}}", subdomain)
+
         # Monta HTML completo com CSS embutido
         html_completo = f"""<!DOCTYPE html>
 <html lang="pt-BR">
@@ -316,7 +321,7 @@ def usar_template(template_name):
         if idx == 0:
             template_id = cur.fetchone()[0]
         else:
-            cur.fetchone()  # só consome o retorno
+            cur.fetchone()  # consome o retorno
 
     conn.commit()
     cur.close()
@@ -328,7 +333,6 @@ def usar_template(template_name):
         "template_id": template_id,
         "page_name": 'index'
     })
-
 
 
 @app.route('/template-preview/<template_name>/<page>')
