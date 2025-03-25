@@ -630,6 +630,36 @@ iframe {
     
 </head>
 <body>
+   <!-- Botão flutuante de suporte com ícone do WhatsApp -->
+<!-- Botão flutuante com ícone de mulher de suporte -->
+<a href="https://wa.me/5517991436759" target="_blank" 
+style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #25d366;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  z-index: 999;
+  transition: transform 0.3s ease;
+"
+onmouseover="this.style.transform='scale(1.05)'"
+onmouseout="this.style.transform='scale(1)'"
+>
+  <img src="https://cdn-icons-png.flaticon.com/512/4140/4140047.png" 
+       alt="Suporte Mulher" 
+       style="width: 22px; height: 22px; border-radius: 50%;" />
+  Dúvidas? Fale com um especialista
+</a>
+
     <header>    
         <div class="container">
             <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
@@ -701,56 +731,63 @@ iframe {
     
         <section class="benefits" style="margin-top: 40px;">
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px;">
-                <div class="template" style="max-width: 320px;">
-                    <h3><i class="fas fa-paint-brush"></i> Templates Profissionais</h3>
-                    <p>Acesse designs modernos, responsivos e prontos para converter visitantes em clientes.</p>
-                </div>
-                <div class="template" style="max-width: 320px;">
-                    <h3><i class="fas fa-bolt"></i> Edição Avançada</h3>
-                    <p>Recursos exclusivos de edição para criar páginas únicas com facilidade.</p>
-                </div>
-                <div class="template" style="max-width: 320px;">
-                    <h3><i class="fas fa-headset"></i> Suporte Prioritário</h3>
-                    <p>Atendimento rápido e dedicado para usuários premium.</p>
-                </div>
+              <div class="template" style="max-width: 320px;">
+                <h3><i class="fas fa-paint-brush"></i> Templates Profissionais</h3>
+                <p>Acesse designs modernos, responsivos e segmentados por nicho para destacar seu negócio.</p>
+              </div>
+              <div class="template" style="max-width: 320px;">
+                <h3><i class="fas fa-magic"></i> Edição Visual Completa</h3>
+                <p>Edite textos, imagens e estrutura com liberdade — sem precisar programar.</p>
+              </div>
+              <div class="template" style="max-width: 320px;">
+                <h3><i class="fas fa-headset"></i> Suporte Diferenciado</h3>
+                <p>Tenha acesso ao nosso time via e-mail, WhatsApp ou até com programadores dedicados (Master).</p>
+              </div>
             </div>
-        </section>
-    
-        <section class="plans" style="margin-top: 60px;">
-            <h2 style="text-align: center;">📦 Planos Premium</h2>
+          </section>
+          
+          <section class="plans" style="margin-top: 60px;">
+            <h2 style="text-align: center;">💎 Planos Premium</h2>
             <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-top: 30px;">
-    
-                <div class="template" style="max-width: 300px; background: #e9f5ff;">
-                    <h3>Plano Mensal</h3>
-                    <p><strong>Ainda não disponível</strong></p>
-                    <ul style="text-align: left;">
-                        <li>✔ Acesso a todos os templates premium</li>
-                        <li>✔ Suporte prioritário</li>
-                        <li>✔ Atualizações frequentes</li>
-                    </ul>
-                    <a href="/generate-payment?plano=mensal" class="btn buy-premium" style="margin-top: 10px;">Assinar</a>
-                </div>
-    
-                <div class="template" style="max-width: 300px; background: #fff2cc;">
-                    <h3>Plano Trimestral</h3>
-                    <p><strong>Ainda não disponível</strong></p>
-                    <ul style="text-align: left;">
-                        <li>✔ Tudo do plano mensal</li>
-                        <li>✔ Economia de 15%</li>
-                    </ul>
-                    <a href="/generate-payment?plano=trimestral" class="btn buy-premium" style="margin-top: 10px;">Assinar</a>
-                </div>
-    
-                <div class="template" style="max-width: 300px; background: #d4edda;">
-                    <h3>Plano Anual</h3>
-                    <p><strong>Ainda não disponível</strong></p>
-                    <ul style="text-align: left;">
-                        <li>✔ Tudo do plano trimestral</li>
-                        <li>✔ Economia de 25%</li>
-                        <li>✔ Suporte técnico personalizado</li>
-                    </ul>
-                    <a href="/generate-payment?plano=anual" class="btn buy-premium" style="margin-top: 10px;">Assinar</a>
-                </div>
+          
+              <div class="template" style="max-width: 300px; background: #e3f2fd; border-left: 5px solid #2196f3;">
+                <h3><i class="fas fa-star"></i> Premium Essential</h3>
+                <ul style="text-align: left;">
+                  <li>✔ Acesso a todos os templates premium <strong>exceto com IA</strong></li>
+                  <li>✔ Criação de <strong>2 páginas extras</strong></li>
+                  <li>✔ Edição de imagens liberada</li>
+                  <li>✔ Liberação para criação de mais de 1 template</li>
+                  <li>✔ Suporte via e-mail</li>
+                </ul>
+                <a href="/generate-payment?plano=essential" class="btn buy-premium" style="margin-top: 10px;">Assinar Essential</a>
+              </div>
+          
+              <div class="template" style="max-width: 300px; background: #fff3cd; border-left: 5px solid #ffc107;">
+                <h3><i class="fas fa-gem"></i> Premium Moderado</h3>
+                <ul style="text-align: left;">
+                  <li>✔ Tudo do plano Essential</li>
+                  <li>✔ Suporte via WhatsApp + e-mail</li>
+                  <li>✔ Domínio próprio incluso(por exemplo seusite.com.br)</li>
+                  <li>✔ Criação de páginas ilimitadas</li>
+                  <li>✔ Programador à disposição</li>
+                </ul>
+                <a href="/generate-payment?plano=moderado" class="btn buy-premium" style="margin-top: 10px;">Assinar Moderado</a>
+              </div>
+          
+              <div class="template" style="max-width: 300px; background: #d4edda; border-left: 5px solid #28a745;">
+                <h3><i class="fas fa-crown"></i> Premium Master</h3>
+                <ul style="text-align: left;">
+                  <li>✔ Tudo do plano Moderado</li>
+                  <li>✔ Acesso a templates com IA</li>
+                  <li>✔ Consultoria personalizada para o seu site</li>
+                  <li>✔ Prioridade máxima no suporte</li>
+                </ul>
+                <a href="/generate-payment?plano=master" class="btn buy-premium" style="margin-top: 10px;">Assinar Master</a>
+              </div>
+          
+            </div>
+          </section>
+          
     
             </div>
         </section>

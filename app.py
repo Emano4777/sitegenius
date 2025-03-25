@@ -552,23 +552,6 @@ def exibir_pagina(subdomain, page_name):
 
     return result[0]
 
-
-@app.route('/<subdomain>')
-def exibir_site(subdomain):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        SELECT page_name FROM user_templates 
-        WHERE subdomain=%s
-    """, (subdomain,))
-    
-    pages = [p[0] for p in cur.fetchall()]
-    cur.close()
-    conn.close()
-
-    return render_template('base.html', subdomain=subdomain, pages=pages)
-
-
 @app.route('/<subdomain>/<page_name>')
 def site_usuario(subdomain, page_name):
     conn = get_db_connection()

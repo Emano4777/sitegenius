@@ -30,7 +30,35 @@ footer .container {
     margin: auto;
     text-align: center;
 }
+@media (max-width: 768px) {
+  .template-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
+  .template {
+    width: 90% !important;
+    margin-bottom: 30px;
+  }
+
+  .template h3 {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .btn {
+    width: 100%;
+    margin-top: 10px;
+    justify-content: center;
+  }
+
+  .banner-rotativo {
+    text-align: center;
+    font-size: 16px;
+    padding: 12px;
+  }
+}
 /* Títulos das seções com linha sutil */
 .templates h2 {
     font-size: 24px;
@@ -743,7 +771,37 @@ iframe {
                         <p><strong>Inclui:</strong> Vitrine com produtos, layout responsivo, seção de destaques e depoimentos de clientes.</p>
                         <p><strong>Diferencial:</strong> Visual moderno, navegação intuitiva e fácil personalização para destacar sua coleção.</p>
                     </div>
-                </div>           
+                </div>       
+                <div class="template" style="
+                background-image: url('https://images.unsplash.com/photo-1549271568-e87e07c5406b?auto=format&fit=crop&w=1600&q=80');
+                background-size: cover;
+                background-position: center;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                margin-bottom: 30px;
+            ">
+                        <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: #f8f5f5;">
+                            <i class="fas fa-scissors"></i> Template Barbearia
+                        </h3>
+                        <!-- Botão de Visualizar -->
+                        <button class="btn" onclick="previewTemplate('/template-preview/template3/index')">
+                            <i class="fas fa-eye"></i> Visualizar
+                        </button>
+                    
+                        <!-- Botão de Detalhes -->
+                        <button class="btn" onclick="toggleDetalhes('detalhes-template3')">
+                            <i class="fas fa-info-circle"></i> Detalhes
+                        </button>
+                    
+                        <!-- Painel oculto com informações -->
+                        <div id="detalhes-template3" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                            <p><strong>Ideal para:</strong> Barbearias, salões masculinos e estúdios de corte.</p>
+                            <p><strong>Inclui:</strong> Layout com horários, serviços oferecidos e botão flutuante para agendamento via WhatsApp.</p>
+                            <p><strong>Diferencial:</strong> Estilo elegante, direto ao ponto e adaptado para dispositivos móveis. Destaque para fotos, equipe e identidade da barbearia.</p>
+                        </div>
+                    </div>         
             <div class="template premium-locked">
                 <h3><i class="fas fa-lock"></i> Template Empresarial</h3>
             
