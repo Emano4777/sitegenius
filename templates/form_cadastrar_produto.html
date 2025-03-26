@@ -1,4 +1,9 @@
-<style>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastrar Produto</title>
+  <style>
     body {
       background: #f8f9fa;
       font-family: sans-serif;
@@ -40,7 +45,8 @@
       margin-bottom: 1rem;
     }
   </style>
-  
+</head>
+<body>
   <div class="container">
     <h2>Cadastrar Produto</h2>
     <form method="POST" onsubmit="return validarForm()">
@@ -52,7 +58,7 @@
       <button type="submit">Cadastrar Produto</button>
     </form>
   </div>
-  
+
   <script>
     function validarForm() {
       const preco = parseFloat(document.querySelector('[name="preco"]').value);
@@ -62,7 +68,7 @@
       }
       return true;
     }
-  
+
     function previewImagem(url) {
       const img = document.getElementById('preview');
       if (url.trim()) {
@@ -73,3 +79,5 @@
       }
     }
   </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Administrativo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #343a40;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 5px solid #007bff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      background: #e9ecef;
+    }
+
+    .card h3 {
+      margin-top: 0;
+    }
+
+    .card a {
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 1rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Painel Admin</h1>
+    <a href="/" style="color:white; text-decoration:none;">🏠 Voltar ao Site</a>
+  </header>
+
+  <div class="container">
+    <div class="menu">
+      <div class="card">
+        <h3>🧾 Produtos</h3>
+        <p>Gerencie os produtos cadastrados por loja.</p>
+        <a href="/admin/produtos">Ir para Produtos</a>
+      </div>
+
+      <div class="card">
+        <h3>💳 Integração Mercado Pago</h3>
+        <p>Configure sua chave pública e secreta.</p>
+        <a href="/configurar-mercado-pago">Ir para Configuração</a>
+      </div>
+
+      <!-- Adicione outros cards aqui conforme crescer -->
+      <!-- Exemplo: Pedidos, Clientes, Templates, Relatórios... -->
+    </div>
+  </div>
+
+  <footer>
+    © 2025 Painel Administrativo - Sistema SiteGenius
+  </footer>
+</body>
+</html>

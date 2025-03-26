@@ -9,6 +9,8 @@ import logging
 import re
 from bs4 import BeautifulSoup
 from werkzeug.security import check_password_hash
+from functools import wraps
+from flask import session, redirect, url_for, jsonify, request
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -34,7 +36,25 @@ MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a7
 
 def get_db_connection():
     return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
+def login_required_admin(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            if request.path.startswith('/api'):
+                return jsonify({'success': False, 'message': 'Admin não autenticado'}), 401
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
+def login_required_cliente(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'cliente_id' not in session:
+            if request.path.startswith('/api'):
+                return jsonify({'success': False, 'message': 'Cliente não autenticado'}), 401
+            return redirect(url_for('login_cliente', subdomain=kwargs.get('subdomain', '')))
+        return f(*args, **kwargs)
+    return decorated_function
 # Rota para buscar todos os produtos
 @app.route('/api/produtos')
 def listar_produtos():
@@ -58,28 +78,6 @@ def listar_produtos():
 
 
 
-@app.route('/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
-def adicionar_carrinho(produto_id):
-    user_id = session.get('user_id')
-    if not user_id:
-        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
-
-    data = request.get_json()
-    quantidade = data.get('quantidade', 1)
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute('''
-        INSERT INTO carrinho (produto_id, quantidade, user_id)
-        VALUES (%s, %s, %s)
-    ''', (produto_id, quantidade, user_id))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({'success': True})
 
 @app.route('/api/quem-sou-eu')
 def quem_sou_eu():
@@ -196,6 +194,10 @@ def listar_produtos_por_loja(subdomain):
     return jsonify(produtos)
 
 
+@app.route('/<subdomain>/api/check-login-cliente')
+def check_login_cliente(subdomain):
+    logado = 'cliente_id' in session
+    return jsonify({'logado': logado})
 
 
 
@@ -207,6 +209,7 @@ def logout_cliente(subdomain):
 
 @app.route('/<subdomain>/loja')
 def loja_cliente(subdomain):
+    print("Sessão atual:", dict(session))
     conn = get_db_connection()
     cur = conn.cursor()
     
@@ -228,6 +231,7 @@ def loja_cliente(subdomain):
 
 
 @app.route('/<subdomain>/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
+@login_required_cliente
 def adicionar_carrinho_cliente(subdomain, produto_id):
     cliente_id = session.get('cliente_id')
     if not cliente_id:
@@ -238,15 +242,35 @@ def adicionar_carrinho_cliente(subdomain, produto_id):
 
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # 🔎 Busca a loja correta pelo subdomínio e cliente vinculado a ela
+    cur.execute("""
+        SELECT ut.id
+        FROM user_templates ut
+        JOIN clientes_loja cl ON cl.loja_id = ut.id
+        WHERE ut.subdomain = %s AND cl.id = %s
+        LIMIT 1
+    """, (subdomain, cliente_id))
+    
+    loja = cur.fetchone()
+
+    if not loja:
+        cur.close(); conn.close()
+        return jsonify({'success': False, 'message': 'Loja não encontrada ou cliente não pertence a essa loja'}), 404
+
+    loja_id = loja[0]
+
+    # 🛒 Insere no carrinho com cliente_id e loja_id corretos
     cur.execute('''
-        INSERT INTO carrinho (produto_id, quantidade, cliente_id)
-        VALUES (%s, %s, %s)
-    ''', (produto_id, quantidade, cliente_id))
+        INSERT INTO carrinho (produto_id, quantidade, cliente_id, loja_id)
+        VALUES (%s, %s, %s, %s)
+    ''', (produto_id, quantidade, cliente_id, loja_id))
 
     conn.commit()
     cur.close(); conn.close()
 
     return jsonify({'success': True})
+
 
 @app.route('/<subdomain>/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
 def adicionar_item_carrinho(subdomain, produto_id):
@@ -403,6 +427,12 @@ def listar_carrinho_cliente(subdomain):
     return jsonify(itens)
 
 
+@app.route('/admin')
+def admin_dashboard():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    return render_template('admin_dashboard.html')
 
 
 @app.route('/api/carrinho')
@@ -594,8 +624,8 @@ def pegar_token_mercado_pago():
 
     return jsonify({'success': True, 'token': row[0]})
 
-@app.route('/api/carrinho/remover/<int:item_id>', methods=['DELETE'])
-def remover_item_carrinho(item_id):
+@app.route('/<subdomain>/api/carrinho/remover/<int:item_id>', methods=['DELETE'])
+def remover_item_carrinho(subdomain, item_id):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('DELETE FROM carrinho WHERE id = %s', (item_id,))
@@ -603,6 +633,7 @@ def remover_item_carrinho(item_id):
     cur.close()
     conn.close()
     return jsonify({'status': 'ok', 'mensagem': 'Item removido do carrinho'})
+
 
 
 @app.route('/api/carrinho/atualizar/<int:item_id>', methods=['PUT'])
@@ -657,31 +688,107 @@ def cadastrar_produto(subdomain):
 
 @app.route('/admin/produtos')
 def admin_produtos():
+    if 'user_id' not in session:
+        return redirect('/login')
+
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT id, nome, preco FROM produtos')
-    produtos = cur.fetchall()
-    cur.close()
-    conn.close()
 
-    html = '<h2>Produtos Cadastrados</h2><ul>'
-    for p in produtos:
-        html += f"<li>{p[1]} - R$ {p[2]:.2f} \
-            <a href='/admin/editar/{p[0]}'>Editar</a> | \
-            <a href='/admin/excluir/{p[0]}'>Excluir</a></li>"
-    html += '</ul><br><a href=\"/admin/cadastrar-produto\">+ Novo Produto</a>'
+    # Busca produtos com subdomínio da loja do usuário
+    cur.execute("""
+        SELECT p.id, p.nome, p.preco, u.subdomain
+        FROM produtos p
+        JOIN user_templates u ON p.loja_id = u.id
+        WHERE u.user_id = %s
+    """, (session['user_id'],))
+    
+    produtos = cur.fetchall()
+
+    # Busca todas as lojas do usuário (caso não tenha produto ainda)
+    cur.execute("""
+        SELECT subdomain FROM user_templates
+        WHERE user_id = %s
+    """, (session['user_id'],))
+    lojas = cur.fetchall()
+
+    cur.close(); conn.close()
+
+    html = """
+    <style>
+      body { font-family: Arial; background: #f4f4f4; padding: 20px; }
+      table { width: 100%; background: white; border-collapse: collapse; }
+      th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+      th { background: #007bff; color: white; }
+      a.btn { padding: 6px 12px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-right: 5px; }
+      a.btn-danger { background: #dc3545; }
+      .top-bar { margin-bottom: 20px; }
+    </style>
+
+    <div class="top-bar">
+      <a href="/admin" class="btn">🏠 Voltar ao Painel</a>
+    </div>
+
+    <h2>Produtos Cadastrados</h2>
+    """
+
+    if produtos:
+        html += """
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Preço</th>
+              <th>Loja (Subdomínio)</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+        """
+        for p in produtos:
+            html += f"""
+            <tr>
+              <td>{p[1]}</td>
+              <td>R$ {p[2]:.2f}</td>
+              <td>{p[3]}</td>
+              <td>
+                <a href='/admin/editar/{p[0]}' class='btn'>Editar</a>
+                <a href='/admin/excluir/{p[0]}' class='btn btn-danger'>Excluir</a>
+                <a href='/{p[3]}/admin/cadastrar-produto' class='btn'>+ Produto</a>
+              </td>
+            </tr>
+            """
+        html += "</tbody></table>"
+    else:
+        html += "<p>⚠️ Nenhum produto cadastrado ainda.</p>"
+
+    # Mostra o botão de +Produto por loja (sempre aparece)
+    if lojas:
+        html += "<h3>➕ Cadastrar Produto por Loja:</h3>"
+        for loja in lojas:
+            html += f"<a href='/{loja[0]}/admin/cadastrar-produto' class='btn'>Cadastrar para {loja[0]}</a>"
+
     return html
+
+
 
 
 @app.route('/admin/excluir/<int:id>')
 def excluir_produto(id):
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Verifica se está no carrinho
+    cur.execute('SELECT 1 FROM carrinho WHERE produto_id = %s LIMIT 1', (id,))
+    if cur.fetchone():
+        cur.close(); conn.close()
+        return "⚠️ Não é possível excluir: produto está em um carrinho.", 400
+
     cur.execute('DELETE FROM produtos WHERE id = %s', (id,))
     conn.commit()
-    cur.close()
-    conn.close()
+    cur.close(); conn.close()
+
     return redirect('/admin/produtos')
+
 
 
 @app.route('/admin/editar/<int:id>', methods=['GET', 'POST'])
