@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Loja Virtual</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+
+    header {
+      background-color: #343a40;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+
+    .produto {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .produto h3 {
+      margin: 0 0 0.5rem 0;
+    }
+
+    .produto button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .carrinho-item {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 5px solid #007bff;
+    }
+
+    .carrinho-item button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.8rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    footer {
+      background-color: #eee;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 3rem;
+    }
+
+    .finalizar {
+      background-color: #ffc107;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 30px;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      display: block;
+      margin: 2rem auto;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Minha Loja</h1>
+    <nav>
+      <a href="#">Produtos</a>
+      <a href="#" onclick="mostrarCarrinho()">Carrinho</a>
+      <a id="link-login">Login</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h2>Produtos em Destaque</h2>
+    <div id="produtos"></div>
+
+    <div id="carrinho" style="display:none">
+      <h2>🛒 Seu Carrinho</h2>
+      <div id="lista-carrinho"></div>
+      <p id="total"></p>
+      <button id="btn-finalizar" class="whatsapp-button">
+        <i class="fas fa-credit-card"></i> Finalizar Pagamento
+      </button>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Minha Loja Virtual - Todos os direitos reservados</p>
+  </footer>
+
+  <script>
+    const sub = window.location.pathname.split('/')[1];
+
+    // Redireciona login para cliente
+    document.getElementById('link-login').href = `/${sub}/login-cliente`;
+  </script>
+
+  <script>
+    document.getElementById('btn-finalizar').addEventListener('click', async () => {
+      const res = await fetch(`/${sub}/api/mercado-pago/pagamento`, { method: 'POST' });
+      const data = await res.json();
+
+      if (!data.success) {
+        alert(data.message);
+        return;
+      }
+
+      window.location.href = data.link;
+    });
+
+    async function carregarProdutos() {
+  const response = await fetch(`/${sub}/api/produtos`);
+  const data = await response.json();
+
+  if (!Array.isArray(data)) {
+    alert(data.error || "Erro ao carregar produtos");
+    return;
+  }
+
+  const container = document.getElementById('produtos');
+  data.forEach(prod => {
+    const div = document.createElement('div');
+    div.className = 'produto';
+    div.innerHTML = `
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <img src="${prod.imagem}" alt="${prod.nome}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px;">
+        <div>
+          <h3>${prod.nome}</h3>
+          <p>${prod.descricao || ''}</p>
+          <p><strong>R$ ${prod.preco.toFixed(2)}</strong></p>
+          <input type="number" value="1" min="1" style="width: 60px;" id="qtd-${prod.id}">
+          <button onclick="adicionarCarrinho(${prod.id})">Adicionar</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+    function adicionarCarrinho(id) {
+      const qtd = document.getElementById(`qtd-${id}`).value || 1;
+      fetch(`/${sub}/api/carrinho/adicionar/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantidade: parseInt(qtd) })
+      }).then(() => alert('Produto adicionado ao carrinho!'));
+    }
+
+    async function mostrarCarrinho() {
+      document.getElementById('carrinho').style.display = 'block';
+      const res = await fetch(`/${sub}/api/carrinho`);
+      const itens = await res.json();
+      const lista = document.getElementById('lista-carrinho');
+      const totalEl = document.getElementById('total');
+      lista.innerHTML = '';
+      let total = 0;
+
+      itens.forEach(item => {
+        total += item.preco * item.quantidade;
+        const div = document.createElement('div');
+        div.className = 'carrinho-item';
+        div.innerHTML = `
+          <div>
+            <strong>${item.nome}</strong> x ${item.quantidade}<br>
+            R$ ${(item.preco * item.quantidade).toFixed(2)}
+          </div>
+          <button onclick="removerItem(${item.id})">Remover</button>
+        `;
+        lista.appendChild(div);
+      });
+
+      totalEl.innerText = `Total: R$ ${total.toFixed(2)}`;
+    }
+
+    function removerItem(id) {
+      fetch(`/${sub}/api/carrinho/remover/${id}`, { method: 'DELETE' })
+        .then(() => mostrarCarrinho());
+    }
+
+    carregarProdutos();
+  </script>
+</body>
+</html>

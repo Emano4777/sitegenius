@@ -8,7 +8,7 @@ from flask_cors import CORS
 import logging
 import re
 from bs4 import BeautifulSoup
-
+from werkzeug.security import check_password_hash
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -34,6 +34,692 @@ MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a7
 
 def get_db_connection():
     return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
+
+# Rota para buscar todos os produtos
+@app.route('/api/produtos')
+def listar_produtos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT id, nome, descricao, preco, imagem FROM produtos')
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    produtos = []
+    for row in rows:
+        produtos.append({
+            'id': row[0],
+            'nome': row[1],
+            'descricao': row[2],
+            'preco': float(row[3]),
+            'imagem': row[4]
+        })
+    return jsonify(produtos)
+
+
+
+@app.route('/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
+def adicionar_carrinho(produto_id):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+    data = request.get_json()
+    quantidade = data.get('quantidade', 1)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute('''
+        INSERT INTO carrinho (produto_id, quantidade, user_id)
+        VALUES (%s, %s, %s)
+    ''', (produto_id, quantidade, user_id))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({'success': True})
+
+@app.route('/api/quem-sou-eu')
+def quem_sou_eu():
+    if 'user_id' in session:
+        return jsonify({'logado': True, 'tipo': 'dono', 'user_id': session['user_id']})
+    elif 'cliente_id' in session:
+        # opcional: descobrir o subdomínio da loja
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT subdomain
+            FROM user_templates
+            WHERE id = (SELECT loja_id FROM clientes_loja WHERE id = %s)
+        """, (session['cliente_id'],))
+        loja = cur.fetchone()
+        cur.close(); conn.close()
+        return jsonify({'logado': True, 'tipo': 'cliente', 'cliente_id': session['cliente_id'], 'subdomain': loja[0] if loja else None})
+    else:
+        return jsonify({'logado': False})
+
+
+@app.route('/<subdomain>/login-cliente', methods=['GET', 'POST'])
+def login_cliente(subdomain):
+    if request.method == 'POST':
+        email = request.form['email']
+        senha = request.form['senha']
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # busca o ID da loja baseado no subdomínio
+        cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+        loja = cur.fetchone()
+        if not loja:
+            cur.close(); conn.close()
+            return "Loja não encontrada", 404
+
+        loja_id = loja[0]
+
+        # busca o cliente
+        cur.execute("SELECT id, senha FROM clientes_loja WHERE email = %s AND loja_id = %s", (email, loja_id))
+        cliente = cur.fetchone()
+        cur.close(); conn.close()
+
+        if cliente and bcrypt.checkpw(senha.encode(), cliente[1].encode()):
+            session['cliente_id'] = cliente[0]
+            return redirect(f'/{subdomain}/loja')
+        else:
+            return "Credenciais inválidas", 401
+
+    return render_template('login_cliente.html', subdomain=subdomain)
+
+@app.route('/<subdomain>/cadastrar', methods=['GET', 'POST'])
+def cadastrar_cliente(subdomain):
+    if request.method == 'POST':
+        nome = request.form['nome']
+        email = request.form['email']
+        senha = request.form['senha']
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+        loja = cur.fetchone()
+        if not loja:
+            cur.close(); conn.close()
+            return "Loja não encontrada", 404
+
+        loja_id = loja[0]
+        senha_hash = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode()
+
+        cur.execute("INSERT INTO clientes_loja (nome, email, senha, loja_id) VALUES (%s, %s, %s, %s)",
+                    (nome, email, senha_hash, loja_id))
+        conn.commit()
+        cur.close(); conn.close()
+
+        return redirect(f'/{subdomain}/login-cliente')
+
+    return render_template('cadastrar_cliente.html', subdomain=subdomain)
+
+@app.route('/<subdomain>/api/produtos')
+def listar_produtos_por_loja(subdomain):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Busca a loja pelo subdomínio
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+
+    if not loja:
+        cur.close(); conn.close()
+        return jsonify([])
+
+    loja_id = loja[0]
+
+    # Busca produtos da loja
+    cur.execute("""
+        SELECT id, nome, descricao, preco, imagem
+        FROM produtos
+        WHERE loja_id = %s
+    """, (loja_id,))
+    
+    rows = cur.fetchall()
+    cur.close(); conn.close()
+
+    produtos = [{
+        'id': r[0],
+        'nome': r[1],
+        'descricao': r[2],
+        'preco': float(r[3]),
+        'imagem': r[4]
+    } for r in rows]
+
+    return jsonify(produtos)
+
+
+
+
+
+@app.route('/<subdomain>/logout-cliente')
+def logout_cliente(subdomain):
+    session.pop('cliente_id', None)
+    return redirect(f'/{subdomain}/login-cliente')
+
+
+@app.route('/<subdomain>/loja')
+def loja_cliente(subdomain):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Buscar id do dono da loja pelo subdomínio
+    cur.execute("SELECT user_id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    dono = cur.fetchone()
+    
+    if not dono:
+        return "Loja não encontrada", 404
+    
+    dono_id = dono[0]
+
+    # Buscar produtos cadastrados por esse dono
+    cur.execute("SELECT id, nome, descricao, preco, imagem FROM produtos WHERE user_id = %s", (dono_id,))
+    produtos = cur.fetchall()
+    cur.close(); conn.close()
+
+    return render_template("template10_index.html", produtos=produtos, subdomain=subdomain)
+
+
+@app.route('/<subdomain>/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
+def adicionar_carrinho_cliente(subdomain, produto_id):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return jsonify({'success': False, 'message': 'Você precisa estar logado.'}), 401
+
+    data = request.get_json()
+    quantidade = data.get('quantidade', 1)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        INSERT INTO carrinho (produto_id, quantidade, cliente_id)
+        VALUES (%s, %s, %s)
+    ''', (produto_id, quantidade, cliente_id))
+
+    conn.commit()
+    cur.close(); conn.close()
+
+    return jsonify({'success': True})
+
+@app.route('/<subdomain>/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
+def adicionar_item_carrinho(subdomain, produto_id):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado'}), 401
+
+    data = request.get_json()
+    quantidade = data.get('quantidade', 1)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+    if not loja:
+        return jsonify({'success': False, 'message': 'Loja não encontrada'}), 404
+
+    loja_id = loja[0]
+
+    cur.execute('''
+        INSERT INTO carrinho (produto_id, quantidade, cliente_id, loja_id)
+        VALUES (%s, %s, %s, %s)
+    ''', (produto_id, quantidade, cliente_id, loja_id))
+
+    conn.commit()
+    cur.close(); conn.close()
+
+    return jsonify({'success': True})
+
+@app.route('/<subdomain>/api/mercado-pago/pagamento', methods=['POST'])
+def gerar_pagamento_cliente(subdomain):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return jsonify({'success': False, 'message': 'Cliente não autenticado'}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Descobre a loja baseada no subdomínio
+    cur.execute("SELECT id, user_id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+    if not loja:
+        return jsonify({'success': False, 'message': 'Loja não encontrada'}), 404
+
+    loja_id = loja[0]
+    dono_id = loja[1]
+
+    # Busca o token do dono da loja (na tabela users2)
+    cur.execute("SELECT mercado_pago_token FROM users2 WHERE id = %s", (dono_id,))
+    user = cur.fetchone()
+    if not user or not user[0]:
+        return jsonify({'success': False, 'message': 'Token do Mercado Pago não configurado'}), 400
+
+    access_token = user[0]
+
+    # Busca os itens do carrinho do cliente
+    cur.execute("""
+        SELECT p.nome, c.quantidade, p.preco
+        FROM carrinho c
+        JOIN produtos p ON c.produto_id = p.id
+        WHERE c.cliente_id = %s AND c.loja_id = %s
+    """, (cliente_id, loja_id))
+
+    itens = cur.fetchall()
+    cur.close(); conn.close()
+
+    if not itens:
+        return jsonify({'success': False, 'message': 'Carrinho está vazio'}), 400
+
+    # Monta os dados da preferência
+    preference_items = [{
+        "title": nome,
+        "quantity": int(quantidade),
+        "unit_price": float(preco),
+        "currency_id": "BRL"
+    } for nome, quantidade, preco in itens]
+
+    sdk = mercadopago.SDK(access_token)
+
+    preference_data = {
+        "items": preference_items,
+        "back_urls": {
+            "success": f"https://{subdomain}.seusite.com/sucesso",
+            "failure": f"https://{subdomain}.seusite.com/erro",
+            "pending": f"https://{subdomain}.seusite.com/pendente"
+        },
+        "auto_return": "approved"
+    }
+
+    preference_response = sdk.preference().create(preference_data)
+    init_point = preference_response["response"]["init_point"]
+
+    return jsonify({'success': True, 'link': init_point})
+
+@app.route('/<subdomain>/sucesso')
+def pagamento_sucesso(subdomain):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return redirect(f'/{subdomain}/login-cliente')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Identifica loja
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+    if not loja:
+        return "Loja não encontrada", 404
+    loja_id = loja[0]
+
+    # Limpa carrinho
+    cur.execute("DELETE FROM carrinho WHERE cliente_id = %s AND loja_id = %s", (cliente_id, loja_id))
+    conn.commit()
+    cur.close(); conn.close()
+
+    return render_template('sucesso_pagamento.html', subdomain=subdomain)
+
+
+
+@app.route('/<subdomain>/api/carrinho')
+def listar_carrinho_cliente(subdomain):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return jsonify([])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Busca o id da loja pelo subdomínio
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+    if not loja:
+        cur.close(); conn.close()
+        return jsonify([])
+
+    loja_id = loja[0]
+
+    cur.execute('''
+        SELECT p.nome, c.quantidade, p.preco, c.id
+        FROM carrinho c
+        JOIN produtos p ON c.produto_id = p.id
+        WHERE c.cliente_id = %s AND c.loja_id = %s
+    ''', (cliente_id, loja_id))
+    rows = cur.fetchall()
+    cur.close(); conn.close()
+
+    itens = [{
+        'nome': r[0],
+        'quantidade': r[1],
+        'preco': float(r[2]),
+        'id': r[3]
+    } for r in rows]
+
+    return jsonify(itens)
+
+
+
+
+@app.route('/api/carrinho')
+def listar_carrinho():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify([])
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        SELECT c.id, p.nome, p.preco, c.quantidade
+        FROM carrinho c
+        JOIN produtos p ON c.produto_id = p.id
+        WHERE c.user_id = %s
+    ''', (user_id,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    itens = [{
+        'id': row[0],
+        'nome': row[1],
+        'preco': float(row[2]),
+        'quantidade': row[3]
+    } for row in rows]
+
+    return jsonify(itens)
+
+
+@app.route('/api/carrinho/limpar', methods=['POST'])
+def limpar_carrinho():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM carrinho')
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok', 'mensagem': 'Carrinho limpo com sucesso'})
+
+@app.route('/configurar-mercado-pago', methods=['GET'])
+def pagina_configuracao_mercado_pago():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect('/login')
+
+    return render_template('configurar_mercado_pago.html')
+
+
+
+@app.route('/configurar-mercado-pago', methods=['POST'])
+def configurar_mercado_pago():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Você precisa estar logado.'}), 401
+
+    data = request.get_json()
+    token = data.get('token')
+
+    if not token:
+        return jsonify({'success': False, 'message': 'Token não fornecido.'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users2 SET mercado_pago_token = %s WHERE id = %s", (token, user_id))
+    conn.commit()
+    cur.close(); conn.close()
+
+    return jsonify({'success': True, 'message': 'Token salvo com sucesso!'})
+
+import mercadopago
+
+@app.route('/api/mercado-pago/pagamento', methods=['POST'])
+def gerar_preferencia_pagamento():
+    user_id = session.get('user_id')
+    cliente_id = session.get('cliente_id')
+
+    if not (user_id or cliente_id):
+        return jsonify({'success': False, 'message': 'Usuário não autenticado.'}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if cliente_id:
+        # 🔎 Buscar loja_id pelo cliente logado
+        cur.execute("SELECT loja_id FROM clientes_loja WHERE id = %s", (cliente_id,))
+        loja = cur.fetchone()
+        if not loja:
+            return jsonify({'success': False, 'message': 'Loja do cliente não encontrada'}), 400
+        loja_id = loja[0]
+
+        # 🔎 Buscar token da loja
+        cur.execute("""
+            SELECT u.mercado_pago_token FROM user_templates t
+            JOIN users2 u ON u.id = t.user_id
+            WHERE t.id = %s
+        """, (loja_id,))
+        row = cur.fetchone()
+        if not row or not row[0]:
+            return jsonify({'success': False, 'message': 'Token do Mercado Pago não encontrado'}), 400
+        access_token = row[0]
+
+        # 🔎 Itens do carrinho do cliente
+        cur.execute("""
+            SELECT p.nome, c.quantidade, p.preco
+            FROM carrinho c
+            JOIN produtos p ON c.produto_id = p.id
+            WHERE c.cliente_id = %s AND c.loja_id = %s
+        """, (cliente_id, loja_id))
+        itens = cur.fetchall()
+
+    else:
+        # 🧑‍💻 Dono do site
+        cur.execute("SELECT mercado_pago_token FROM users2 WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+        if not row or not row[0]:
+            return jsonify({'success': False, 'message': 'Token do Mercado Pago não configurado.'}), 400
+        access_token = row[0]
+
+        cur.execute("""
+            SELECT p.nome, c.quantidade, p.preco
+            FROM carrinho c
+            JOIN produtos p ON c.produto_id = p.id
+            WHERE c.user_id = %s
+        """, (user_id,))
+        itens = cur.fetchall()
+
+    if not itens:
+        return jsonify({'success': False, 'message': 'Carrinho vazio.'}), 400
+
+    # ✅ Salvar pedido no banco
+    if cliente_id:
+        total = sum([qtd * preco for _, qtd, preco in itens])
+        cur.execute("""
+            INSERT INTO pedidos (cliente_id, loja_id, total)
+            VALUES (%s, %s, %s) RETURNING id
+        """, (cliente_id, loja_id, total))
+        pedido_id = cur.fetchone()[0]
+
+        for nome, quantidade, preco in itens:
+            cur.execute("""
+                INSERT INTO itens_pedido (pedido_id, produto_nome, quantidade, preco)
+                VALUES (%s, %s, %s, %s)
+            """, (pedido_id, nome, quantidade, preco))
+
+    conn.commit()
+    cur.close(); conn.close()
+
+    # 🔁 Criar preferência Mercado Pago
+    sdk = mercadopago.SDK(access_token)
+    preference_data = {
+        "items": [
+            {
+                "title": nome,
+                "quantity": int(quantidade),
+                "unit_price": float(preco),
+                "currency_id": "BRL"
+            } for nome, quantidade, preco in itens
+        ],
+        "back_urls": {
+            "success": "https://seusite.com/sucesso",  # ← depois trocamos isso pelo subdomínio
+            "failure": "https://seusite.com/erro",
+            "pending": "https://seusite.com/pendente"
+        },
+        "auto_return": "approved"
+    }
+
+    preference_response = sdk.preference().create(preference_data)
+    init_point = preference_response["response"]["init_point"]
+    return jsonify({'success': True, 'link': init_point})
+
+
+
+
+@app.route('/api/mercado-pago/token')
+def pegar_token_mercado_pago():
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'message': 'Usuário não autenticado.'}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT mercado_pago_token FROM users2 WHERE id = %s', (user_id,))
+    row = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not row or not row[0]:
+        return jsonify({'success': False, 'message': 'Token do Mercado Pago não configurado.'}), 404
+
+    return jsonify({'success': True, 'token': row[0]})
+
+@app.route('/api/carrinho/remover/<int:item_id>', methods=['DELETE'])
+def remover_item_carrinho(item_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM carrinho WHERE id = %s', (item_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok', 'mensagem': 'Item removido do carrinho'})
+
+
+@app.route('/api/carrinho/atualizar/<int:item_id>', methods=['PUT'])
+def atualizar_quantidade(item_id):
+    data = request.get_json()
+    nova_qtd = data.get('quantidade', 1)
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('UPDATE carrinho SET quantidade = %s WHERE id = %s', (nova_qtd, item_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'status': 'ok', 'mensagem': 'Quantidade atualizada'})
+
+@app.route('/<subdomain>/admin/cadastrar-produto', methods=['GET', 'POST'])
+def cadastrar_produto(subdomain):
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 🔎 Busca a loja correta pelo subdomínio e user_id
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s AND user_id = %s", (subdomain, session['user_id']))
+    loja = cur.fetchone()
+
+    if not loja:
+        cur.close(); conn.close()
+        return "Loja não encontrada ou não pertence a este usuário", 404
+
+    loja_id = loja[0]
+
+    if request.method == 'POST':
+        nome = request.form['nome']
+        descricao = request.form['descricao']
+        preco = request.form['preco']
+        imagem = request.form['imagem']
+
+        # Insere com o loja_id correto
+        cur.execute(
+            'INSERT INTO produtos (nome, descricao, preco, imagem, loja_id) VALUES (%s, %s, %s, %s, %s)',
+            (nome, descricao, preco, imagem, loja_id)
+        )
+        conn.commit()
+        cur.close(); conn.close()
+        return redirect(url_for('cadastrar_produto', subdomain=subdomain))
+
+    cur.close(); conn.close()
+
+    return render_template('form_cadastrar_produto.html')
+
+
+@app.route('/admin/produtos')
+def admin_produtos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('SELECT id, nome, preco FROM produtos')
+    produtos = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    html = '<h2>Produtos Cadastrados</h2><ul>'
+    for p in produtos:
+        html += f"<li>{p[1]} - R$ {p[2]:.2f} \
+            <a href='/admin/editar/{p[0]}'>Editar</a> | \
+            <a href='/admin/excluir/{p[0]}'>Excluir</a></li>"
+    html += '</ul><br><a href=\"/admin/cadastrar-produto\">+ Novo Produto</a>'
+    return html
+
+
+@app.route('/admin/excluir/<int:id>')
+def excluir_produto(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM produtos WHERE id = %s', (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect('/admin/produtos')
+
+
+@app.route('/admin/editar/<int:id>', methods=['GET', 'POST'])
+def editar_produto(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        nome = request.form['nome']
+        descricao = request.form['descricao']
+        preco = request.form['preco']
+        imagem = request.form['imagem']
+        cur.execute('''
+            UPDATE produtos
+            SET nome=%s, descricao=%s, preco=%s, imagem=%s
+            WHERE id=%s
+        ''', (nome, descricao, preco, imagem, id))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return '<p style=\"color:green;\">Produto atualizado com sucesso! <a href=\"/admin/produtos\">Voltar</a></p>'
+
+    cur.execute('SELECT nome, descricao, preco, imagem FROM produtos WHERE id = %s', (id,))
+    produto = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    return f'''
+        <h2>Editar Produto</h2>
+        <form method=\"POST\">
+            <input name=\"nome\" value=\"{produto[0]}\" required><br>
+            <textarea name=\"descricao\">{produto[1]}</textarea><br>
+            <input name=\"preco\" type=\"number\" step=\"0.01\" value=\"{produto[2]}\" required><br>
+            <input name=\"imagem\" value=\"{produto[3]}\"><br>
+            <button type=\"submit\">Salvar</button>
+        </form>
+        <br><a href=\"/admin/produtos\">Cancelar</a>
+    '''
 
 
 @app.route('/')
@@ -327,6 +1013,25 @@ def usar_template(template_name):
         "template_id": template_id,
         "page_name": 'index'
     })
+@app.route('/<subdomain>/<page_name>')
+def render_template_dinamico(subdomain, page_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT custom_html
+        FROM user_templates
+        WHERE subdomain = %s AND page_name = %s
+        LIMIT 1
+    """, (subdomain, page_name))
+
+    result = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not result:
+        return "Página não encontrada", 404
+
+    return result[0]  # já é HTML completo
 
 
 @app.route('/template-preview/<template_name>/<page>')

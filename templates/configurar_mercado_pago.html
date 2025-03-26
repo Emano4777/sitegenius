@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuração de Pagamento</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 3rem auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 2rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 0.7rem;
+      background-color: #28a745;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .mensagem {
+      margin-top: 1rem;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/admin/produtos" style="
+  display: block;
+  text-align: center;
+  margin-top: 2rem;
+  text-decoration: none;
+  font-weight: bold;
+  color: #007bff;
+">
+  ← Voltar ao Painel Administrativo
+</a>
+    <h2><i class="fas fa-credit-card"></i> Configurar Mercado Pago</h2>
+    <form id="form-token">
+      <label for="token">Access Token do Mercado Pago:</label>
+      <input type="text" id="token" name="token" required placeholder="Insira seu Access Token aqui">
+      <button type="submit">Salvar Token</button>
+    </form>
+    <div class="mensagem" id="mensagem"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form-token');
+    const mensagem = document.getElementById('mensagem');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = document.getElementById('token').value;
+      const res = await fetch('/configurar-mercado-pago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      const data = await res.json();
+      mensagem.innerText = data.message;
+      mensagem.style.color = data.success ? 'green' : 'red';
+    });
+  </script>
+</body>
+</html>
