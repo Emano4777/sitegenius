@@ -25,7 +25,7 @@ CORS(app, supports_credentials=True)
 # CONFIG ESSENCIAL
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_DOMAIN'] = '.sitegenius.vercel.app'
+
 
 
 
