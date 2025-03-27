@@ -21,8 +21,6 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app, supports_credentials=True)
 
-app = Flask(__name__)
-app.secret_key = os.urandom(24)
 
 # CONFIG ESSENCIAL
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
