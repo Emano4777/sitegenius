@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
-app.secret_key = os.urandom(24)
+app.secret_key = 'minha-chave-segura'
 CORS(app, supports_credentials=True)
 
 
