@@ -21,19 +21,16 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app, supports_credentials=True)
 
-# Configurações para rodar no Vercel (HTTPS)
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+# CONFIG ESSENCIAL
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_DOMAIN'] = '.sitegenius.com'
-
-
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_DOMAIN'] = '.sitegenius.vercel.app'
 
 
 
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-app.config['SESSION_COOKIE_SECURE'] = True
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
 # Conexão com o Banco de Dados
 
@@ -1098,6 +1095,8 @@ def check_login():
             "user_name": session.get('user_name', '')  # Retorna o nome do usuário se estiver logado
         })
     return jsonify({"logged_in": False, "user_name": ""})  # Retorna falso se não estiver logado
+
+
 
 
 @app.route('/logout', methods=['POST'])
