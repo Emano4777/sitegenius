@@ -124,16 +124,13 @@ def login_cliente(subdomain):
         conn.close()
 
         if cliente and bcrypt.checkpw(senha.encode(), cliente[1].encode()):
-            session['cliente_id'] = cliente[0]
-
-            # Garantindo que o cookie de sessão será enviado corretamente
-            resp = make_response(redirect(f'/{subdomain}'))
-            resp.set_cookie('session', session.get('cliente_id', ''), secure=True, httponly=True, samesite='None', path='/')
-            return resp
+            session['cliente_id'] = cliente[0]  # Armazena na sessão
+            return redirect(f'/{subdomain}')     # Redireciona normalmente
 
         return "Credenciais inválidas", 401
 
     return render_template('login_cliente.html', subdomain=subdomain)
+
 
 
 @app.route('/<subdomain>/editar-dados', methods=['GET', 'POST'])

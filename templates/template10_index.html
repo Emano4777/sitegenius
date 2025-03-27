@@ -653,7 +653,7 @@ header, .header-loja {
             <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
               Bem-vindo, <span id="mobile-username-text"></span>
             </li>
-            <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+            <li><a href="/login-cliente" id="mobile-login-option">Entrar</a></li>
             <li><a href="/meus-pedidos" id="mobile-meus-templates-option" style="display:none;">Meus Pedidos</a></li>
             <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
           </ul>
@@ -667,7 +667,7 @@ header, .header-loja {
         <span id="contador-carrinho" class="badge-carrinho">0</span>
       </a>
       <div id="area-login">
-        <a id="link-login" href="javascript:void(0)" onclick="window.location.href='/${sub}/login-cliente'">Login</a>
+        <form method="POST" action="{{ url_for('login_cliente', subdomain=subdomain) }}">Login</a>
       </div>
       <button id="toggle-darkmode" title="Alternar modo escuro">
         <i class="fas fa-moon"></i>
