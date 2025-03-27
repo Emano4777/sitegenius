@@ -665,27 +665,6 @@
 
   <script>
     const sub = window.location.pathname.split('/')[1];
-    function verificarLoginCliente() {
-      fetch(`/${sub}/api/check-login-cliente`)
-        .then(res => res.json())
-        .then(data => {
-          const areaLogin = document.getElementById('area-login');
-          if (data.logado) {
-            areaLogin.innerHTML = `
-              <div class="perfil-dropdown">
-                <button><i class="fas fa-user-circle"></i> Perfil</button>
-                <div class="perfil-dropdown-content">
-                  <a href="/${sub}/meus-pedidos">🧾 Meus Pedidos</a>
-                  <a href="/${sub}/logout-cliente">🚪 Sair</a>
-                </div>
-              </div>`;
-          } else {
-            areaLogin.innerHTML = `<a id="link-login" href="/${sub}/login-cliente">Login</a>`;
-          }
-        });
-    }
-
-    verificarLoginCliente();
 
     document.getElementById('toggle-darkmode').addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
@@ -824,9 +803,65 @@ async function atualizarCarrinho() {
         .then(() => mostrarCarrinho());
     }
 
-    carregarProdutos();
+
+    function verificarLoginCliente() {
+  fetch(`/${sub}/api/check-login-cliente`)
+    .then(res => res.json())
+    .then(data => {
+      // ====== DESKTOP ======
+      const areaLogin = document.getElementById('area-login');
+      if (areaLogin) {
+        if (data.logado) {
+          areaLogin.innerHTML = `
+            <div class="perfil-dropdown">
+              <button><i class="fas fa-user-circle"></i> Perfil</button>
+              <div class="perfil-dropdown-content">
+                <a href="/${sub}/meus-pedidos">🧾 Meus Pedidos</a>
+                <a href="/${sub}/editar-dados">📝 Editar Dados</a>
+                <a href="/${sub}/logout-cliente">🚪 Sair</a>
+              </div>
+            </div>
+          `;
+        } else {
+          areaLogin.innerHTML = `<a id="link-login" href="/${sub}/login-cliente">Login</a>`;
+        }
+      }
+
+      // ====== MOBILE ======
+      const mobileUserText = document.getElementById('mobile-user-name-text');
+      const mobileUsernameDisplay = document.getElementById('mobile-user-name');
+      const mobileUsernameText = document.getElementById('mobile-username-text');
+      const mobileEntrarLink = document.querySelector('.mobile-dropdown-menu a[href*="login-cliente"]');
+      const mobileMeusPedidos = document.getElementById('mobile-meus-templates-option');
+      const mobileLogout = document.getElementById('mobile-logout-option');
+
+      if (data.logado) {
+        // Atualiza nome do usuário (se quiser exibir no mobile também)
+        mobileUserText.textContent = 'Perfil';
+        mobileUsernameText.textContent = data.nome || '';
+        mobileUsernameDisplay.style.display = 'block';
+
+        // Oculta link "Entrar" e mostra as opções
+        if (mobileEntrarLink) mobileEntrarLink.style.display = 'none';
+        if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'block';
+        if (mobileLogout) mobileLogout.style.display = 'block';
+      } else {
+        // Não logado
+        mobileUserText.textContent = 'Entrar';
+        mobileUsernameDisplay.style.display = 'none';
+        if (mobileEntrarLink) mobileEntrarLink.style.display = 'block';
+        if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'none';
+        if (mobileLogout) mobileLogout.style.display = 'none';
+      }
+    });
+}
+
+carregarProdutos();
     atualizarCarrinho();
-    verificarLoginCliente();
+// Executa a função ao carregar
+window.addEventListener('load', verificarLoginCliente);
+
+
   </script>
 {% block scripts %}
 {% endblock %}

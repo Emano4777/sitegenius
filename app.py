@@ -301,8 +301,18 @@ def listar_produtos_por_loja(subdomain):
 
 @app.route('/<subdomain>/api/check-login-cliente')
 def check_login_cliente(subdomain):
-    logado = 'cliente_id' in session
-    return jsonify({'logado': logado})
+    if 'cliente_id' in session:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT nome FROM clientes_loja WHERE id = %s", (session['cliente_id'],))
+        cliente = cur.fetchone()
+        cur.close(); conn.close()
+
+        return jsonify({
+            "logado": True,
+            "nome": cliente[0] if cliente else "Cliente"
+        })
+    return jsonify({"logado": False})
 
 
 
