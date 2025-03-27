@@ -1,28 +1,37 @@
 {% extends "template_base.html" %}
-
-{% block title %}📦 Acompanhar Pedido{% endblock %}
+{% block title %}🚚 Acompanhamento do Pedido{% endblock %}
 
 {% block content %}
 <div class="container">
-  <h2 class="titulo-produtos">📦 Acompanhamento do Pedido</h2>
+  <h2 class="titulo-produtos"><i class="fas fa-truck-moving"></i> Acompanhar Pedido #{{ pedido.id }}</h2>
 
-  <div style="background: var(--card); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-top: 2rem;">
-    <p><strong>Pedido #{{ pedido[0] }}</strong></p>
-    <p>Data: {{ pedido[1].strftime('%d/%m/%Y %H:%M') }}</p>
-    <p>Status: <strong style="color: #28a745">{{ pedido[3] }}</strong></p>
-    <p>Entrega: <strong>{{ pedido[4] }}</strong></p>
-    <p><i class="fas fa-map-marker-alt"></i> {{ pedido[5] }}</p>
-    <p>Total: <strong style="color: #28a745">R$ {{ '%.2f'|format(pedido[2]) }}</strong></p>
+  <div style="background: var(--card); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 2rem;">
+    <p><strong><i class="fas fa-info-circle"></i> Status:</strong> <span style="color: #28a745;">{{ pedido.status_entrega }}</span></p>
+    <p><strong><i class="fas fa-shipping-fast"></i> Tipo de Entrega:</strong> <span style="color: #17a2b8;">{{ pedido.tipo_entrega }}</span></p>
+    <p><strong><i class="fas fa-map-marker-alt"></i> Endereço:</strong> {{ pedido.endereco_entrega }}</p>
+    <p><strong><i class="fas fa-coins"></i> Total:</strong> <span style="color: #28a745">R$ {{ '%.2f'|format(pedido.total) }}</span></p>
+  </div>
 
-    <div style="text-align: center; margin-top: 1.5rem;">
-      <a class="btn-voltar" href="https://wa.me/5599999999999" target="_blank">
-        📲 Falar com o entregador
-      </a>
-    </div>
+  <h3 style="margin-bottom: 1rem;"><i class="fas fa-map"></i> Localização da Entrega</h3>
+  <iframe
+    width="100%"
+    height="300"
+    frameborder="0"
+    style="border:0; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);"
+    src="https://www.google.com/maps?q={{ pedido.endereco_entrega | urlencode }}&output=embed"
+    allowfullscreen>
+  </iframe>
 
-    <div style="text-align: center; margin-top: 2rem;">
-      <a class="btn-voltar" href="javascript:history.back()">← Voltar</a>
-    </div>
+  <div style="text-align: center; margin-top: 2rem;">
+    <a href="https://wa.me/SEUNUMERO" target="_blank" class="btn-voltar" style="background-color: #25d366; color: white; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold; text-decoration: none;">
+      <i class="fab fa-whatsapp"></i> Contatar Entregador
+    </a>
+  </div>
+
+  <div style="text-align: center; margin-top: 1.5rem;">
+    <a class="btn-voltar" href="/{{ subdomain }}/meus-pedidos" style="background-color: #6c757d; color: white; padding: 0.7rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: bold;">
+      <i class="fas fa-arrow-left"></i> Voltar para Meus Pedidos
+    </a>
   </div>
 </div>
 {% endblock %}

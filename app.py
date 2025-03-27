@@ -24,6 +24,8 @@ CORS(app, supports_credentials=True)
 # Configurações para rodar no Vercel (HTTPS)
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_DOMAIN'] = '.sitegenius.com'
+
 
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -176,20 +178,29 @@ def acompanhar_pedido(subdomain, pedido_id):
 
     conn = get_db_connection()
     cur = conn.cursor()
-    
     cur.execute("""
         SELECT id, data, total, status_entrega, tipo_entrega, endereco_entrega
         FROM pedidos
         WHERE id = %s AND cliente_id = %s
     """, (pedido_id, cliente_id))
     
-    pedido = cur.fetchone()
+    row = cur.fetchone()  # <- isso estava faltando
     cur.close(); conn.close()
 
-    if not pedido:
-        return "Pedido não encontrado ou acesso negado", 404
+    if not row:
+        return "Pedido não encontrado", 404
 
-    return render_template('template10_acompanhar_pedido.html', pedido=pedido, subdomain=subdomain)
+    pedido = {
+        'id': row[0],
+        'data': row[1],
+        'total': row[2],
+        'status_entrega': row[3],
+        'tipo_entrega': row[4],
+        'endereco_entrega': row[5]
+    }
+
+    return render_template("template10_acompanhar_pedido.html", pedido=pedido, subdomain=subdomain)
+
 
 
 @app.route('/<subdomain>/meus-pedidos')
@@ -457,9 +468,10 @@ def gerar_pagamento_cliente(subdomain):
     preference_data = {
         "items": preference_items,
         "back_urls": {
-            "success": f"https://{subdomain}.seusite.com/sucesso",
-            "failure": f"https://{subdomain}.seusite.com/erro",
-            "pending": f"https://{subdomain}.seusite.com/pendente"
+        "success": f"https://{request.host}/{subdomain}/sucesso",
+        "failure": f"https://{request.host}/{subdomain}/erro",
+        "pending": f"https://{request.host}/{subdomain}/pendente"
+
         },
         "auto_return": "approved"
     }

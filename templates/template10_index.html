@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minha Loja Virtual</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -475,6 +476,83 @@ header, .header-loja {
   color: #ffc107;
 }
 
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  display: none;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+.mobile-menu-modal {
+  position: fixed;
+  top: 70px;
+  right: 0;
+  background: #343a40;
+  color: white;
+  width: 100%;
+  max-width: 300px;
+  height: calc(100% - 70px);
+  z-index: 9998;
+  display: none;
+  padding: 1rem;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from { right: -300px; opacity: 0; }
+  to   { right: 0; opacity: 1; }
+}
+
+.mobile-menu-content a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 10px 0;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.mobile-user-menu {
+  margin-top: 1rem;
+}
+
+.mobile-user-link {
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.mobile-dropdown-menu {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.5rem;
+}
+
+.mobile-dropdown-menu li a {
+  color: white;
+  text-decoration: none;
+  padding: 5px 0;
+  display: block;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  nav.navbar-links {
+    display: none !important;
+  }
+}
+
 @keyframes slideIn {
   from {
     transform: translateX(-30px);
@@ -538,7 +616,12 @@ header, .header-loja {
     
     <div id="campo-endereco" style="display:none;margin-top:1rem;">
       <label><strong>Endereço de Entrega:</strong></label><br>
-      <textarea id="endereco_entrega" rows="3" placeholder="Rua, número, bairro, cidade..." style="width:100%;padding:0.5rem;"></textarea>
+    
+      <input type="text" id="rua" placeholder="Rua" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="numero" placeholder="Número" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="bairro" placeholder="Bairro" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="cidade" placeholder="Cidade" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="cep" placeholder="CEP (somente números)" pattern="\d{5}-?\d{3}" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
     </div>
     <p id="total"></p>
     <button id="btn-finalizar" class="whatsapp-button">
@@ -547,9 +630,35 @@ header, .header-loja {
 
   </div>
   <header>
+
     <div class="header-titulo">
       <i class="fas fa-store-alt"></i>
       <span>Minha Loja Virtual</span>
+    </div>
+    <button class="mobile-menu-btn" onclick="openMobileMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+    
+    <div class="mobile-menu-modal" id="mobileMenuModal">
+      <div class="mobile-menu-content">
+        <a href="#"><i class="fas fa-box"></i> Produtos</a>
+        <a href="javascript:void(0)" onclick="mostrarCarrinho()">
+          <i class="fas fa-shopping-cart"></i> Carrinho
+        </a>
+        <div class="mobile-user-menu">
+          <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+            <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
+          </a>
+          <ul class="mobile-dropdown-menu" id="mobile-user-dropdown" style="display: none;">
+            <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+              Bem-vindo, <span id="mobile-username-text"></span>
+            </li>
+            <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+            <li><a href="/meus-pedidos" id="mobile-meus-templates-option" style="display:none;">Meus Pedidos</a></li>
+            <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
     <nav class="navbar-links">
       <a href="#"><i class="fas fa-box"></i> Produtos</a>
@@ -611,11 +720,22 @@ header, .header-loja {
       
       document.getElementById('btn-finalizar').addEventListener('click', async () => {
   const tipoEntrega = document.getElementById('tipo_entrega').value;
-  const enderecoEntrega = document.getElementById('endereco_entrega').value;
 
-  if (!tipoEntrega) {
-    alert('Selecione o tipo de entrega.');
-    return;
+  let enderecoEntrega = '';
+  if (tipoEntrega === 'delivery') {
+    const rua = document.getElementById('rua').value.trim();
+    const numero = document.getElementById('numero').value.trim();
+    const bairro = document.getElementById('bairro').value.trim();
+    const cidade = document.getElementById('cidade').value.trim();
+    const cep = document.getElementById('cep').value.trim();
+
+    if (!rua || !numero || !bairro || !cidade || !cep) {
+      alert('Preencha todos os campos de endereço corretamente.');
+      return;
+    }
+
+    // Montar o endereço no padrão correto
+    enderecoEntrega = `${rua}, ${numero} - ${bairro}, ${cidade} - CEP ${cep}`;
   }
 
   const res = await fetch(`/${sub}/api/mercado-pago/pagamento`, {
@@ -650,6 +770,26 @@ function toggleEndereco() {
     const tipo = document.getElementById('tipo_entrega').value;
     document.getElementById('campo-endereco').style.display = tipo === 'delivery' ? 'block' : 'none';
   }
+
+  function openMobileMenu() {
+  const menu = document.getElementById('mobileMenuModal');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+function toggleMobileUserMenu(event) {
+  event.preventDefault();
+  const dropdown = document.getElementById('mobile-user-dropdown');
+  dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+// Fecha menu ao clicar fora
+document.addEventListener('click', function (e) {
+  const menu = document.getElementById('mobileMenuModal');
+  const btn = document.querySelector('.mobile-menu-btn');
+  if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
 
     async function carregarProdutos() {
   const response = await fetch(`/${sub}/api/produtos`);
