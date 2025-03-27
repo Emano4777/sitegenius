@@ -25,8 +25,7 @@ CORS(app, supports_credentials=True)
 # CONFIG ESSENCIAL
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
-
-
+app.config['SESSION_COOKIE_PATH'] = '/'
 
 
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
@@ -97,7 +96,6 @@ def quem_sou_eu():
     else:
         return jsonify({'logado': False})
 
-
 @app.route('/<subdomain>/login-cliente', methods=['GET', 'POST'])
 def login_cliente(subdomain):
     if request.method == 'POST':
@@ -107,27 +105,36 @@ def login_cliente(subdomain):
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # busca o ID da loja baseado no subdomínio
+        # Busca o ID da loja baseado no subdomínio
         cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
         loja = cur.fetchone()
+
         if not loja:
-            cur.close(); conn.close()
+            cur.close()
+            conn.close()
             return "Loja não encontrada", 404
 
         loja_id = loja[0]
 
-        # busca o cliente
+        # Busca o cliente
         cur.execute("SELECT id, senha FROM clientes_loja WHERE email = %s AND loja_id = %s", (email, loja_id))
         cliente = cur.fetchone()
-        cur.close(); conn.close()
+
+        cur.close()
+        conn.close()
 
         if cliente and bcrypt.checkpw(senha.encode(), cliente[1].encode()):
             session['cliente_id'] = cliente[0]
-            return redirect(f'/{subdomain}') 
-        else:
-            return "Credenciais inválidas", 401
+
+            # Garantindo que o cookie de sessão será enviado corretamente
+            resp = make_response(redirect(f'/{subdomain}'))
+            resp.set_cookie('session', session.get('cliente_id', ''), secure=True, httponly=True, samesite='None', path='/')
+            return resp
+
+        return "Credenciais inválidas", 401
 
     return render_template('login_cliente.html', subdomain=subdomain)
+
 
 @app.route('/<subdomain>/editar-dados', methods=['GET', 'POST'])
 def editar_dados(subdomain):
