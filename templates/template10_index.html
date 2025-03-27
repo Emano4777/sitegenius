@@ -655,10 +655,11 @@ header, .header-loja {
             </li>
             <li>
               <a href="{{ url_for('login_cliente', subdomain=subdomain) }}" class="mobile-user-link">
-                <i class="fas fa-user"></i> Entrar
+                Entrar
               </a>
             </li>          
-            <li><a href="/meus-pedidos" id="mobile-meus-templates-option" style="display:none;">Meus Pedidos</a></li>
+            <li><a id="mobile-meus-pedidos" style="display: none;">🧾 Meus Pedidos</a></li>
+            <li><a id="mobile-editar-dados" style="display: none;">📝 Editar Dados</a></li>
             <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
           </ul>
         </div>
@@ -991,32 +992,41 @@ function verificarLoginCliente() {
       }
 
       // ====== MOBILE ======
+      // ====== MOBILE ======
       const mobileUserText = document.getElementById('mobile-user-name-text');
       const mobileUsernameDisplay = document.getElementById('mobile-user-name');
       const mobileUsernameText = document.getElementById('mobile-username-text');
       const mobileEntrarLink = document.querySelector('.mobile-dropdown-menu a[href*="login-cliente"]');
-      const mobileMeusPedidos = document.getElementById('mobile-meus-templates-option');
+      const mobileMeusPedidos = document.getElementById('mobile-meus-pedidos');
+      const mobileEditarDados = document.getElementById('mobile-editar-dados');
       const mobileLogout = document.getElementById('mobile-logout-option');
 
       if (data.logado) {
-        // Atualiza nome do usuário (se quiser exibir no mobile também)
         mobileUserText.textContent = 'Perfil';
         mobileUsernameText.textContent = data.nome || '';
         mobileUsernameDisplay.style.display = 'block';
 
-        // Oculta link "Entrar" e mostra as opções
         if (mobileEntrarLink) mobileEntrarLink.style.display = 'none';
-        if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'block';
+        if (mobileMeusPedidos) {
+          mobileMeusPedidos.href = `/${sub}/meus-pedidos`;
+          mobileMeusPedidos.style.display = 'block';
+        }
+        if (mobileEditarDados) {
+          mobileEditarDados.href = `/${sub}/editar-dados`;
+          mobileEditarDados.style.display = 'block';
+        }
         if (mobileLogout) mobileLogout.style.display = 'block';
+
       } else {
-        // Não logado
         mobileUserText.textContent = 'Entrar';
         mobileUsernameDisplay.style.display = 'none';
+
         if (mobileEntrarLink) mobileEntrarLink.style.display = 'block';
         if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'none';
+        if (mobileEditarDados) mobileEditarDados.style.display = 'none';
         if (mobileLogout) mobileLogout.style.display = 'none';
       }
-    });
+   });
 }
 
 // Executa a função ao carregar
