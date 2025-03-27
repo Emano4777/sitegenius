@@ -1,0 +1,37 @@
+{% extends "template_base.html" %}
+
+{% block title %}📝 Editar Dados{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="titulo-produtos">📝 Editar Dados da Conta</h2>
+
+  <form method="POST" style="max-width: 500px; margin: auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <label for="nome" style="font-weight: bold;">Nome:</label>
+    <input type="text" id="nome" name="nome" value="{{ nome }}" required style="width: 100%; padding: 0.5rem; margin-top: 0.3rem; border: 1px solid #ccc; border-radius: 5px;">
+
+    <label for="email" style="margin-top: 1rem; font-weight: bold;">Email:</label>
+    <input type="email" id="email" name="email" value="{{ email }}" required style="width: 100%; padding: 0.5rem; margin-top: 0.3rem; border: 1px solid #ccc; border-radius: 5px;">
+
+    <label for="senha" style="margin-top: 1rem; font-weight: bold;">Nova Senha:</label>
+    <input type="password" id="senha" name="senha" placeholder="Digite a nova senha" required style="width: 100%; padding: 0.5rem; margin-top: 0.3rem; border: 1px solid #ccc; border-radius: 5px;">
+
+    <button type="submit" style="margin-top: 1.5rem; padding: 0.7rem 1.5rem; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+      💾 Salvar Alterações
+    </button>
+  </form>
+
+  <div style="text-align: center; margin-top: 2rem;">
+    <a class="btn-voltar" href="javascript:void(0);" onclick="voltarLoja()" style="color: #007bff; text-decoration: none; font-weight: bold;">← Voltar para a loja</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function voltarLoja() {
+    const sub = window.location.pathname.split('/')[1];
+    window.location.href = `/${sub}/index`;
+  }
+</script>
+{% endblock %}

@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 from werkzeug.security import check_password_hash
 from functools import wraps
 from flask import session, redirect, url_for, jsonify, request
+from datetime import datetime
+import mercadopago
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -124,11 +126,104 @@ def login_cliente(subdomain):
 
         if cliente and bcrypt.checkpw(senha.encode(), cliente[1].encode()):
             session['cliente_id'] = cliente[0]
-            return redirect(f'/{subdomain}/loja')
+            return redirect(f'/{subdomain}') 
         else:
             return "Credenciais inválidas", 401
 
     return render_template('login_cliente.html', subdomain=subdomain)
+
+@app.route('/<subdomain>/editar-dados', methods=['GET', 'POST'])
+def editar_dados(subdomain):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return redirect(f'/{subdomain}/login-cliente')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        nome = request.form['nome']
+        email = request.form['email']
+        senha = request.form['senha']
+
+        hashed = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode()
+
+        cur.execute("""
+            UPDATE clientes_loja
+            SET nome = %s, email = %s, senha = %s
+            WHERE id = %s
+        """, (nome, email, hashed, cliente_id))
+        conn.commit()
+        cur.close(); conn.close()
+
+        return redirect(f'/{subdomain}')  # Volta pra loja
+
+    # GET
+    cur.execute("SELECT nome, email FROM clientes_loja WHERE id = %s", (cliente_id,))
+    dados = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not dados:
+        return "Cliente não encontrado", 404
+
+    return render_template('template10_editar_dados.html', nome=dados[0], email=dados[1], subdomain=subdomain)
+
+@app.route('/<subdomain>/acompanhar-pedido/<int:pedido_id>')
+def acompanhar_pedido(subdomain, pedido_id):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return redirect(f'/{subdomain}/login-cliente')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        SELECT id, data, total, status_entrega, tipo_entrega, endereco_entrega
+        FROM pedidos
+        WHERE id = %s AND cliente_id = %s
+    """, (pedido_id, cliente_id))
+    
+    pedido = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not pedido:
+        return "Pedido não encontrado ou acesso negado", 404
+
+    return render_template('template10_acompanhar_pedido.html', pedido=pedido, subdomain=subdomain)
+
+
+@app.route('/<subdomain>/meus-pedidos')
+def meus_pedidos(subdomain):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return redirect(f'/{subdomain}/login-cliente')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Identifica loja atual
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+    if not loja:
+        return "Loja não encontrada", 404
+
+    loja_id = loja[0]
+
+    # Agora filtra por cliente_id e loja_id juntos
+    cur.execute("""
+        SELECT id, data, total, status_entrega, tipo_entrega, endereco_entrega
+        FROM pedidos
+        WHERE cliente_id = %s AND loja_id = %s
+        ORDER BY data DESC
+    """, (cliente_id, loja_id))
+    
+    pedidos = cur.fetchall()
+    cur.close(); conn.close()
+
+    return render_template('template10_meuspedidos.html', pedidos=pedidos, subdomain=subdomain)
+
+
+
 
 @app.route('/<subdomain>/cadastrar', methods=['GET', 'POST'])
 def cadastrar_cliente(subdomain):
@@ -207,19 +302,20 @@ def logout_cliente(subdomain):
     return redirect(f'/{subdomain}/login-cliente')
 
 
-@app.route('/<subdomain>/loja')
-def loja_cliente(subdomain):
+@app.route('/<subdomain>')
+@app.route('/<subdomain>/index')
+def index_loja(subdomain):
     print("Sessão atual:", dict(session))
     conn = get_db_connection()
     cur = conn.cursor()
-    
+
     # Buscar id do dono da loja pelo subdomínio
     cur.execute("SELECT user_id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
     dono = cur.fetchone()
-    
+
     if not dono:
         return "Loja não encontrada", 404
-    
+
     dono_id = dono[0]
 
     # Buscar produtos cadastrados por esse dono
@@ -228,6 +324,7 @@ def loja_cliente(subdomain):
     cur.close(); conn.close()
 
     return render_template("template10_index.html", produtos=produtos, subdomain=subdomain)
+
 
 
 @app.route('/<subdomain>/api/carrinho/adicionar/<int:produto_id>', methods=['POST'])
@@ -302,6 +399,13 @@ def adicionar_item_carrinho(subdomain, produto_id):
 
 @app.route('/<subdomain>/api/mercado-pago/pagamento', methods=['POST'])
 def gerar_pagamento_cliente(subdomain):
+    data = request.get_json()
+    tipo_entrega = data.get('tipo_entrega')
+    endereco_entrega = data.get('endereco_entrega') if tipo_entrega == 'delivery' else None
+
+    # Salvar temporariamente na sessão
+    session['tipo_entrega'] = tipo_entrega
+    session['endereco_entrega'] = endereco_entrega
     cliente_id = session.get('cliente_id')
     if not cliente_id:
         return jsonify({'success': False, 'message': 'Cliente não autenticado'}), 401
@@ -365,6 +469,7 @@ def gerar_pagamento_cliente(subdomain):
 
     return jsonify({'success': True, 'link': init_point})
 
+
 @app.route('/<subdomain>/sucesso')
 def pagamento_sucesso(subdomain):
     cliente_id = session.get('cliente_id')
@@ -381,12 +486,30 @@ def pagamento_sucesso(subdomain):
         return "Loja não encontrada", 404
     loja_id = loja[0]
 
+    # Busca itens do carrinho (para somar o total)
+    cur.execute("""
+        SELECT p.preco, c.quantidade
+        FROM carrinho c
+        JOIN produtos p ON c.produto_id = p.id
+        WHERE c.cliente_id = %s AND c.loja_id = %s
+    """, (cliente_id, loja_id))
+    itens = cur.fetchall()
+
+    total = sum(preco * quantidade for preco, quantidade in itens)
+    tipo_entrega = session.pop('tipo_entrega', None)
+    endereco_entrega = session.pop('endereco_entrega', None)
+    # Insere o pedido
+    cur.execute("""
+    INSERT INTO pedidos (cliente_id, loja_id, data, total, status_entrega, tipo_entrega, endereco_entrega)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+""", (cliente_id, loja_id, datetime.now(), total, 'Recebido', tipo_entrega, endereco_entrega))
+
     # Limpa carrinho
     cur.execute("DELETE FROM carrinho WHERE cliente_id = %s AND loja_id = %s", (cliente_id, loja_id))
     conn.commit()
     cur.close(); conn.close()
 
-    return render_template('sucesso_pagamento.html', subdomain=subdomain)
+    return render_template('template10_meuspedidos.html', subdomain=subdomain)
 
 
 
@@ -503,12 +626,20 @@ def configurar_mercado_pago():
 
     return jsonify({'success': True, 'message': 'Token salvo com sucesso!'})
 
-import mercadopago
+
 
 @app.route('/api/mercado-pago/pagamento', methods=['POST'])
 def gerar_preferencia_pagamento():
     user_id = session.get('user_id')
     cliente_id = session.get('cliente_id')
+    data = request.get_json()
+    tipo_entrega = data.get('tipo_entrega')
+    endereco_entrega = data.get('endereco_entrega') if tipo_entrega == 'delivery' else None
+
+    # Salvar temporariamente na sessão
+    session['tipo_entrega'] = tipo_entrega
+    session['endereco_entrega'] = endereco_entrega
+
 
     if not (user_id or cliente_id):
         return jsonify({'success': False, 'message': 'Usuário não autenticado.'}), 401

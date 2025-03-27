@@ -1,0 +1,28 @@
+{% extends "template_base.html" %}
+
+{% block title %}📦 Acompanhar Pedido{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="titulo-produtos">📦 Acompanhamento do Pedido</h2>
+
+  <div style="background: var(--card); padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); margin-top: 2rem;">
+    <p><strong>Pedido #{{ pedido[0] }}</strong></p>
+    <p>Data: {{ pedido[1].strftime('%d/%m/%Y %H:%M') }}</p>
+    <p>Status: <strong style="color: #28a745">{{ pedido[3] }}</strong></p>
+    <p>Entrega: <strong>{{ pedido[4] }}</strong></p>
+    <p><i class="fas fa-map-marker-alt"></i> {{ pedido[5] }}</p>
+    <p>Total: <strong style="color: #28a745">R$ {{ '%.2f'|format(pedido[2]) }}</strong></p>
+
+    <div style="text-align: center; margin-top: 1.5rem;">
+      <a class="btn-voltar" href="https://wa.me/5599999999999" target="_blank">
+        📲 Falar com o entregador
+      </a>
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem;">
+      <a class="btn-voltar" href="javascript:history.back()">← Voltar</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

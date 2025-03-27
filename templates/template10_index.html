@@ -163,7 +163,9 @@ nav.navbar-links a,
     font-size: 0.9rem;
   }
 }
-
+#link-login {
+  cursor: pointer;
+}
     .carrinho-item {
       background-color: white;
       padding: 1rem;
@@ -525,6 +527,19 @@ header, .header-loja {
     <button class="close-btn" onclick="fecharCarrinho()">×</button>
     <h2>🛒 Seu Carrinho</h2>
     <div id="lista-carrinho"></div>
+    <div style="margin-top: 1rem;">
+      <label><strong>Tipo de Entrega:</strong></label><br>
+      <select id="tipo_entrega" required onchange="toggleEndereco()" style="width:100%;padding:0.5rem;margin-top:0.3rem;">
+        <option value="">Selecione</option>
+        <option value="retirada">Retirar na loja</option>
+        <option value="delivery">Receber em casa</option>
+      </select>
+    </div>
+    
+    <div id="campo-endereco" style="display:none;margin-top:1rem;">
+      <label><strong>Endereço de Entrega:</strong></label><br>
+      <textarea id="endereco_entrega" rows="3" placeholder="Rua, número, bairro, cidade..." style="width:100%;padding:0.5rem;"></textarea>
+    </div>
     <p id="total"></p>
     <button id="btn-finalizar" class="whatsapp-button">
       <i class="fas fa-credit-card"></i> Finalizar Pagamento
@@ -543,14 +558,12 @@ header, .header-loja {
         <span id="contador-carrinho" class="badge-carrinho">0</span>
       </a>
       <div id="area-login">
-        <a id="link-login"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a id="link-login" href="javascript:void(0)" onclick="window.location.href='/${sub}/login-cliente'">Login</a>
       </div>
       <button id="toggle-darkmode" title="Alternar modo escuro">
         <i class="fas fa-moon"></i>
       </button>
-      
     </nav>
-
   </header>
   <div class="carousel-inner">
     <!-- Banner fixo 1 -->
@@ -592,42 +605,37 @@ header, .header-loja {
 
   <script>
     const sub = window.location.pathname.split('/')[1];
-  
-    // Verifica se o cliente está logado (via cookie da sessão)
-    fetch(`/${sub}/api/check-login-cliente`)
-      .then(res => res.json())
-      .then(data => {
-        const areaLogin = document.getElementById('area-login');
-  
-        if (data.logado) {
-          // Cliente logado: mostra perfil
-          areaLogin.innerHTML = `
-            <div class="perfil-dropdown">
-             <button><i class="fas fa-user-circle"></i> Perfil</button>
-              <div class="perfil-dropdown-content">
-                <a href="/${sub}/logout-cliente">Sair</a>
-              </div>
-            </div>
-          `;
-        } else {
-          // Não logado: mostra botão de login
-          areaLogin.innerHTML = `<a id="link-login" href="/${sub}/login-cliente">Login</a>`;
-        }
-      });
   </script>
-
+  
   <script>
-    document.getElementById('btn-finalizar').addEventListener('click', async () => {
-      const res = await fetch(`/${sub}/api/mercado-pago/pagamento`, { method: 'POST' });
-      const data = await res.json();
+      
+      document.getElementById('btn-finalizar').addEventListener('click', async () => {
+  const tipoEntrega = document.getElementById('tipo_entrega').value;
+  const enderecoEntrega = document.getElementById('endereco_entrega').value;
 
-      if (!data.success) {
-        alert(data.message);
-        return;
-      }
+  if (!tipoEntrega) {
+    alert('Selecione o tipo de entrega.');
+    return;
+  }
 
-      window.location.href = data.link;
-    });
+  const res = await fetch(`/${sub}/api/mercado-pago/pagamento`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tipo_entrega: tipoEntrega,
+      endereco_entrega: enderecoEntrega
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.message);
+    return;
+  }
+
+  window.location.href = data.link;
+});
 
     function mostrarCarrinho() {
   document.getElementById('sidebar-carrinho').classList.add('ativo');
@@ -637,6 +645,11 @@ header, .header-loja {
 function fecharCarrinho() {
   document.getElementById('sidebar-carrinho').classList.remove('ativo');
 }
+
+function toggleEndereco() {
+    const tipo = document.getElementById('tipo_entrega').value;
+    document.getElementById('campo-endereco').style.display = tipo === 'delivery' ? 'block' : 'none';
+  }
 
     async function carregarProdutos() {
   const response = await fetch(`/${sub}/api/produtos`);
@@ -697,6 +710,7 @@ container.appendChild(grid);
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantidade: parseInt(qtd) })
       }).then(() => mostrarToast('Produto adicionado ao carrinho!'));
+      atualizarCarrinho();
     }
 
     async function atualizarCarrinho() {
@@ -733,7 +747,11 @@ container.appendChild(grid);
         .then(() => mostrarCarrinho());
     }
 
-    carregarProdutos();
+   window.addEventListener('load', () => {
+  carregarProdutos();
+  atualizarCarrinho();
+  verificarLoginCliente();
+});
     let banners = document.querySelectorAll('.banner-slide');
 let currentBanner = 0;
 
@@ -797,6 +815,43 @@ document.addEventListener('click', function (e) {
     console.log(`Produto ID ${div.dataset.id} avaliado com ${valor} estrelas`);
   }
 });
+
+
+
   </script>
+
+<script>
+
+
+function verificarLoginCliente() {
+  fetch(`/${sub}/api/check-login-cliente`)
+    .then(res => res.json())
+    .then(data => {
+      const areaLogin = document.getElementById('area-login');
+      if (!areaLogin) return;
+
+      if (data.logado) {
+        areaLogin.innerHTML = `
+          <div class="perfil-dropdown">
+            <button><i class="fas fa-user-circle"></i> Perfil</button>
+            <div class="perfil-dropdown-content">
+              <a href="/${sub}/meus-pedidos">🧾 Meus Pedidos</a>
+              <a href="/${sub}/editar-dados">📝 Editar Dados</a>
+              <a href="/${sub}/logout-cliente">🚪 Sair</a>
+            </div>
+          </div>
+        `;
+      } else {
+        areaLogin.innerHTML = `<a id="link-login" href="/${sub}/login-cliente">Login</a>`;
+      }
+    });
+}
+
+
+  // Espera o DOM carregar totalmente antes de rodar
+  window.addEventListener('load', verificarLoginCliente);
+</script>
+
+
 </body>
 </html>

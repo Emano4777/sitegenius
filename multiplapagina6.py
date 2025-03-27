@@ -7,7 +7,10 @@ TEMPLATE_NAME = 'template10'
 SUBDOMAIN_PLACEHOLDER = '{{sub}}'
 
 ARQUIVOS = {
-    'index': 'template10_index.html',
+     'index': 'template10_index.html',
+     'meuspedidos':'template10_meuspedidos.html',
+     'editardados': 'template10_editar_dados.html',
+     'acompanharpedido' : 'template10_acompanhar_pedido.html'
 }
 
 def extrair_css_apenas(html):
