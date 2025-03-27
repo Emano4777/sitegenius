@@ -639,19 +639,28 @@
   </header>
   
   <!-- ✅ Menu Mobile -->
-  <div class="mobile-menu-modal" id="mobileMenuModal" style="display: none;">
+  <div class="mobile-menu-modal" id="mobileMenuModal">
     <div class="mobile-menu-content">
       <a href="#"><i class="fas fa-box"></i> Produtos</a>
-      <a href="#" onclick="mostrarCarrinho()"><i class="fas fa-shopping-cart"></i> Carrinho</a>
-  
+      <a href="javascript:void(0)" onclick="mostrarCarrinho()">
+        <i class="fas fa-shopping-cart"></i> Carrinho
+      </a>
       <div class="mobile-user-menu">
         <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
           <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
         </a>
-        <ul class="mobile-dropdown-menu" id="mobile-user-dropdown" style="display:none;">
-          <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-          <li><a href="/meus-pedidos" id="mobile-meus-pedidos-option">Meus Pedidos</a></li>
-          <li><a href="#" id="mobile-logout-option" onclick="logout()">Sair</a></li>
+        <ul class="mobile-dropdown-menu" id="mobile-user-dropdown" style="display: none;">
+          <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+            Bem-vindo, <span id="mobile-username-text"></span>
+          </li>
+          <li>
+            <a href="{{ url_for('login_cliente', subdomain=subdomain) }}" class="mobile-user-link">
+              Entrar
+            </a>
+          </li>          
+          <li><a id="mobile-meus-pedidos" style="display: none;">🧾 Meus Pedidos</a></li>
+          <li><a id="mobile-editar-dados" style="display: none;">📝 Editar Dados</a></li>
+          <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
         </ul>
       </div>
     </div>
@@ -832,29 +841,40 @@ async function atualizarCarrinho() {
       const mobileUsernameDisplay = document.getElementById('mobile-user-name');
       const mobileUsernameText = document.getElementById('mobile-username-text');
       const mobileEntrarLink = document.querySelector('.mobile-dropdown-menu a[href*="login-cliente"]');
-      const mobileMeusPedidos = document.getElementById('mobile-meus-templates-option');
+      const mobileMeusPedidos = document.getElementById('mobile-meus-pedidos');
+      const mobileEditarDados = document.getElementById('mobile-editar-dados');
       const mobileLogout = document.getElementById('mobile-logout-option');
 
       if (data.logado) {
-        // Atualiza nome do usuário (se quiser exibir no mobile também)
         mobileUserText.textContent = 'Perfil';
         mobileUsernameText.textContent = data.nome || '';
         mobileUsernameDisplay.style.display = 'block';
 
-        // Oculta link "Entrar" e mostra as opções
         if (mobileEntrarLink) mobileEntrarLink.style.display = 'none';
-        if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'block';
+        if (mobileMeusPedidos) {
+          mobileMeusPedidos.href = `/${sub}/meus-pedidos`;
+          mobileMeusPedidos.style.display = 'block';
+        }
+        if (mobileEditarDados) {
+          mobileEditarDados.href = `/${sub}/editar-dados`;
+          mobileEditarDados.style.display = 'block';
+        }
         if (mobileLogout) mobileLogout.style.display = 'block';
+
       } else {
-        // Não logado
         mobileUserText.textContent = 'Entrar';
         mobileUsernameDisplay.style.display = 'none';
+
         if (mobileEntrarLink) mobileEntrarLink.style.display = 'block';
         if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'none';
+        if (mobileEditarDados) mobileEditarDados.style.display = 'none';
         if (mobileLogout) mobileLogout.style.display = 'none';
       }
-    });
+   });
 }
+
+// Executa a função ao carregar
+window.addEventListener('load', verificarLoginCliente);
 
 carregarProdutos();
     atualizarCarrinho();
