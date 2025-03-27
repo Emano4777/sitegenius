@@ -653,11 +653,11 @@ header, .header-loja {
             <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
               Bem-vindo, <span id="mobile-username-text"></span>
             </li>
-            <form method="POST" action="{{ url_for('login_cliente', subdomain=subdomain) }}">
-              <button type="submit" class="mobile-user-link" style="background: none; border: none; color: inherit; padding: 10px; width: 100%; text-align: left;">
-                <i class="fas fa-user"></i> <span>Entrar</span>
-              </button>
-            </form>
+            <li>
+              <a href="{{ url_for('login_cliente', subdomain=subdomain) }}" class="mobile-user-link">
+                <i class="fas fa-user"></i> Entrar
+              </a>
+            </li>
             <li><a href="/meus-pedidos" id="mobile-meus-templates-option" style="display:none;">Meus Pedidos</a></li>
             <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
           </ul>
