@@ -3,70 +3,73 @@ import psycopg2
 from bs4 import BeautifulSoup
 import re
 
-TEMPLATE_NAME = 'template10'
-SUBDOMAIN_PLACEHOLDER = '{{sub}}'
 
-ARQUIVOS = {
-     'index': 'template10_index.html',
-     'meuspedidos':'template10_meuspedidos.html',
-     'editardados': 'template10_editar_dados.html',
-     'acompanharpedido' : 'template10_acompanhar_pedido.html'
-}
-
-def extrair_css_apenas(html):
+def adaptar_links(html, template_id, subdomain, template_name):
     soup = BeautifulSoup(html, 'html.parser')
-    style_tags = soup.find_all('style')
-    css = '\n'.join(tag.text for tag in style_tags)
-    return css
-
-def adaptar_links(html, subdomain):
-    soup = BeautifulSoup(html, 'html.parser')
+    atualizado = False
 
     for a in soup.find_all('a', href=True):
         href = a['href'].strip()
 
-        # Caso 1: link tipo "/template/sobre"
-        if href.startswith('/template/'):
-            page_name = href.split('/template/')[-1]
-            a['href'] = f'/{subdomain}/{page_name}'
+        if "{{" in href or "{%" in href:
+            continue
 
-        # Caso 2: link tipo "{{ url_for('site_usuario', subdomain=subdomain, page_name='sobre') }}"
-        elif '{{ url_for' in href:
-            match = re.search(r"page_name=['\"](.*?)['\"]", href)
+        # 🔁 Se for template10 → mantém /<subdomain>/<pagina>
+        if template_name == 'template10':
+            match = re.match(r"^/[\w-]+/(\w+)", href)
             if match:
                 page_name = match.group(1)
-                a['href'] = f'/{subdomain}/{page_name}'
+                novo = f"/{subdomain}/{page_name}"
+                if href != novo:
+                    print(f"➡️ Corrigido: {href} → {novo}")
+                    a['href'] = novo
+                    atualizado = True
+        else:
+            match = re.match(r"^/(template|site|[\w-]+)/(\w+)", href)
+            if match:
+                page_name = match.group(2)
+                novo = f"/site/{template_id}/{page_name}"
+                if href != novo:
+                    print(f"➡️ Corrigido: {href} → {novo}")
+                    a['href'] = novo
+                    atualizado = True
 
-    return str(soup)
+    return str(soup), atualizado
 
-def salvar_paginas_no_banco():
+
+
+def corrigir_links_no_banco():
     conn = psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
     cur = conn.cursor()
 
-    # 🧹 Remove páginas antigas desse template
-    cur.execute("DELETE FROM template_pages WHERE template_name = %s", (TEMPLATE_NAME,))
-    print(f"🧹 Páginas antigas de '{TEMPLATE_NAME}' removidas com sucesso.")
+    cur.execute("""
+        SELECT id, template_name, subdomain, user_id, page_name, custom_html
+        FROM user_templates
+    """)
+    templates = cur.fetchall()
 
-    # ✅ Insere as novas páginas adaptadas
-    for page_name, arquivo in ARQUIVOS.items():
-        caminho = os.path.join('templates', arquivo)
+    total_corrigidos = 0
 
-        with open(caminho, 'r', encoding='utf-8') as f:
-            html_completo = f.read()
+    for template_id, template_name, subdomain, user_id, page_name, html in templates:
+        # ⛔ pula o template10 — ele usa rotas com subdomínio
+        if template_name == 'template10':
+            continue
 
-            # 🔁 Adapta os links (inclusive os com url_for)
-            html_adaptado = adaptar_links(html_completo, SUBDOMAIN_PLACEHOLDER)
-            css_extraido = extrair_css_apenas(html_adaptado)
+        html_corrigido, atualizado = adaptar_links(html, template_id, subdomain, template_name)
 
+        if atualizado:
             cur.execute("""
-                INSERT INTO template_pages (template_name, page_name, html, css)
-                VALUES (%s, %s, %s, %s)
-            """, (TEMPLATE_NAME, page_name, html_adaptado, css_extraido))
-            print(f"✅ Página '{page_name}' salva com sucesso.")
+                UPDATE user_templates
+                SET custom_html = %s
+                WHERE id = %s
+            """, (html_corrigido, template_id))
+            print(f"🔧 Página '{page_name}' do subdomínio '{subdomain}' (template {template_name}) corrigida com sucesso.")
+            total_corrigidos += 1
 
     conn.commit()
     cur.close()
     conn.close()
-    print("🚀 Todas as páginas foram atualizadas no banco com sucesso!")
+    print(f"\n✅ Correção finalizada. Total de páginas atualizadas: {total_corrigidos}")
 
-salvar_paginas_no_banco()
+
+corrigir_links_no_banco()

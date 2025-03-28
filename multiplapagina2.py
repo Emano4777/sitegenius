@@ -3,13 +3,16 @@ import psycopg2
 from bs4 import BeautifulSoup
 import re
 
-TEMPLATE_NAME = 'template2'
+TEMPLATE_NAME = 'template10'
 SUBDOMAIN_PLACEHOLDER = '{{sub}}'
 
-ARQUIVOS = {
-    'index': 'template2_index.html',
-    'sobre': 'template2_sobre.html',
-    'contato': 'template2_contato.html'
+# Vai pegar automaticamente todos os arquivos HTML do template10
+PASTA_TEMPLATE = 'templates'
+PAGINAS_ESPECIAIS = {
+    'index': 'template10_index.html',
+    'meus-pedidos': 'template10_meuspedidos.html',
+    'acompanhar-pedido': 'template10_acompanhar_pedido.html',
+    'editar-dados': 'template10_editar_dados.html',
 }
 
 def extrair_css_apenas(html):
@@ -24,12 +27,10 @@ def adaptar_links(html, subdomain):
     for a in soup.find_all('a', href=True):
         href = a['href'].strip()
 
-        # Caso 1: link tipo "/template/sobre"
         if href.startswith('/template/'):
             page_name = href.split('/template/')[-1]
             a['href'] = f'/{subdomain}/{page_name}'
 
-        # Caso 2: link tipo "{{ url_for('site_usuario', subdomain=subdomain, page_name='sobre') }}"
         elif '{{ url_for' in href:
             match = re.search(r"page_name=['\"](.*?)['\"]", href)
             if match:
@@ -42,18 +43,22 @@ def salvar_paginas_no_banco():
     conn = psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
     cur = conn.cursor()
 
-    # 🧹 Remove páginas antigas desse template
+    # Remove antigas
     cur.execute("DELETE FROM template_pages WHERE template_name = %s", (TEMPLATE_NAME,))
     print(f"🧹 Páginas antigas de '{TEMPLATE_NAME}' removidas com sucesso.")
 
-    # ✅ Insere as novas páginas adaptadas
-    for page_name, arquivo in ARQUIVOS.items():
-        caminho = os.path.join('templates', arquivo)
+    total = 0
+
+    for page_name, nome_arquivo in PAGINAS_ESPECIAIS.items():
+        caminho = os.path.join(PASTA_TEMPLATE, nome_arquivo)
+
+        if not os.path.isfile(caminho):
+            print(f"⚠️ Arquivo não encontrado: {nome_arquivo} — pulando.")
+            continue
 
         with open(caminho, 'r', encoding='utf-8') as f:
             html_completo = f.read()
 
-            # 🔁 Adapta os links (inclusive os com url_for)
             html_adaptado = adaptar_links(html_completo, SUBDOMAIN_PLACEHOLDER)
             css_extraido = extrair_css_apenas(html_adaptado)
 
@@ -61,11 +66,13 @@ def salvar_paginas_no_banco():
                 INSERT INTO template_pages (template_name, page_name, html, css)
                 VALUES (%s, %s, %s, %s)
             """, (TEMPLATE_NAME, page_name, html_adaptado, css_extraido))
+
             print(f"✅ Página '{page_name}' salva com sucesso.")
+            total += 1
 
     conn.commit()
     cur.close()
     conn.close()
-    print("🚀 Todas as páginas foram atualizadas no banco com sucesso!")
+    print(f"🚀 Total de páginas atualizadas no banco: {total}")
 
 salvar_paginas_no_banco()

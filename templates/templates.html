@@ -1265,23 +1265,37 @@ function closePreview() {
     console.log("❌ Modal fechado com sucesso.");
 }
 
-        function downloadTemplate() {
+function downloadTemplate() {
     const src = document.getElementById("previewFrame").src;
-    const parts = src.split('/');
-    const templateName = parts[parts.indexOf('template-preview') + 1]; // Ex: /template-preview/template1/index
+
+    // Garante que estamos pegando corretamente o nome do template (ex: template1)
+    const match = src.match(/\/template-preview\/(template\d+)\//);
+
+    if (!match || match.length < 2) {
+        alert("Não foi possível identificar o template.");
+        return;
+    }
+
+    const templateName = match[1]; // ex: template1
 
     console.log("Usando template:", templateName);
+
     fetch('/usar-template/' + templateName, { method: 'POST' })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert("Template vinculado com sucesso!");
-            window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name; 
-        } else {
-            alert(data.message || "Erro ao vincular template");
-        }
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Template vinculado com sucesso!");
+                window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name;
+            } else {
+                alert(data.message || "Erro ao vincular template");
+            }
+        })
+        .catch(error => {
+            console.error("Erro ao usar o template:", error);
+            alert("Erro inesperado ao tentar usar o template.");
+        });
 }
+
 
         function handlePremiumPurchase() {
     fetch('/check-login')

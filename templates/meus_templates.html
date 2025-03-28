@@ -108,27 +108,19 @@ nav ul li a:hover {
     margin: 20px 0;
 }
 
-/* Botões Ações */
 .btn {
-    background: #1E2A38;
-    color: white !important;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-size: 14px;
-    text-decoration: none;
-    font-weight: 500;
     display: inline-block;
-    margin: 5px 0;
-    transition: all 0.3s ease-in-out;
-    border: none;
+    padding: 6px 12px;
+    background-color: white;
+    color: black;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
 }
 
 .btn:hover {
-    background: #e68900;
-    transform: scale(1.05);
-    color: white;
+    background-color: #afc1d4;
 }
-
 /* Features Section */
 .features {
     padding: 60px 20px;
@@ -677,22 +669,32 @@ main {
             <tr>
                 <td>{{ data.template_name }}</td>
                 <td>
-                    <div class="subdomain-container">
-                        <div class="subdomain-title">{{ subdomain }}</div>
-                        <p class="subpages-hint">
-                            <i class="fa-solid fa-eye"></i> Essas abaixo são as páginas do seu site. Clique para ver como estão ficando!
-                          </p>                          
-                          <ul class="subpages-list">
-                            {% for page in data.pages %}
-                            <li>
-                                <a href="{{ url_for('site_usuario', subdomain=subdomain, page_name=page) }}" target="_blank">
-                                    <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }}
-                                </a>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </td>                
+                  <div class="subdomain-container">
+                    <div class="subdomain-title">{{ data.subdomain }}</div>
+                    <p class="subpages-hint">
+                      <i class="fa-solid fa-eye"></i> Essas abaixo são as páginas do seu site. Clique para ver como estão ficando!
+                    </p>                          
+                    <ul class="subpages-list">
+                      {% for page in data.pages %}
+                      <li>
+                        {% if data.template_name == 'template10' %}
+                          <!-- Abrir página com a rota /<subdomain>/<page_name> -->
+                            <a href="{{ url_for('site_usuario', subdomain=subdomain, page_name=page) }}"
+                            class="btn btn-primary" target="_blank">
+                           <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }} (Public)
+                         </a>
+                        {% else %}
+                          <!-- Abrir com /site/<template_id>/<page_name> -->
+                          <a href="{{ url_for('site_usuario_completo', template_id=data.template_id, page_name=page) }}" 
+                             class="btn btn-secondary" target="_blank">
+                            <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }} (Editor)
+                          </a>
+                        {% endif %}
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </td>        
                 <td>
                     <a class="btn" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">Editar</a>
                 </td>
