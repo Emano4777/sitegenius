@@ -47,12 +47,14 @@ def login_required_admin(f):
 def login_required_cliente(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'cliente_id' not in session:
+        cliente_id = session.get('cliente_id')
+        if not cliente_id:
             if request.path.startswith('/api'):
                 return jsonify({'success': False, 'message': 'Cliente não autenticado'}), 401
             return redirect(url_for('login_cliente', subdomain=kwargs.get('subdomain', '')))
         return f(*args, **kwargs)
     return decorated_function
+
 # Rota para buscar todos os produtos
 @app.route('/api/produtos')
 def listar_produtos():
@@ -203,10 +205,9 @@ def acompanhar_pedido(subdomain, pedido_id):
 
 
 @app.route('/<subdomain>/meus-pedidos')
+@login_required_cliente
 def meus_pedidos(subdomain):
     cliente_id = session.get('cliente_id')
-    if not cliente_id:
-        return redirect(f'/{subdomain}/login-cliente')
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1524,10 +1525,21 @@ def site_usuario(subdomain, page_name):
     cur.close()
     conn.close()
 
+    # Protege páginas privadas
+    paginas_privadas = ['meus-pedidos', 'acompanhar-pedido', 'editar-dados']
+
+    if page_name in paginas_privadas:
+        if 'cliente_id' not in session:
+            return redirect(url_for('login_cliente', subdomain=subdomain))
+        if 'user_id' in session:
+            return "Acesso restrito a clientes.", 403
+
     if site:
-        return site[0]  # Retorna o HTML da página específica do subdomínio
+        return site[0]
     else:
         return "Página não encontrada.", 404
+
+
 
 
 

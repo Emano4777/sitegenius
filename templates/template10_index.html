@@ -506,7 +506,29 @@ header, .header-loja {
   from { right: -300px; opacity: 0; }
   to   { right: 0; opacity: 1; }
 }
+.sessao-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
 
+.sessao-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.sessao-scroll::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+
+.sessao-scroll .produto {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: 260px;
+  min-height: 380px;
+}
 .mobile-menu-content a {
   display: block;
   color: white;
@@ -533,6 +555,67 @@ header, .header-loja {
   list-style: none;
   padding-left: 0;
   margin-top: 0.5rem;
+}
+
+.comentario-texto {
+  width: 100%;
+  min-height: 60px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+  font-family: Arial, sans-serif;
+  font-size: 0.95rem;
+  color: #333;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-enviar-comentario {
+  margin-top: 6px;
+  width: 100%;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-enviar-comentario:hover {
+  background-color: #0056b3;
+}
+#comentarios-rodape {
+  background: #343a40;
+  color: white;
+  padding: 1rem;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+#comentarios-rodape span {
+  display: inline-block;
+  margin-right: 2rem;
+  animation: deslizarComentarios 30s linear infinite;
+}
+
+@keyframes deslizarComentarios {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .mobile-dropdown-menu li a {
@@ -697,11 +780,26 @@ header, .header-loja {
     {% endfor %}
 </div>
 
-  
-  <div class="container">
-    <h2 class="titulo-produtos">🛍️ Produtos em Destaque</h2>
+<div class="container">
+  <h2 class="titulo-produtos">
+    <i class="fa-solid fa-fire"></i> Mais Vendidos
+  </h2>
+  <div class="sessao-scroll" id="mais-vendidos"></div>
 
-    <div id="produtos"></div>
+  <h2 class="titulo-produtos">
+    <i class="fa-solid fa-bullseye"></i> Ofertas do Dia
+  </h2>
+  <div class="sessao-scroll" id="ofertas"></div>
+
+  <h2 class="titulo-produtos">
+    <i class="fa-solid fa-rocket"></i> Lançamentos
+  </h2>
+  <div class="sessao-scroll" id="lancamentos"></div>
+</div>
+
+
+
+    </div>
 
     <div id="carrinho" style="display:none">
       <h2>🛒 Seu Carrinho</h2>
@@ -713,9 +811,7 @@ header, .header-loja {
     </div>
   </div>
 
-  <footer>
-    <p>© 2025 Minha Loja Virtual - Todos os direitos reservados</p>
-  </footer>
+
 
   <script>
     const sub = window.location.pathname.split('/')[1];
@@ -796,7 +892,7 @@ document.addEventListener('click', function (e) {
   }
 });
 
-    async function carregarProdutos() {
+async function carregarProdutos() {
   const response = await fetch(`/${sub}/api/produtos`);
   const data = await response.json();
 
@@ -805,47 +901,58 @@ document.addEventListener('click', function (e) {
     return;
   }
 
-  const container = document.getElementById('produtos');
-container.innerHTML = ''; // Limpa antes de inserir
+  const maisVendidos = document.getElementById('mais-vendidos');
+  const ofertas = document.getElementById('ofertas');
+  const lancamentos = document.getElementById('lancamentos');
 
-const grid = document.createElement('div');
-grid.style.display = 'grid';
-grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
-grid.style.gap = '1rem';
 
-data.forEach(prod => {
-  const div = document.createElement('div');
-  div.className = 'produto';
+  maisVendidos.innerHTML = '';
+  ofertas.innerHTML = '';
+  lancamentos.innerHTML = '';
 
-  const estrelasHTML = `
-    <div class="avaliacao" data-id="${prod.id}">
-      <i class="fas fa-star" data-value="1"></i>
-      <i class="fas fa-star" data-value="2"></i>
-      <i class="fas fa-star" data-value="3"></i>
-      <i class="fas fa-star" data-value="4"></i>
-      <i class="fas fa-star" data-value="5"></i>
-    </div>
-  `;
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
+  grid.style.gap = '1rem';
 
-  div.innerHTML = `
-    <div>
-      <img src="${prod.imagem}" alt="${prod.nome}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
-      <h3>${prod.nome}</h3>
-      ${prod.marca ? `<small><i class="fas fa-tag"></i> ${prod.marca}</small><br>` : ''}
-      ${prod.promocao ? `<span class="promocao-tag">🔥 Promoção</span><br>` : ''}
-      ${estrelasHTML}
-      <p style="font-size: 1.2rem;"><strong>R$ ${prod.preco.toFixed(2)}</strong></p>
-      <input type="number" value="1" min="1" style="width: 60px;" id="qtd-${prod.id}">
-      <button onclick="adicionarCarrinho(${prod.id})">
-        <i class="fas fa-cart-plus"></i> Adicionar
-      </button>
-    </div>
-  `;
+  data.forEach((prod, index) => {
+    const div = document.createElement('div');
+    div.className = 'produto';
+    div.innerHTML = `
+      <div>
+        <img src="${prod.imagem}" alt="${prod.nome}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
+        <h3>${prod.nome}</h3>
+        ${prod.marca ? `<small><i class="fas fa-tag"></i> ${prod.marca}</small><br>` : ''}
+        ${prod.promocao ? `<span class="promocao-tag">🔥 Promoção</span><br>` : ''}
+        <div class="avaliacao" data-id="${prod.id}">
+          <i class="fas fa-star" data-value="1"></i>
+          <i class="fas fa-star" data-value="2"></i>
+          <i class="fas fa-star" data-value="3"></i>
+          <i class="fas fa-star" data-value="4"></i>
+          <i class="fas fa-star" data-value="5"></i>
+        </div>
+        <textarea class="comentario-texto" placeholder="Deixe seu comentário..." style="width:100%; margin-top:10px; resize: vertical;"></textarea>
+<button class="btn-enviar-comentario" data-id="${prod.id}" style="margin-top:5px; width:100%; background-color:#007bff; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">
+  <i class="fas fa-paper-plane"></i> Enviar Comentário
+</button>
+        <p style="font-size: 1.2rem;"><strong>R$ ${prod.preco.toFixed(2)}</strong></p>
+        <input type="number" value="1" min="1" style="width: 60px;" id="qtd-${prod.id}">
+        <button onclick="adicionarCarrinho(${prod.id})">
+          <i class="fas fa-cart-plus"></i> Adicionar
+        </button>
+      </div>
+    `;
 
-  grid.appendChild(div);
-});
+    // Adiciona no grid geral
+    grid.appendChild(div);
 
-container.appendChild(grid);
+    // Distribui em sessões
+    if (index % 2 === 0) maisVendidos.appendChild(div.cloneNode(true));
+    if (prod.promocao) ofertas.appendChild(div.cloneNode(true));
+    if (index % 3 === 0) lancamentos.appendChild(div.cloneNode(true));
+  });
+
+  container.appendChild(grid);
 
 }
     function adicionarCarrinho(id) {
@@ -885,6 +992,17 @@ container.appendChild(grid);
 
   totalEl.innerText = `Total: R$ ${total.toFixed(2)}`;
 }
+function atualizarComentariosRodape() {
+  const comentarios = JSON.parse(localStorage.getItem('comentarios') || '[]');
+  const container = document.getElementById('comentarios-rodape');
+  container.innerHTML = '💬 Feedback dos clientes: ';
+  comentarios.slice(-10).forEach(c => {
+    const span = document.createElement('span');
+    span.textContent = `“${c.texto}”  `;
+    span.style.marginRight = '2rem';
+    container.appendChild(span);
+  });
+}
 
 
     function removerItem(id) {
@@ -896,6 +1014,7 @@ container.appendChild(grid);
   carregarProdutos();
   atualizarCarrinho();
   verificarLoginCliente();
+  atualizarComentariosRodape();
 });
   let banners = document.querySelectorAll('.banner-slide');
 let currentBanner = 0;
@@ -961,8 +1080,7 @@ document.addEventListener('click', function (e) {
   }
 });
 
-
-
+f
   </script>
 
 <script>
@@ -1030,8 +1148,38 @@ function verificarLoginCliente() {
 
 // Executa a função ao carregar
 window.addEventListener('load', verificarLoginCliente);
+
+document.addEventListener('click', function (e) {
+  if (e.target.classList.contains('btn-enviar-comentario')) {
+    const produtoId = e.target.dataset.id;
+    const textarea = e.target.previousElementSibling;
+    const comentario = textarea.value.trim();
+
+    if (!comentario) {
+      mostrarToast('Escreva algo antes de enviar!', 'error');
+      return;
+    }
+
+    // Exemplo com localStorage (substituir por POST no backend se quiser)
+    const comentariosSalvos = JSON.parse(localStorage.getItem('comentarios') || '[]');
+    comentariosSalvos.push({ id: produtoId, texto: comentario, data: new Date().toLocaleDateString() });
+    localStorage.setItem('comentarios', JSON.stringify(comentariosSalvos));
+
+    textarea.value = '';
+    mostrarToast('Comentário enviado!');
+    atualizarComentariosRodape();
+  }
+});
+
+
 </script>
 
+<footer>
+  <p>© 2025 Minha Loja Virtual - Todos os direitos reservados</p>
+  <div id="comentarios-rodape" style="background:#343a40; color:white; padding:1rem; overflow-x:auto; white-space:nowrap; font-size:0.9rem;">
+    <span>💬 Feedback dos clientes: </span>
+  </div>
+</footer>
 
 </body>
 </html>
