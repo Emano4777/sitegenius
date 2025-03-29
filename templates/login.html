@@ -152,6 +152,16 @@
       </div>
       
     
+      {% with mensagens = get_flashed_messages() %}
+      {% if mensagens %}
+        <div class="error">
+          {% for msg in mensagens %}
+            {{ msg }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
     <form method="POST">
         <input type="text" name="email" placeholder="E-mail" required>
         <input type="password" name="senha" placeholder="Senha" required>

@@ -665,37 +665,41 @@ iframe {
         <div class="container">
             <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
     
-            <!-- ✅ Navbar Desktop Corrigida -->
-            <nav class="desktop-nav">
-                <ul>
-                    <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
-                    <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
-                    <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
-                    <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
-    
-                    <!-- Ícone do usuário -->
-                    <li class="user-menu">
-                        <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
-                            <i class="fas fa-user user-icon"></i>
-                        </a>
-                        <ul class="dropdown-menu" id="user-dropdown">
-                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
-                                Olá, <span id="user-name-text"></span><br>
-                                <small id="user-premium-info" style="color: #666;"></small>
-                            </li>
-                            <li><a href="/login" id="login-option">Entrar</a></li>
-                            <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
-                            <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </nav>
-    
-            <!-- ✅ Botão de menu mobile -->
-            <button class="mobile-menu-btn" onclick="openMobileMenu()">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
+           <!-- ✅ Navbar Desktop Corrigida -->
+<nav class="desktop-nav">
+    <ul>
+        <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+        <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+        <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
+        <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+
+        <!-- ✅ Avatar do usuário -->
+        <li class="user-menu">
+            <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
+                <span id="user-avatar-container">
+                    <i class="fas fa-user user-icon"></i>
+                </span>
+            </a>
+            <ul class="dropdown-menu" id="user-dropdown">
+                <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
+                    Olá, <span id="user-name-text"></span><br>
+                    <small id="user-premium-info" style="color: #666;"></small>
+                </li>
+                <li><a href="/login" id="login-option">Entrar</a></li>
+                <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
+                <li><a href="/editar-dados" id="editar-dados-option" style="display:none;">Editar meus Dados</a></li>
+
+                <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+
+<!-- ✅ Botão de menu mobile -->
+<button class="mobile-menu-btn" onclick="openMobileMenu()">
+    <i class="fas fa-bars"></i>
+</button>
+
     </div>
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <div class="mobile-menu-content">
@@ -705,20 +709,25 @@ iframe {
             <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
     
                     <!-- ✅ Ícone do usuário no menu mobile -->
-<div class="mobile-user-menu">
-    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
-        <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
-    </a>
-    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
-        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-           Olá, <span id="mobile-username-text"></span><br>
-            <small id="mobile-user-premium-info" style="color: #ddd;"></small>
-        </li>
-        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-        <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
-        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-    </ul>
-</div>
+                    <div class="mobile-user-menu">
+                        <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+                            <span id="mobile-user-avatar-container">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <span id="mobile-user-name-text">Entrar</span>
+                        </a>
+                        <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+                            <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+                                Olá, <span id="mobile-username-text"></span><br>
+                                <small id="mobile-user-premium-info" style="color: #ddd;"></small>
+                            </li>
+                            <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+                            <li><a href="/meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
+                            <li><a href="/editar-dados" id="mobile-editar-dados-option" style="display:none;">Editar meus Dados</a></li>
+
+                            <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                        </ul>
+                    </div>
       
                     <button class="close-btn" onclick="closeMobileMenu()">
                         <i class="fas fa-times-circle"></i>
@@ -760,20 +769,30 @@ iframe {
                 </button>
             
                 <div id="detalhes-template1" style="
-                    display: none;
-                    text-align: left;
-                    margin-top: 10px;
-                    background: rgba(255, 255, 255, 0.85);
-                    padding: 10px;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    color: #333;
-                    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-                ">
-                    <p><strong>Ideal para:</strong> Agências de Viagem, Turismo e Guias</p>
-                    <p><strong>Recursos:</strong> Visual impactante, seções informativas, responsivo e editável</p>
-                    <p><strong>Diferencial:</strong> Pronto para destacar pacotes, depoimentos e diferenciais da empresa</p>
-                </div>
+    display: none;
+    text-align: left;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+">
+  <p><strong>Ideal para:</strong> Agências de Viagem, Turismo e Guias</p>
+  <p><strong>Recursos:</strong></p>
+  <ul style="margin-top: 5px; padding-left: 18px; list-style: disc;">
+    <li>Design visual impactante e 100% responsivo</li>
+    <li>Seções de pacotes turísticos com ícones personalizados</li>
+    <li>Formulário de depoimentos com armazenamento local</li>
+    <li>Quiz interativo para ajudar o cliente a escolher um pacote</li>
+    <li>Depoimentos exibidos também no rodapé</li>
+    <li>Barra de progresso de leitura no topo da tela</li>
+    <li>Notificações em tempo real tipo: “João acabou de reservar para Cancún!”</li>
+  </ul>
+  <p><strong>Diferencial:</strong> Ferramentas interativas e efeitos sutis que aumentam o engajamento e mantêm o visitante mais tempo no site.</p>
+</div>
+
             </div>
             <div class="template" style="
             background-image: url('https://images.unsplash.com/photo-1567958451986-2de427a4a0be?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
@@ -800,11 +819,13 @@ iframe {
                     </button>
                 
                     <!-- Painel oculto com informações -->
-                    <div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-                        <p><strong>Ideal para:</strong> Lojas de roupas, boutiques, brechós e vitrines de moda.</p>
-                        <p><strong>Inclui:</strong> Vitrine com produtos, layout responsivo, seção de destaques e depoimentos de clientes.</p>
-                        <p><strong>Diferencial:</strong> Visual moderno, navegação intuitiva e fácil personalização para destacar sua coleção.</p>
-                    </div>
+                  <!-- Painel oculto com informações -->
+<div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+    <p><strong>Ideal para:</strong> Lojas de roupas, boutiques, brechós e vitrines de moda.</p>
+    <p><strong>Inclui:</strong> Galeria de fotos por produto, layout responsivo, seção de destaques, vitrine e depoimentos de clientes.</p>
+    <p><strong>Diferencial:</strong> Carrinho de compras que envia diretamente para o WhatsApp com os produtos escolhidos, sistema de quiz interativo para sugestão de looks, e formulário de comentários com salvamento local.</p>
+  </div>
+  
                 </div>       
                 <div class="template" style="
                 background-image: url('https://images.unsplash.com/photo-1549271568-e87e07c5406b?auto=format&fit=crop&w=1600&q=80');
@@ -816,9 +837,11 @@ iframe {
                 box-shadow: 0 4px 10px rgba(0,0,0,0.3);
                 margin-bottom: 30px;
             ">
-                        <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: #f8f5f5;">
-                            <i class="fas fa-scissors"></i> Template Barbearia
+                       <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                        <h3 style="margin: 0; color: white;">
+                          <i class="fas fa-scissors"></i> Template para Barbearia
                         </h3>
+                      </div>
                         <!-- Botão de Visualizar -->
                         <button class="btn" onclick="previewTemplate('/template-preview/template3/index')">
                             <i class="fas fa-eye"></i> Visualizar
@@ -1240,63 +1263,105 @@ iframe {
     fetch('/check-login')
         .then(response => response.json())
         .then(data => {
-            let userNameElement = document.getElementById('user-name');
-            let userNameText = document.getElementById('user-name-text');
-            let loginOption = document.getElementById('login-option');
-            let logoutOption = document.getElementById('logout-option');
-            let meusTemplatesOption = document.getElementById('meus-templates-option');
+            const userNameElement = document.getElementById('user-name');
+        const userNameText = document.getElementById('user-name-text');
+        const loginOption = document.getElementById('login-option');
+        const logoutOption = document.getElementById('logout-option');
+        const meusTemplatesOption = document.getElementById('meus-templates-option');
+        let editarDadosOption = document.getElementById('editar-dados-option');
+        let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
 
-            let mobileUserNameElement = document.getElementById('mobile-user-name');
-            let mobileUserNameText = document.getElementById('mobile-username-text');
-            let mobileLoginOption = document.getElementById('mobile-login-option');
-            let mobileLogoutOption = document.getElementById('mobile-logout-option');
-            let mobileUserText = document.getElementById('mobile-user-name-text');
-            let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+        const mobileUserNameElement = document.getElementById('mobile-user-name');
+        const mobileUserNameText = document.getElementById('mobile-username-text');
+        const mobileLoginOption = document.getElementById('mobile-login-option');
+        const mobileLogoutOption = document.getElementById('mobile-logout-option');
+        const mobileUserText = document.getElementById('mobile-user-name-text');
+        const mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
 
-            if (data.logged_in) {
-                if (data.premium_level) {
-        document.getElementById('user-premium-info').textContent = 
-            data.premium_level === 'free' 
-                ? 'Plano Gratuito'
-                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+        const avatarContainer = document.getElementById('user-avatar-container');
+        const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
 
-        document.getElementById('mobile-user-premium-info').textContent = 
-            data.premium_level === 'free' 
-                ? 'Plano Gratuito'
-                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
-    }
-                loginOption.style.display = 'none';
-                logoutOption.style.display = 'block';
-                meusTemplatesOption.style.display = 'block';
+        if (data.logged_in) {
+            if (data.premium_level) {
+                document.getElementById('user-premium-info').textContent =
+                    data.premium_level === 'free' ? 'Plano Gratuito' :
+                    `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
 
-                mobileLoginOption.style.display = 'none';
-                mobileLogoutOption.style.display = 'block';
-                mobileMeusTemplatesOption.style.display = 'block';
-
-                if (data.user_name) {
-                    userNameText.textContent = data.user_name;
-                    userNameElement.style.display = 'block';
-
-                    mobileUserNameText.textContent = data.user_name;
-                    mobileUserNameElement.style.display = 'block';
-                    mobileUserText.textContent = data.user_name;
-                }
-            } else {
-                loginOption.style.display = 'block';
-                logoutOption.style.display = 'none';
-                meusTemplatesOption.style.display = 'none';
-
-                userNameElement.style.display = 'none';
-
-                mobileLoginOption.style.display = 'block';
-                mobileLogoutOption.style.display = 'none';
-                mobileMeusTemplatesOption.style.display = 'none';
-
-                mobileUserNameElement.style.display = 'none';
-                mobileUserText.textContent = "Entrar";
+                document.getElementById('mobile-user-premium-info').textContent =
+                    data.premium_level === 'free' ? 'Plano Gratuito' :
+                    `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
             }
-        })
-        .catch(error => console.error('Erro ao verificar login:', error));
+
+            loginOption.style.display = 'none';
+            logoutOption.style.display = 'block';
+            meusTemplatesOption.style.display = 'block';
+            editarDadosOption.style.display = 'block';
+            mobileEditarDadosOption.style.display = 'block';
+            mobileLoginOption.style.display = 'none';
+            mobileLogoutOption.style.display = 'block';
+            mobileMeusTemplatesOption.style.display = 'block';
+
+            // Avatar Desktop
+            avatarContainer.innerHTML = '';
+            if (data.avatar_url) {
+                const img = document.createElement('img');
+                img.src = data.avatar_url;
+                img.alt = 'Avatar';
+                img.style.width = '28px';
+                img.style.height = '28px';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                avatarContainer.appendChild(img);
+            } else {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-user user-icon';
+                avatarContainer.appendChild(icon);
+                editarDadosOption.style.display = 'none';
+                mobileEditarDadosOption.style.display = 'none';
+
+            }
+
+            // Avatar Mobile
+            mobileAvatarContainer.innerHTML = '';
+            if (data.avatar_url) {
+                const img = document.createElement('img');
+                img.src = data.avatar_url;
+                img.alt = 'Avatar';
+                img.style.width = '28px';
+                img.style.height = '28px';
+                img.style.borderRadius = '50%';
+                img.style.objectFit = 'cover';
+                mobileAvatarContainer.appendChild(img);
+            } else {
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-user';
+                mobileAvatarContainer.appendChild(icon);
+            }
+
+            // Nome
+            if (data.user_name) {
+                userNameText.textContent = data.user_name;
+                userNameElement.style.display = 'block';
+
+                mobileUserNameText.textContent = data.user_name;
+                mobileUserNameElement.style.display = 'block';
+                mobileUserText.textContent = data.user_name;
+            }
+
+        } else {
+            loginOption.style.display = 'block';
+            logoutOption.style.display = 'none';
+            meusTemplatesOption.style.display = 'none';
+            userNameElement.style.display = 'none';
+
+            mobileLoginOption.style.display = 'block';
+            mobileLogoutOption.style.display = 'none';
+            mobileMeusTemplatesOption.style.display = 'none';
+            mobileUserNameElement.style.display = 'none';
+            mobileUserText.textContent = "Entrar";
+        }
+    })
+    .catch(error => console.error('Erro ao verificar login:', error));
 
 
     let previewModal = document.getElementById("previewModal");
@@ -1515,72 +1580,7 @@ function toggleMobileUserMenu(event) {
     let menu = document.getElementById('mobile-user-dropdown');
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
-// ✅ Verifica se o usuário está logado e exibe corretamente no desktop e mobile
-fetch('/check-login')
-    .then(response => response.json())
-    .then(data => {
-        let userNameElement = document.getElementById('user-name');
-        let userNameText = document.getElementById('user-name-text');
-        let loginOption = document.getElementById('login-option');
-        let logoutOption = document.getElementById('logout-option');
-        let meusTemplatesOption = document.getElementById('meus-templates-option');
 
-        let mobileUserNameElement = document.getElementById('mobile-user-name');
-        let mobileUserNameText = document.getElementById('mobile-username-text');
-        let mobileLoginOption = document.getElementById('mobile-login-option');
-        let mobileLogoutOption = document.getElementById('mobile-logout-option');
-        let mobileUserText = document.getElementById('mobile-user-name-text');
-        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
-
-        if (data.logged_in) {
-    const banner = document.getElementById('premium-banner');
-    if (data.premium_level && data.premium_level !== 'free') {
-        if (banner) banner.style.display = 'none';
-    }
-
-    if (data.premium_level) {
-        document.getElementById('user-premium-info').textContent = 
-            data.premium_level === 'free' 
-                ? 'Plano Gratuito'
-                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
-
-        document.getElementById('mobile-user-premium-info').textContent = 
-            data.premium_level === 'free' 
-                ? 'Plano Gratuito'
-                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
-    }
-            loginOption.style.display = 'none';
-            logoutOption.style.display = 'block';
-            meusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates"
-
-            mobileLoginOption.style.display = 'none';
-            mobileLogoutOption.style.display = 'block';
-            mobileMeusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" no mobile
-
-            if (data.user_name) {
-                userNameText.textContent = data.user_name;
-                userNameElement.style.display = 'block';
-
-                mobileUserNameText.textContent = data.user_name;
-                mobileUserNameElement.style.display = 'block';
-                mobileUserText.textContent = data.user_name; // Atualiza nome no menu mobile
-            }
-        } else {
-            loginOption.style.display = 'block';
-            logoutOption.style.display = 'none';
-            meusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates"
-
-            userNameElement.style.display = 'none';
-
-            mobileLoginOption.style.display = 'block';
-            mobileLogoutOption.style.display = 'none';
-            mobileMeusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates" no mobile
-
-            mobileUserNameElement.style.display = 'none';
-            mobileUserText.textContent = "Entrar"; // Reseta para "Entrar"
-        }
-    })
-    .catch(error => console.error('Erro ao verificar login:', error));
 
 
 // ✅ Função para logout e redirecionamento

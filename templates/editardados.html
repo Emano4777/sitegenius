@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Dados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 40px;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0px 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #2b7a78;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #205c5a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Editar Dados</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <label for="avatar">Avatar:</label><br>
+        <input type="file" id="avatar" name="avatar" accept="image/*"><br><br>
+      
+        {% if avatar %}
+          <img src="{{ avatar }}" alt="Avatar atual" style="max-width: 120px; border-radius: 8px;"><br>
+        {% endif %}
+  <label for="nome">Nome:</label><br>
+  <input type="text" id="nome" name="nome" value="{{ nome }}" required><br><br>
+
+  <label for="email">E-mail:</label><br>
+  <input type="email" id="email" name="email" value="{{ email }}" required><br><br>
+
+  <label for="senha">Nova Senha:</label><br>
+  <input type="password" id="senha" name="senha" placeholder="Deixe em branco para não alterar"><br><br>
+
+  <button type="submit">Salvar Alterações</button>
+</form>
+
+  </div>
+</body>
+</html>

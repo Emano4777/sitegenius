@@ -89,6 +89,38 @@
       color: #555;
     }
 
+    #progressBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 5px;
+    background: #2b7a78;
+    width: 0%;
+    z-index: 9999;
+  }
+
+  .notification-popup {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background-color: #fff;
+  color: #333;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 10000 !important;
+  display: none;
+  animation: slideIn 0.5s ease;
+  font-size: 0.95em;
+  border: 1px solid #ccc;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+
     .footer {
       text-align: center;
       padding: 25px;
@@ -108,11 +140,14 @@
 </head>
 <body>
 
+
+
   <nav class="navbar">
     <a href="/template/index"><i class="fas fa-home"></i> Início</a>
     <a href="/template/sobre"><i class="fas fa-user"></i> Sobre</a>
-    <a href="/template/contato"><i class="fas fa-envelope"></i> Contato</a>
   </nav>
+
+  <div id="progressBar"></div>
 
   <section class="hero">
     <h1>Insira aqui o nome da sua agência ou negócio</h1>
@@ -120,39 +155,163 @@
   </section>
 
   <section class="section">
-    <h2>Adicione os principais serviços ou pacotes aqui</h2>
+    <h2><i class="fas fa-suitcase-rolling"></i> Adicione os principais serviços ou pacotes aqui</h2>
     <p>Apresente ao visitante o que você oferece — pode ser uma chamada geral ou introdutória</p>
 
     <div class="packages">
       <div class="package">
-        <h3>Nome do pacote 1</h3>
+        <h3><i class="fas fa-umbrella-beach"></i> Nome do pacote 1</h3>
         <p>Descreva aqui esse pacote. Exemplo: 7 dias em praias paradisíacas com hospedagem inclusa.</p>
       </div>
       <div class="package">
-        <h3>Nome do pacote 2</h3>
+        <h3><i class="fas fa-globe-americas"></i> Nome do pacote 2</h3>
         <p>Você pode oferecer pacotes internacionais, passeios locais ou o que quiser.</p>
       </div>
       <div class="package">
-        <h3>Nome do pacote 3</h3>
+        <h3><i class="fas fa-mountain-sun"></i> Nome do pacote 3</h3>
         <p>Descreva experiências únicas para atrair os clientes. Seja criativo!</p>
       </div>
     </div>
   </section>
 
   <section class="section" style="background-color:#f9f9f9;">
-    <h2>Fale sobre o seu diferencial aqui</h2>
+    <h2><i class="fas fa-award"></i> Fale sobre o seu diferencial aqui</h2>
     <p>Conte um pouco da sua história, do que torna seu negócio especial, e por que os clientes devem escolher você.</p>
   </section>
 
+  <section class="section" style="background-color:#f1f1f1;">
+    <h2><i class="fas fa-map-signs"></i> Qual o destino ideal pra você?</h2>
+    <form id="quizForm" style="max-width: 600px; margin: auto; text-align: left;">
+      <label>Você prefere:</label><br>
+      <input type="radio" name="resposta" value="praia" required> Relaxar na praia<br>
+      <input type="radio" name="resposta" value="aventura"> Aventura na montanha<br>
+      <input type="radio" name="resposta" value="cidade"> Vida urbana e agito<br><br>
+      <button type="submit" style="background:#2b7a78; color:white; padding:10px 20px; border:none; border-radius:5px;">
+        <i class="fas fa-compass"></i> Ver sugestão de destino
+      </button>
+    </form>
+  
+    <div id="quizResult" style="margin-top:20px; font-weight:bold; color:#2b7a78; text-align:center;"></div>
+  </section>
+  
+
   <section class="section">
-    <h2>Depoimentos (adicione os seus aqui!)</h2>
-    <p>“Aqui você pode colocar frases de clientes felizes com seus serviços.”</p>
-    <p>“Depoimentos aumentam a confiança de quem visita o site pela primeira vez.”</p>
+    <h2><i class="fas fa-comments"></i> Depoimentos (adicione os seus aqui!)</h2>
+    <div id="testimonials"></div>
+  
+    <form id="testimonialForm" style="margin-top: 30px; max-width: 600px; margin-inline: auto;">
+      <input type="text" id="userName" placeholder="Seu nome" required style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px;">
+      <textarea id="userComment" placeholder="Seu depoimento..." rows="4" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+      <button type="submit" style="margin-top: 10px; background-color: #2b7a78; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+        <i class="fas fa-paper-plane"></i> Enviar depoimento
+      </button>
+    </form>
+  </section>
+  <section class="hero" style="background-color:#2b7a78; background-image:none;">
+    <h1 style="font-size:2.5em;">
+      <i class="fas fa-paper-plane"></i> Pronto para começar sua viagem dos sonhos?
+    </h1>    
+    <p>Entre em contato agora e receba uma cotação exclusiva.</p>
+    <a href="https://wa.me/SEUNUMERO" style="padding:12px 20px;background:#fff;color:#2b7a78;text-decoration:none;border-radius:5px;font-weight:bold;">Fale conosco no WhatsApp</a>
   </section>
 
+
+  
+  <div id="notification" class="notification-popup"></div>
   <div class="footer">
+    <h3><i class="fas fa-star"></i> Depoimentos recentes</h3>
+    <div id="footer-testimonials" style="max-width:600px;margin:20px auto;text-align:left;"></div>
     <p><i class="fas fa-plane-departure"></i> Edite este rodapé com o nome do seu negócio e o ano ©</p>
   </div>
+  
+  <script>
+    const form = document.getElementById('testimonialForm');
+    const list = document.getElementById('testimonials');
+  
+    function renderFooterTestimonials() {
+  const depoimentos = JSON.parse(localStorage.getItem('depoimentos')) || [];
+  const footerList = document.getElementById('footer-testimonials');
+  footerList.innerHTML = '';
+  depoimentos.slice(-3).reverse().forEach(d => {
+    const div = document.createElement('div');
+    div.style.borderBottom = '1px dashed #ccc';
+    div.style.marginBottom = '10px';
+    div.innerHTML = `<strong><i class="fas fa-user"></i> ${d.nome}</strong><br><span style="font-size: 0.9em;">${d.comentario}</span>`;
+    footerList.appendChild(div);
+  });
+}
 
+renderFooterTestimonials();
+  
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const nome = document.getElementById('userName').value.trim();
+      const comentario = document.getElementById('userComment').value.trim();
+      if (!nome || !comentario) return;
+  
+      const depoimentos = JSON.parse(localStorage.getItem('depoimentos')) || [];
+      depoimentos.push({ nome, comentario });
+      localStorage.setItem('depoimentos', JSON.stringify(depoimentos));
+      form.reset();
+      renderTestimonials();
+      renderFooterTestimonials();
+    });
+  
+    renderTestimonials();
+
+    window.addEventListener("scroll", function() {
+    const scrollTop = document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = (scrollTop / scrollHeight) * 100;
+    document.getElementById("progressBar").style.width = scrolled + "%";
+  });
+
+
+  document.getElementById("quizForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const resposta = document.querySelector('input[name="resposta"]:checked').value;
+    let mensagem = "";
+
+    if (resposta === "praia") {
+      mensagem = "🌴 Seu destino ideal é: MALDIVAS! Relaxe nas águas cristalinas.";
+    } else if (resposta === "aventura") {
+      mensagem = "⛰️ Seu destino ideal é: PATAGÔNIA! Aventuras intensas te aguardam.";
+    } else {
+      mensagem = "🏙️ Seu destino ideal é: NOVA YORK! Aproveite o agito da cidade que nunca dorme.";
+    }
+
+    document.getElementById("quizResult").innerHTML = mensagem + "<br><br><a href='#' style='text-decoration:none;color:#fff;background:#2b7a78;padding:8px 16px;border-radius:5px;'>Ver Pacote</a>";
+  });
+
+  const notifications = [
+  "João de SP acabou de reservar o pacote para Cancún!",
+  "Maria de BH acabou de fechar 5 dias em Porto Seguro!",
+  "Carlos de Curitiba garantiu sua viagem para Paris!",
+  "Juliana de Recife escolheu o pacote para Gramado!",
+  "Lucas de Salvador reservou uma viagem para Fernando de Noronha!"
+];
+  function showRandomNotification() {
+    const popup = document.getElementById('notification');
+    const mensagem = notifications[Math.floor(Math.random() * notifications.length)];
+    popup.textContent = mensagem;
+    console.log("Mostrando notificação:", mensagem);
+
+    popup.style.display = 'block';
+
+    setTimeout(() => {
+      popup.style.opacity = '1';
+setTimeout(() => {
+  popup.style.transition = 'opacity 0.5s';
+  popup.style.opacity = '0';
+  setTimeout(() => popup.style.display = 'none', 500);
+}, 5000);
+    }, 5000); // fica visível por 5 segundos
+  }
+
+  window.onload = function () {
+  showRandomNotification();
+  setInterval(showRandomNotification, 20000);
+};
+  </script>
 </body>
 </html>

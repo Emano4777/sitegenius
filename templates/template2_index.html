@@ -111,7 +111,6 @@
   <nav class="navbar">
     <a href="/template/index"><i class="fas fa-home"></i> Início</a>
     <a href="/template/sobre"><i class="fas fa-store"></i> Sobre</a>
-    <a href="/template/contato"><i class="fas fa-envelope"></i> Contato</a>
   </nav>
 
   <section class="hero">
@@ -125,34 +124,166 @@
 
     <div class="products">
       <div class="product">
+        
         <h3>Look Casual</h3>
         <p>Conforto e estilo para o dia a dia com muito charme.</p>
+        <div class="product-gallery">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743263273/images_4_yoiv9t.jpg" style="width: 100%; border-radius: 6px; margin-bottom: 8px;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743263319/Estilo_casual_masculino_Entenda_o_que__e_o_que_vestir-1200x837_lkhnzp.jpg" style="width: 100%; border-radius: 6px; margin-bottom: 8px;">
+        </div>
+        <button onclick="adicionarAoCarrinho('Look Casual')" style="background:#111;color:#fff;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;margin-top:10px;">
+          <i class="fas fa-cart-plus"></i> Adicionar ao Carrinho
+        </button>
       </div>
       <div class="product">
         <h3>Moda Social</h3>
         <p>Elegância e sofisticação para impressionar em qualquer ocasião.</p>
+        <div class="product-gallery">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743263419/images_6_jdht0s.jpg" style="width: 100%; border-radius: 6px; margin-bottom: 8px;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743263426/images_5_akpmzi.jpg" style="width: 100%; border-radius: 6px; margin-bottom: 8px;">
+        </div>
+        <button onclick="adicionarAoCarrinho('Look Casual')" style="background:#111;color:#fff;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;margin-top:10px;">
+          <i class="fas fa-cart-plus"></i> Adicionar ao Carrinho
+        </button>
       </div>
       <div class="product">
         <h3>Acessórios</h3>
         <p>Complete seu visual com detalhes que fazem a diferença.</p>
+        <div class="product-gallery">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743263513/como-combinar-roupas-e-acessorios-animal-print-1024x683_p73rtc.jpg" style="width: 100%; border-radius: 6px; margin-bottom: 8px;">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743263524/51L-s-H_F5L._AC_SY1000__vwsuiu.jpg" style="width: 100%; border-radius: 6px; margin-bottom: 8px;">
+        </div>
+        <button onclick="adicionarAoCarrinho('Look Casual')" style="background:#111;color:#fff;padding:10px 20px;border:none;border-radius:5px;cursor:pointer;margin-top:10px;">
+          <i class="fas fa-cart-plus"></i> Adicionar ao Carrinho
+        </button>
       </div>
     </div>
   </section>
 
   <section class="section" style="background-color:#f9f9f9;">
-    <h2>Sobre a nossa loja</h2>
-    <p>Somos apaixonados por moda e queremos te ajudar a expressar quem você é através do seu estilo.</p>
+    <h2><i class="fas fa-tshirt"></i> Descubra seu Estilo!</h2>
+    <form id="quizForm" style="max-width:600px;margin:auto;text-align:left;">
+      <p><strong>Qual ocasião você mais se veste?</strong></p>
+      <input type="radio" name="resposta" value="casual" required> Dia a dia<br>
+      <input type="radio" name="resposta" value="social"> Trabalho / Eventos<br>
+      <input type="radio" name="resposta" value="praia"> Praia / Férias<br><br>
+      <button type="submit" style="background:#111;color:white;padding:10px 20px;border:none;border-radius:5px;">
+        Ver Estilo Ideal
+      </button>
+    </form>
+    <div id="quizResult" style="margin-top:20px;color:#111;font-weight:bold;"></div>
   </section>
+  
 
-  <section class="section">
-    <h2>Depoimentos de Clientes</h2>
-    <p>“A melhor experiência de compra online que já tive! Roupas lindas e entrega rápida.”</p>
-    <p>“Comprei um vestido maravilhoso e fui super elogiada. Amei!”</p>
+  <section class="section" id="depoimentos">
+    <h2><i class="fas fa-comments"></i> Depoimentos</h2>
+    <div id="listaComentarios" style="max-width:600px;margin:auto;text-align:left;"></div>
+  
+    <form id="formComentario" style="max-width:600px;margin:30px auto 0 auto;text-align:left;">
+      <input type="text" id="nomeUsuario" placeholder="Seu nome" required style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc;border-radius:5px;">
+      <textarea id="comentarioUsuario" placeholder="Seu comentário..." required style="width:100%;padding:10px;height:100px;border:1px solid #ccc;border-radius:5px;"></textarea>
+      <button type="submit" style="margin-top:10px;background:#111;color:white;padding:10px 20px;border:none;border-radius:5px;">
+        Enviar Comentário
+      </button>
+    </form>
   </section>
+  <div id="carrinho" style="
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  width: 260px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  display: none;
+  z-index: 999;
+">
+  <h4 style="margin:0 0 10px 0;">🛒 Seu Carrinho</h4>
+  <ul id="itensCarrinho" style="padding-left: 18px; font-size: 14px;"></ul>
+  <a id="btnWhats" href="#" target="_blank" style="display: block; background: #25d366; color: white; text-align: center; padding: 10px; border-radius: 5px; text-decoration: none; margin-top: 10px;">
+    Finalizar no WhatsApp
+  </a>
+</div>
 
   <div class="footer">
     <p><i class="fas fa-tshirt"></i> Loja de Roupas © Todos os direitos reservados</p>
   </div>
+  <script>
 
+    
+    const carrinho = [];
+    const lista = document.getElementById('itensCarrinho');
+    const popup = document.getElementById('carrinho');
+    const btnWhats = document.getElementById('btnWhats');
+    const numeroWhats = '5599999999999'; // Substituir pelo número da loja
+  
+    function adicionarAoCarrinho(produto) {
+      carrinho.push(produto);
+      atualizarCarrinho();
+      popup.style.display = 'block';
+    }
+  
+    function atualizarCarrinho() {
+      lista.innerHTML = '';
+      carrinho.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.textContent = `${index + 1}. ${item}`;
+        lista.appendChild(li);
+      });
+  
+      const mensagem = `Olá! Gostaria de comprar os seguintes itens:\n${carrinho.map((p, i) => `${i + 1}. ${p}`).join('\n')}`;
+      const url = `https://wa.me/${17991436759}?text=${encodeURIComponent(mensagem)}`;
+      btnWhats.href = url;
+    }
+
+      // Quiz
+  document.getElementById('quizForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const escolha = document.querySelector('input[name="resposta"]:checked').value;
+    let resultado = '';
+
+    if (escolha === 'casual') resultado = '👕 Seu estilo ideal é Casual! Looks leves e confortáveis para o dia a dia.';
+    if (escolha === 'social') resultado = '👔 Seu estilo ideal é Social! Elegância com presença.';
+    if (escolha === 'praia') resultado = '🩴 Seu estilo ideal é Praia! Roupas leves, estampas e muita liberdade.';
+
+    document.getElementById('quizResult').innerText = resultado;
+  });
+
+  // Depoimentos
+ // Depoimentos
+const formDepo = document.getElementById('formComentario');
+const listaComentarios = document.getElementById('listaComentarios');
+
+function renderizarComentarios() {
+  const comentarios = JSON.parse(localStorage.getItem('comentarios')) || [];
+  listaComentarios.innerHTML = '';
+  comentarios.reverse().forEach(c => {
+    const div = document.createElement('div');
+    div.style.borderBottom = '1px dashed #ccc';
+    div.style.padding = '10px 0';
+    div.innerHTML = `<strong>${c.nome}</strong><br><span style="font-size: 0.9em;">${c.texto}</span>`;
+    listaComentarios.appendChild(div);
+  });
+}
+
+formDepo.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nome = document.getElementById('nomeUsuario').value.trim();
+  const texto = document.getElementById('comentarioUsuario').value.trim();
+  if (!nome || !texto) return;
+
+  const comentarios = JSON.parse(localStorage.getItem('comentarios')) || [];
+  comentarios.push({ nome, texto });
+  localStorage.setItem('comentarios', JSON.stringify(comentarios));
+  formDepo.reset();
+  renderizarComentarios();
+});
+
+renderizarComentarios();
+  </script>
+
+  
 </body>
 </html>

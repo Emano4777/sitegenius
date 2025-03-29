@@ -10,9 +10,18 @@ import re
 from bs4 import BeautifulSoup
 from werkzeug.security import check_password_hash
 from functools import wraps
-from flask import session, redirect, url_for, jsonify, request
+from flask import session, redirect, url_for, jsonify, request,flash
 from datetime import datetime
 import mercadopago
+import cloudinary
+import cloudinary.uploader
+
+# Configuração
+cloudinary.config(
+    cloud_name='dyyrgll7h',
+    api_key='121426271799432',
+    api_secret='pJuEZvImfvoRQQE3p5cWFxK9erA'
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -40,6 +49,7 @@ def login_required_admin(f):
         if 'user_id' not in session:
             if request.path.startswith('/api'):
                 return jsonify({'success': False, 'message': 'Admin não autenticado'}), 401
+            
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -133,6 +143,66 @@ def login_cliente(subdomain):
 
     return render_template('login_cliente.html', subdomain=subdomain)
 
+
+@app.route('/editar-dados', methods=['GET', 'POST'])
+def editar_dados_painel():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        nome = request.form.get('nome')
+        email = request.form.get('email')
+        senha = request.form.get('senha')
+        avatar_url = None
+
+        # Verifica e faz upload do avatar se houver
+        if 'avatar' in request.files:
+            avatar_file = request.files['avatar']
+            if avatar_file and avatar_file.filename != '':
+                resultado = cloudinary.uploader.upload(avatar_file, folder="usuarios_sitegenius")
+                avatar_url = resultado['secure_url']
+
+        # Atualiza dados com base no que foi enviado
+        if senha:
+            hashed = bcrypt.hashpw(senha.encode(), bcrypt.gensalt()).decode()
+            if avatar_url:
+                cur.execute("""
+                    UPDATE users2 SET nome = %s, email = %s, senha = %s, avatar_url = %s
+                    WHERE id = %s
+                """, (nome, email, hashed, avatar_url, session['user_id']))
+            else:
+                cur.execute("""
+                    UPDATE users2 SET nome = %s, email = %s, senha = %s
+                    WHERE id = %s
+                """, (nome, email, hashed, session['user_id']))
+        else:
+            if avatar_url:
+                cur.execute("""
+                    UPDATE users2 SET nome = %s, email = %s, avatar_url = %s
+                    WHERE id = %s
+                """, (nome, email, avatar_url, session['user_id']))
+            else:
+                cur.execute("""
+                    UPDATE users2 SET nome = %s, email = %s
+                    WHERE id = %s
+                """, (nome, email, session['user_id']))
+
+        conn.commit()
+        cur.close(); conn.close()
+        return redirect('/')
+
+    # GET - carrega dados atuais
+    cur.execute("SELECT nome, email, avatar_url FROM users2 WHERE id = %s", (session['user_id'],))
+    dados = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not dados:
+        return "Usuário não encontrado", 404
+
+    return render_template('editardados.html', nome=dados[0], email=dados[1], avatar=dados[2])
 
 
 @app.route('/<subdomain>/editar-dados', methods=['GET', 'POST'])
@@ -1072,14 +1142,21 @@ def register():
         nome = request.form['nome']
         email = request.form['email']
         senha = request.form['senha']
-
+        avatar_url = None
+    if 'avatar' in request.files:
+        avatar_file = request.files['avatar']
+        if avatar_file.filename != '':
+            upload_result = cloudinary.uploader.upload(avatar_file)
+            avatar_url = upload_result['secure_url']
         hashed_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
 
         conn = get_db_connection()
         cur = conn.cursor()
         try:
-            cur.execute("INSERT INTO users2 (nome, email, senha) VALUES (%s, %s, %s)", 
-                        (nome, email, hashed_senha))
+            cur.execute("INSERT INTO users2 (nome, email, senha, avatar_url) VALUES (%s, %s, %s, %s)", 
+                (nome, email, hashed_senha.hex(), avatar_url))
+
+
             conn.commit()
             return redirect(url_for('login'))
         except psycopg2.Error:
@@ -1096,21 +1173,20 @@ def check_login():
     if 'user_id' in session:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT nome, premium_level FROM users2 WHERE id = %s", (session['user_id'],))
+        cur.execute("SELECT nome, premium_level,avatar_url  FROM users2 WHERE id = %s", (session['user_id'],))
         result = cur.fetchone()
         cur.close(); conn.close()
 
         if result:
-            nome, plano = result
+            nome, plano, avatar_url = result
             return jsonify({
                 "logged_in": True,
                 "user_name": nome,
-                "premium_level": plano
+                "premium_level": plano,
+                "avatar_url": avatar_url
             })
 
     return jsonify({"logged_in": False})
-
-
 
 
 
@@ -1129,7 +1205,7 @@ def login():
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, nome, senha::TEXT, is_premium FROM users2 WHERE email = %s", (email,))
+        cur.execute("SELECT id, nome, senha::TEXT, is_premium, avatar_url FROM users2 WHERE email = %s", (email,))
         user = cur.fetchone()
 
         if user:
@@ -1140,6 +1216,8 @@ def login():
                 session['user_id'] = user_id
                 session['user_name'] = user[1]
                 session['is_premium'] = user[3]
+                session['avatar_url'] = user[4]
+
 
                 session_token = str(uuid.uuid4())
                 cur.execute("UPDATE users2 SET session_token = %s WHERE id = %s", (session_token, user_id))
@@ -1166,16 +1244,19 @@ def login():
 
 @app.route('/templates')
 def templates():
-    if 'user_id' in session:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (session['user_id'],))
-        user_status = cur.fetchone()
-        cur.close()
-        conn.close()
+    if 'user_id' not in session:
+        flash("🚀 Para visualizar os templates disponíveis, por favor faça seu login ou cadastre-se — é gratuito!")
+        return redirect(url_for('login'))
 
-        if user_status:
-            session['is_premium'] = user_status[0]  # Atualiza o status na sessão
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (session['user_id'],))
+    user_status = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if user_status:
+        session['is_premium'] = user_status[0]  # Atualiza o status na sessão
 
     is_premium = session.get('is_premium', False)
     return render_template('templates.html', is_premium=is_premium)

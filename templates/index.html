@@ -468,7 +468,7 @@ footer .container {
     <header>    
         <div class="container">
             <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
-    
+        
             <!-- ✅ Navbar Desktop Corrigida -->
             <nav class="desktop-nav">
                 <ul>
@@ -476,11 +476,13 @@ footer .container {
                     <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
                     <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
                     <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
-    
-                    <!-- Ícone do usuário -->
+        
+                    <!-- ✅ Avatar e Dropdown -->
                     <li class="user-menu">
                         <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
-                            <i class="fas fa-user user-icon"></i>
+                            <span id="user-avatar-container">
+                                <i class="fas fa-user user-icon"></i>
+                            </span>
                         </a>
                         <ul class="dropdown-menu" id="user-dropdown">
                             <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
@@ -489,48 +491,53 @@ footer .container {
                             </li>
                             <li><a href="/login" id="login-option">Entrar</a></li>
                             <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
+                            <li><a href="/editar-dados" id="editar-dados-option" style="display: none;">Editar Dados</a></li>
                             <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
                         </ul>
                     </li>
                 </ul>
             </nav>
-    
+        
             <!-- ✅ Botão de menu mobile -->
             <button class="mobile-menu-btn" onclick="openMobileMenu()">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
-    </div>
-    <div class="mobile-menu-modal" id="mobileMenuModal">
-        <div class="mobile-menu-content">
-            <a href="/"><i class="fas fa-home"></i> Início</a>
-            <a href="/templates"><i class="fas fa-th"></i> Templates</a>
-            <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
-            <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
-    
-                    <!-- ✅ Ícone do usuário no menu mobile -->
-<div class="mobile-user-menu">
-    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
-        <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
-    </a>
-    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
-        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-            Bem-vindo, <span id="mobile-username-text"></span><br>
-            <small id="mobile-user-premium-info" style="color: #ddd;"></small>
-        </li>
-        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-        <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Meus Templates</a></li>
-        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-    </ul>
-
-</div>
-
-            
-                    <button class="close-btn" onclick="closeMobileMenu()">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
+        
+        <!-- ✅ Menu Mobile -->
+        <div class="mobile-menu-modal" id="mobileMenuModal">
+            <div class="mobile-menu-content">
+                <a href="/"><i class="fas fa-home"></i> Início</a>
+                <a href="/templates"><i class="fas fa-th"></i> Templates</a>
+                <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
+                <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
+        
+                <!-- ✅ Avatar Mobile -->
+                <div class="mobile-user-menu">
+                    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+                        <span id="mobile-user-avatar-container">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <span id="mobile-user-name-text">Entrar</span>
+                    </a>
+                    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+                        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+                            Bem-vindo, <span id="mobile-username-text"></span><br>
+                            <small id="mobile-user-premium-info" style="color: #ddd;"></small>
+                        </li>
+                        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
+                        <li><a href="/meu-site" id="mobile-meus-templates-option" style="display:none;">Meus Templates</a></li>
+                        <li><a href="/editar-dados" id="mobile-editar-dados-option" style="display: none;">Editar Dados</a></li>
+                        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                    </ul>
                 </div>
+        
+                <button class="close-btn" onclick="closeMobileMenu()">
+                    <i class="fas fa-times-circle"></i>
+                </button>
             </div>
+        </div>
+
     </header>
     <section class="hero">
         <div class="container">
@@ -583,7 +590,6 @@ function toggleMobileUserMenu(event) {
     let menu = document.getElementById('mobile-user-dropdown');
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
-// ✅ Verifica se o usuário está logado e exibe corretamente no desktop e mobile
 fetch('/check-login')
     .then(response => response.json())
     .then(data => {
@@ -591,59 +597,107 @@ fetch('/check-login')
         let userNameText = document.getElementById('user-name-text');
         let loginOption = document.getElementById('login-option');
         let logoutOption = document.getElementById('logout-option');
-        let meusTemplatesOption = document.getElementById('meus-templates-option'); // Novo elemento
+        let meusTemplatesOption = document.getElementById('meus-templates-option');
 
         let mobileUserNameElement = document.getElementById('mobile-user-name');
         let mobileUserNameText = document.getElementById('mobile-username-text');
         let mobileLoginOption = document.getElementById('mobile-login-option');
         let mobileLogoutOption = document.getElementById('mobile-logout-option');
         let mobileUserText = document.getElementById('mobile-user-name-text');
-        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option'); // Novo elemento mobile
+        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+
+        let editarDadosOption = document.getElementById('editar-dados-option');
+        let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
 
         if (data.logged_in) {
             if (data.premium_level) {
-        document.getElementById('user-premium-info').textContent = 
-            data.premium_level === 'free' 
-                ? 'Plano Gratuito'
-                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+                document.getElementById('user-premium-info').textContent = 
+                    data.premium_level === 'free' 
+                        ? 'Plano Gratuito'
+                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
 
-        document.getElementById('mobile-user-premium-info').textContent = 
-            data.premium_level === 'free' 
-                ? 'Plano Gratuito'
-                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
-    }
+                document.getElementById('mobile-user-premium-info').textContent = 
+                    data.premium_level === 'free' 
+                        ? 'Plano Gratuito'
+                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+            }
+
             loginOption.style.display = 'none';
             logoutOption.style.display = 'block';
-            meusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" (Desktop)
+            meusTemplatesOption.style.display = 'block';
 
             mobileLoginOption.style.display = 'none';
             mobileLogoutOption.style.display = 'block';
-            mobileMeusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" (Mobile)
+            mobileMeusTemplatesOption.style.display = 'block';
 
             if (data.user_name) {
                 userNameText.textContent = data.user_name;
-                userNameElement.style.display = 'block';
 
+                // ✅ Desktop Avatar
+                const avatarContainer = document.getElementById('user-avatar-container');
+                avatarContainer.innerHTML = '';
+                if (data.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = 'Avatar';
+                    img.style.width = '28px';
+                    img.style.height = '28px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    avatarContainer.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user user-icon';
+                    avatarContainer.appendChild(icon);
+                }
+
+                // ✅ Mobile Avatar
+                const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
+                mobileAvatarContainer.innerHTML = '';
+                if (data.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = 'Avatar';
+                    img.style.width = '28px';
+                    img.style.height = '28px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    mobileAvatarContainer.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user';
+                    mobileAvatarContainer.appendChild(icon);
+                }
+
+                const mobileSpan = document.createElement('span');
+                mobileSpan.id = 'mobile-user-name-text';
+                mobileSpan.textContent = data.user_name;
+                mobileAvatarContainer.appendChild(mobileSpan);
+
+                userNameElement.style.display = 'block';
+                editarDadosOption.style.display = 'block';
+                mobileEditarDadosOption.style.display = 'block';
                 mobileUserNameText.textContent = data.user_name;
                 mobileUserNameElement.style.display = 'block';
-                mobileUserText.textContent = data.user_name; // Atualiza nome no menu mobile
+                mobileUserText.textContent = data.user_name;
             }
         } else {
             loginOption.style.display = 'block';
             logoutOption.style.display = 'none';
-            meusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates" (Desktop)
-
+            meusTemplatesOption.style.display = 'none';
             userNameElement.style.display = 'none';
 
             mobileLoginOption.style.display = 'block';
             mobileLogoutOption.style.display = 'none';
-            mobileMeusTemplatesOption.style.display = 'none'; // Oculta "Meus Templates" (Mobile)
-
+            mobileMeusTemplatesOption.style.display = 'none';
+            editarDadosOption.style.display = 'none';
+            mobileEditarDadosOption.style.display = 'none';
             mobileUserNameElement.style.display = 'none';
-            mobileUserText.textContent = "Entrar"; // Reseta para "Entrar"
+            mobileUserText.textContent = "Entrar";
         }
     })
     .catch(error => console.error('Erro ao verificar login:', error));
+
 
 
 // ✅ Função para logout e redirecionamento

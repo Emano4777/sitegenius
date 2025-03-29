@@ -7,8 +7,8 @@ TEMPLATE_NAME = 'template5'
 SUBDOMAIN_PLACEHOLDER = '{{sub}}'
 
 ARQUIVOS = {
-    'index': 'template7_index.html',
-    'sobre': 'template7_sobre.html',
+    'index': 'template5_index.html',
+    'sobre': 'template5_sobre.html',
 }
 
 def extrair_css_apenas(html):
