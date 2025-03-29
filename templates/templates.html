@@ -421,6 +421,28 @@ nav ul li a {
     padding: 10px;
 }
 
+.carousel-modal {
+  width: 100%;
+  max-width: 900px;
+  height: 500px;
+  overflow: hidden;
+  margin: 0 auto;
+  position: relative;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease;
+  height: 100%;
+}
+
+.carousel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 nav ul li a:hover {
     text-decoration: underline;
     background: rgba(255, 255, 255, 0.2);
@@ -581,6 +603,8 @@ iframe {
     box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
 }
 
+
+
 .close-btn:hover {
     background: darkred;
 }
@@ -656,8 +680,9 @@ iframe {
                         </a>
                         <ul class="dropdown-menu" id="user-dropdown">
                             <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
-                                Bem-vindo, <span id="user-name-text"></span>
-                            </li>    
+                                Olá, <span id="user-name-text"></span><br>
+                                <small id="user-premium-info" style="color: #666;"></small>
+                            </li>
                             <li><a href="/login" id="login-option">Entrar</a></li>
                             <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
                             <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
@@ -686,7 +711,8 @@ iframe {
     </a>
     <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
         <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-            Olá, <span id="mobile-username-text"></span>
+           Olá, <span id="mobile-username-text"></span><br>
+            <small id="mobile-user-premium-info" style="color: #ddd;"></small>
         </li>
         <li><a href="/login" id="mobile-login-option">Entrar</a></li>
         <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
@@ -701,8 +727,9 @@ iframe {
             </div>
     </header>
     <main>
-        <div class="banner-rotativo">
-            💎 Torne-se Premium e desbloqueie todos os templates exclusivos! <a href="/preco" style="color: #000; text-decoration: underline;">Veja os benefícios</a>
+        <div class="banner-rotativo" id="premium-banner">
+            💎 Torne-se Premium e desbloqueie todos os templates exclusivos! 
+            <a href="/preco" style="color: #000; text-decoration: underline;">Veja os benefícios</a>
         </div>
         <section class="templates">
             <h2><i class="fas fa-box-open"></i> Templates disponiveis</h2>
@@ -1072,49 +1099,70 @@ iframe {
       
       </div>
              
-                    <div class="template premium-locked" style="width: 100%; max-width: 350px; margin: auto;">
-                        <h3 style="font-size: 1.3em;">
-                          <i class="fas fa-lock"></i> Template Loja Virtual
-                        </h3>
+                    <div class="template premium-locked" style="width: 100%; max-width: 350px; margin: auto;background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743218379/istockphoto-1221651371-612x612_zopivk.jpg');">
+                       <h3 style="
+  font-size: 1.3em;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+">
+  <i class="fas fa-lock"></i> Template Loja Virtual Completa
+</h3>
                       
-                        <!-- 🔘 Botão premium ou visualizar -->
-                        {% if is_premium %}
-                          <button class="btn" onclick="previewTemplate('/template-preview/template10/index')">
+                        <button class="btn" onclick="previewTemplate('/template-preview/template10/index')">
                             <i class="fas fa-eye"></i> Ver Template Premium
                           </button>
-                        {% else %}
-                          <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-                            <i class="fas fa-credit-card"></i> Adquirir Premium
-                          </button>
-                          <div style="text-align: center; margin: 20px 0;">
-                            <a href="/preco" class="btn buy-premium" style="font-size: 16px; padding: 12px 18px; display: inline-block;">
-                              <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
-                            </a>
-                          </div>
-                        {% endif %}
+                          
                       
                         <!-- 🔽 Botão de detalhes -->
                         <button class="btn" onclick="toggleDetalhes('detalhes-template10')">
                           <i class="fas fa-info-circle"></i> Detalhes
                         </button>
                       
-                        <!-- 🔽 Painel de detalhes oculto -->
                         <div id="detalhes-template10" style="
-                          display: none;
-                          text-align: left;
-                          margin-top: 10px;
-                          background: #fff;
-                          padding: 10px;
-                          border-radius: 6px;
-                          font-size: 14px;
-                          color: #333;
-                          box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-                        ">
-                          <p><strong>Ideal para:</strong> Empresas que precisam de um site institucional elegante.</p>
-                          <p><strong>Inclui:</strong> Banner com chamada de ação, formulário de contato, integração com WhatsApp e mapa da empresa.</p>
-                          <p><strong>Diferencial:</strong> Layout corporativo profissional e moderno, pronto para conversão de clientes.</p>
-                        </div>
+                        display: none;
+                        text-align: left;
+                        margin-top: 10px;
+                        background: #fff;
+                        padding: 10px;
+                        border-radius: 6px;
+                        font-size: 14px;
+                        color: #333;
+                        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+                      ">
+                        <p><strong>Ideal para:</strong> Lojas que desejam vender online com uma estrutura completa e profissional.</p>
+                        
+                        <p><strong>Inclui:</strong></p>
+                        <ul style="padding-left: 1.2rem; margin: 0;">
+                          <li>✅ Banner rotativo personalizável</li>
+                          <li>✅ Integração com WhatsApp (botão flutuante)</li>
+                          <li>✅ Carrinho de compras com cálculo total e entrega</li>
+                          <li>✅ Checkout via Mercado Pago</li>
+                          <li>✅ Disponibilidade para qualquer integração de pagamento online que desejar</li>
+                          <li>✅ Sistema de Delivery</li>
+                          <li>✅ Layout da loja personalizável</li>
+                          <li>✅ Seção de mais vendidos, ofertas e lançamentos</li>
+                          <li>✅ Comentários com avaliação por estrelas</li>
+                          <li>✅ Login de cliente com área de pedidos</li>
+                          <li>✅ Modo escuro (Dark Mode)</li>
+                          <li>✅ Menu responsivo com design mobile</li>
+                          <li>✅ Sistema de comentários e avaliações com armazenamento</li>
+                          <li>✅ Layout 100% responsivo e moderno</li>
+                        </ul>
+                      
+                        <p><strong>Diferenciais Premium:</strong></p>
+                        <ul style="padding-left: 1.2rem; margin: 0;">
+                          <li>📊 Painel completo de vendas com gráficos e relatórios</li>
+                          <li>📦 Controle de estoque e produtos mais vendidos</li>
+                          <li>👨‍💼 Integração com banco de dados para gestão total</li>
+                          <li>🛠️ Suporte para personalização e extensões futuras</li>
+                        </ul>
+                      
+                        <p><strong>Observação:</strong> Este template é exclusivo para assinantes do plano Premium.</p>
                       </div>
+                    </div>
             
                       <div class="template premium-locked" style="width: 100%; max-width: 350px; margin: auto;">
                         <h3 style="font-size: 1.3em;">
@@ -1129,11 +1177,7 @@ iframe {
                           <button class="btn buy-premium" onclick="handlePremiumPurchase()">
                             <i class="fas fa-credit-card"></i> Adquirir Premium
                           </button>
-                          <div style="text-align: center; margin: 20px 0;">
-                            <a href="/preco" class="btn buy-premium" style="font-size: 16px; padding: 12px 18px;">
-                              <i class="fas fa-star"></i> Descubra as Vantagens do Plano Premium
-                            </a>
-                          </div>
+                         
                         {% endif %}
                       
                         <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
@@ -1164,6 +1208,13 @@ iframe {
     <div class="modal-content">
         <span class="close" onclick="closePreview()"><i class="fas fa-times-circle"></i></span>
         <iframe id="previewFrame"></iframe>
+            <div id="carousel-template10" class="carousel-modal">
+                <div class="carousel-track">
+                  <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743217826/Captura_de_tela_2025-03-28_234629_swootl.png" class="carousel-img">
+                  <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743217936/Captura_de_tela_2025-03-29_001204_qforc3.png" class="carousel-img">
+                  <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743216490/Captura_de_tela_2025-03-28_234759_dnzbdi.png" class="carousel-img">
+                </div>
+              </div>
         <div class="modal-actions">
             <button class="btn" onclick="downloadTemplate()"><i class="fas fa-download"></i> Usar este template</button>
             <button class="btn close-btn" onclick="closePreview()"><i class="fas fa-times"></i> Fechar</button>
@@ -1174,7 +1225,80 @@ iframe {
     </main>
 
     <script>
-            document.addEventListener("DOMContentLoaded", function() {
+        let currentTemplate = '';
+            document.addEventListener("DOMContentLoaded", function () {
+
+    // Logout mobile
+    const mobileLogoutBtn = document.getElementById('mobile-logout-option');
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.addEventListener('click', function () {
+            fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
+        });
+    }
+
+    // Verifica login
+    fetch('/check-login')
+        .then(response => response.json())
+        .then(data => {
+            let userNameElement = document.getElementById('user-name');
+            let userNameText = document.getElementById('user-name-text');
+            let loginOption = document.getElementById('login-option');
+            let logoutOption = document.getElementById('logout-option');
+            let meusTemplatesOption = document.getElementById('meus-templates-option');
+
+            let mobileUserNameElement = document.getElementById('mobile-user-name');
+            let mobileUserNameText = document.getElementById('mobile-username-text');
+            let mobileLoginOption = document.getElementById('mobile-login-option');
+            let mobileLogoutOption = document.getElementById('mobile-logout-option');
+            let mobileUserText = document.getElementById('mobile-user-name-text');
+            let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+
+            if (data.logged_in) {
+                if (data.premium_level) {
+        document.getElementById('user-premium-info').textContent = 
+            data.premium_level === 'free' 
+                ? 'Plano Gratuito'
+                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+
+        document.getElementById('mobile-user-premium-info').textContent = 
+            data.premium_level === 'free' 
+                ? 'Plano Gratuito'
+                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+    }
+                loginOption.style.display = 'none';
+                logoutOption.style.display = 'block';
+                meusTemplatesOption.style.display = 'block';
+
+                mobileLoginOption.style.display = 'none';
+                mobileLogoutOption.style.display = 'block';
+                mobileMeusTemplatesOption.style.display = 'block';
+
+                if (data.user_name) {
+                    userNameText.textContent = data.user_name;
+                    userNameElement.style.display = 'block';
+
+                    mobileUserNameText.textContent = data.user_name;
+                    mobileUserNameElement.style.display = 'block';
+                    mobileUserText.textContent = data.user_name;
+                }
+            } else {
+                loginOption.style.display = 'block';
+                logoutOption.style.display = 'none';
+                meusTemplatesOption.style.display = 'none';
+
+                userNameElement.style.display = 'none';
+
+                mobileLoginOption.style.display = 'block';
+                mobileLogoutOption.style.display = 'none';
+                mobileMeusTemplatesOption.style.display = 'none';
+
+                mobileUserNameElement.style.display = 'none';
+                mobileUserText.textContent = "Entrar";
+            }
+        })
+        .catch(error => console.error('Erro ao verificar login:', error));
+
+
     let previewModal = document.getElementById("previewModal");
 
     if (previewModal) {
@@ -1190,54 +1314,106 @@ iframe {
 });
 
 
+let index10 = 0;
+let carrosselIniciado = false;
+
+function exibirCarrosselTemplate10() {
+  const modal = document.getElementById("previewModal");
+  const iframe = document.getElementById("previewFrame");
+  const carrossel = document.getElementById("carousel-template10");
+
+  if (!modal || !iframe || !carrossel) return;
+
+  iframe.style.display = "none";
+  carrossel.style.display = "block";
+  modal.style.display = "flex";
+
+  const track = carrossel.querySelector('.carousel-track');
+  const totalSlides = track.children.length;
+
+  if (!carrosselIniciado) {
+    carrosselIniciado = true;
+    setInterval(() => {
+      index10 = (index10 + 1) % totalSlides;
+      track.style.transform = `translateX(-${index10 * 100}%)`;
+    }, 4000);
+  }
+}
+
+
+const track = document.querySelector('#carousel-template10 .carousel-track');
+const images = track.querySelectorAll('.carousel-img');
+
+images.forEach(img => {
+  img.style.width = `${modal.offsetWidth}px`;
+});
+
 function previewTemplate(templateURL) {
-    console.log("🖼️ Abrindo preview:", templateURL);
+  console.log("🖼️ Abrindo preview:", templateURL);
 
-    let modal = document.getElementById("previewModal");
-    let iframe = document.getElementById("previewFrame");
+  if (templateURL.includes('template10')) {
+    currentTemplate = 'template10'; // 🛠️ Aqui salva o nome pra usar depois
+    exibirCarrosselTemplate10();
+    return;
+}
 
-    if (!modal || !iframe) {
-        console.error("⚠️ Modal ou iframe não encontrados.");
-        return;
-    }
+  let modal = document.getElementById("previewModal");
+  let iframe = document.getElementById("previewFrame");
+  let carrossel = document.getElementById("carousel-template10");
 
-    // Remove listener anterior se já existir
-    iframe.removeEventListener("load", iframe.__previewHandler);
+  if (!modal || !iframe) {
+    console.error("⚠️ Modal ou iframe não encontrados.");
+    return;
+  }
 
-    // Define o novo listener
-    iframe.__previewHandler = function () {
+  // Oculta o carrossel e mostra o iframe normalmente para os outros templates
+  iframe.style.display = "block";
+  if (carrossel) carrossel.style.display = "none";
+  
+  // Remove listener anterior se já existir
+  iframe.removeEventListener("load", iframe.__previewHandler);
+
+  iframe.__previewHandler = function () {
     try {
-        const currentURL = new URL(iframe.src, window.location.origin);
-        const pathParts = currentURL.pathname.split('/');
-        const templateName = pathParts[2]; // /template-preview/template1/index
+      const currentURL = new URL(iframe.src, window.location.origin);
+      const pathParts = currentURL.pathname.split('/');
+      const templateName = pathParts[2];
 
-        // Seleciona todos os <a> que apontam para /template/*
-        const links = iframe.contentDocument.querySelectorAll('a[href^="/template/"]');
-        links.forEach(link => {
-            const hrefParts = link.getAttribute('href').split('/');
-            const pageName = hrefParts[2];
-
-            // Corrige o href para preview
-            link.setAttribute('href', `/template-preview/${templateName}/${pageName}`);
-
-            // Garante que clique atualize o iframe sem recarregar a página
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                iframe.src = `/template-preview/${templateName}/${pageName}`;
-            });
+      const links = iframe.contentDocument.querySelectorAll('a[href^="/template/"]');
+      links.forEach(link => {
+        const hrefParts = link.getAttribute('href').split('/');
+        const pageName = hrefParts[2];
+        link.setAttribute('href', `/template-preview/${templateName}/${pageName}`);
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          iframe.src = `/template-preview/${templateName}/${pageName}`;
         });
+      });
 
-        console.log("✅ Preview interativo ativado.");
+      setTimeout(() => {
+        fetch('/verificar-premium/' + templateName, { method: 'POST' })
+          .then(res => res.json())
+          .then(data => {
+            if (!data.pode_usar) {
+              const script = `
+                document.body.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  alert("Para ver ou usar este template, confira nossos planos premium! Somos um dos mais baratos do Brasil. 😄");
+                  window.location.href = '/preco';
+                }, true);
+              `;
+              iframe.contentWindow.eval(script);
+            }
+          });
+      }, 1000);
     } catch (err) {
-        console.warn("⚠️ Erro ao acessar links dentro do iframe:", err);
+      console.warn("⚠️ Erro ao acessar links dentro do iframe:", err);
     }
-};
+  };
 
-    // Adiciona o novo listener
-    iframe.addEventListener("load", iframe.__previewHandler);
-
-    iframe.src = templateURL;
-    modal.style.display = "flex";
+  iframe.addEventListener("load", iframe.__previewHandler);
+  iframe.src = templateURL;
+  modal.style.display = "flex";
 }
 
 
@@ -1266,20 +1442,33 @@ function closePreview() {
 }
 
 function downloadTemplate() {
-    const src = document.getElementById("previewFrame").src;
+    let templateName = currentTemplate;
 
-    // Garante que estamos pegando corretamente o nome do template (ex: template1)
+if (!templateName) {
+    let src = document.getElementById("previewFrame").src;
     const match = src.match(/\/template-preview\/(template\d+)\//);
-
     if (!match || match.length < 2) {
         alert("Não foi possível identificar o template.");
         return;
     }
+    templateName = match[1];
+    currentTemplate = templateName; // 🔁 Atualiza pra uso posterior
+}
 
-    const templateName = match[1]; // ex: template1
 
     console.log("Usando template:", templateName);
 
+    fetch('/verificar-premium/' + templateName, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.pode_usar) {
+                alert("Para usar/ver com mais detalhes este template, confira nossos planos premium! Somos um dos mais baratos do Brasil. 😄");
+                window.location.href = '/preco';
+            } else {
+                usarTemplate(templateName);
+            }
+        });
+        function usarTemplate(templateName) {
     fetch('/usar-template/' + templateName, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
@@ -1294,21 +1483,8 @@ function downloadTemplate() {
             console.error("Erro ao usar o template:", error);
             alert("Erro inesperado ao tentar usar o template.");
         });
-}
+}}
 
-
-        function handlePremiumPurchase() {
-    fetch('/check-login')
-        .then(response => response.json())
-        .then(data => {
-            if (data.logged_in) {
-                buyPremium(); // Se estiver logado, inicia a compra do plano premium
-            } else {
-                alert("Você precisa estar logado para adquirir o plano Premium.");
-                window.location.href = "/login"; // Redireciona para a página de login
-            }
-        });
-}
 
 function buyPremium() {
     fetch('/generate-payment', { method: 'POST' })
@@ -1357,6 +1533,22 @@ fetch('/check-login')
         let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
 
         if (data.logged_in) {
+    const banner = document.getElementById('premium-banner');
+    if (data.premium_level && data.premium_level !== 'free') {
+        if (banner) banner.style.display = 'none';
+    }
+
+    if (data.premium_level) {
+        document.getElementById('user-premium-info').textContent = 
+            data.premium_level === 'free' 
+                ? 'Plano Gratuito'
+                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+
+        document.getElementById('mobile-user-premium-info').textContent = 
+            data.premium_level === 'free' 
+                ? 'Plano Gratuito'
+                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+    }
             loginOption.style.display = 'none';
             logoutOption.style.display = 'block';
             meusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates"
@@ -1417,10 +1609,7 @@ document.addEventListener('click', function(event) {
 });
 
 
-    document.getElementById('mobile-logout-option').addEventListener('click', function() {
-        fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
-    });
-
+   
     // Funções para abrir e fechar o menu mobile
     function openMobileMenu() {
         document.getElementById('mobileMenuModal').style.display = 'block';

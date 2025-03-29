@@ -484,7 +484,8 @@ footer .container {
                         </a>
                         <ul class="dropdown-menu" id="user-dropdown">
                             <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
-                                Bem-vindo, <span id="user-name-text"></span>
+                                Bem-vindo, <span id="user-name-text"></span><br>
+                                <small id="user-premium-info" style="color: #666;"></small>
                             </li>
                             <li><a href="/login" id="login-option">Entrar</a></li>
                             <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
@@ -514,7 +515,8 @@ footer .container {
     </a>
     <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
         <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-            Bem-vindo, <span id="mobile-username-text"></span>
+            Bem-vindo, <span id="mobile-username-text"></span><br>
+            <small id="mobile-user-premium-info" style="color: #ddd;"></small>
         </li>
         <li><a href="/login" id="mobile-login-option">Entrar</a></li>
         <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Meus Templates</a></li>
@@ -599,6 +601,17 @@ fetch('/check-login')
         let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option'); // Novo elemento mobile
 
         if (data.logged_in) {
+            if (data.premium_level) {
+        document.getElementById('user-premium-info').textContent = 
+            data.premium_level === 'free' 
+                ? 'Plano Gratuito'
+                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+
+        document.getElementById('mobile-user-premium-info').textContent = 
+            data.premium_level === 'free' 
+                ? 'Plano Gratuito'
+                : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+    }
             loginOption.style.display = 'none';
             logoutOption.style.display = 'block';
             meusTemplatesOption.style.display = 'block'; // Exibe "Meus Templates" (Desktop)

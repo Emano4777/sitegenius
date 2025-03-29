@@ -30,7 +30,7 @@ app.config['SESSION_COOKIE_PATH'] = '/'
 
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
 # Conexão com o Banco de Dados
-
+BASE_URL = "https://sitegenius.vercel.app"
 
 def get_db_connection():
     return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
@@ -986,41 +986,36 @@ def editar_produto(id):
 def home():
     return render_template('index.html')
 
-@app.route('/generate-payment', methods=['POST'])
+@app.route('/generate-payment')
 def generate_payment():
-    if 'user_id' not in session:
-        return jsonify({"message": "Você precisa estar logado para pagarr."}), 401
+    plano = request.args.get("plano")
+    if not plano:
+        return "Plano não informado", 400
 
-    user_id = session['user_id']
+    planos_info = {
+        "essential": {"price": 32.90, "title": "Premium Essential"},
+        "moderado": {"price": 59.90, "title": "Premium Moderado"},
+        "master": {"price": 120.90, "title": "Premium Master"}
+    }
 
-    # Conectar ao banco para obter o email do usuário
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT email FROM users2 WHERE id = %s", (user_id,))
-    user_email = cur.fetchone()
-    cur.close()
-    conn.close()
+    if plano not in planos_info:
+        return "Plano inválido", 400
 
-    if not user_email:
-        return jsonify({"error": "Usuário não encontrado"}), 404
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
 
-    # Dados do pagamento
     payment_data = {
-        "items": [
-            {
-                "title": "Plano Premium - Site Genius",
-                "quantity": 1,
-                "currency_id": "BRL",
-                "unit_price": 49.90  # Valor do plano premium
-            }
-        ],
-    "payer": {
-        "email": "test_user_423840156@testuser.com"  # E-mail do comprador de teste
-    },
+        "items": [{
+            "title": f"Plano {planos_info[plano]['title']} - Site Genius",
+            "quantity": 1,
+            "currency_id": "BRL",
+            "unit_price": planos_info[plano]["price"]
+        }],
         "back_urls": {
-    "success": "https://sitegenius.vercel.app//payment-success",
-    "failure": "https://sitegenius.vercel.app/payment-failure"
-},
+            "success": f"{BASE_URL}/payment-success?plano={plano}",
+            "failure": f"{BASE_URL}/payment-failure"
+        },
         "auto_return": "approved"
     }
 
@@ -1031,17 +1026,11 @@ def generate_payment():
 
     response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)
 
-
-
     if response.status_code == 201:
-        payment_url = response.json()["init_point"]
-        return jsonify({"payment_url": payment_url}), 200
+        return redirect(response.json()["init_point"])
     else:
-        return jsonify({
-            "error": "Erro ao criar pagamento",
-            "status_code": response.status_code,
-            "details": response.json()
-        }), response.status_code
+        return "Erro ao gerar pagamento", 500
+
     
 @app.route('/verificar-sessao')
 def verificar_sessao():
@@ -1050,27 +1039,29 @@ def verificar_sessao():
     return jsonify({"ok": False}), 401
     
 
-@app.route('/payment-success')   
+@app.route('/payment-success')
 def payment_success():
-    if 'user_id' in session:
-        user_id = session['user_id']
+    plano = request.args.get("plano")
+    if 'user_id' not in session or not plano:
+        return "Acesso inválido", 401
 
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("UPDATE users2 SET is_premium = TRUE WHERE id = %s", (user_id,))
-            conn.commit()
-            session['is_premium'] = True  # Atualiza sessão
+    user_id = session['user_id']
 
-            return redirect(url_for('templates'))  # Redireciona para área premium
-        except psycopg2.Error:
-            conn.rollback()
-            return "Erro ao ativar premium", 500
-        finally:
-            cur.close()
-            conn.close()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("UPDATE users2 SET is_premium = TRUE, premium_level = %s WHERE id = %s", (plano, user_id))
+        conn.commit()
+        session['is_premium'] = True
+        session['premium_level'] = plano
+        return redirect(url_for('templates'))
+    except psycopg2.Error:
+        conn.rollback()
+        return "Erro ao ativar premium", 500
+    finally:
+        cur.close()
+        conn.close()
 
-    return "Usuário não autenticado", 401
 
 
 
@@ -1103,11 +1094,22 @@ def register():
 @app.route('/check-login')
 def check_login():
     if 'user_id' in session:
-        return jsonify({
-            "logged_in": True,
-            "user_name": session.get('user_name', '')  # Retorna o nome do usuário se estiver logado
-        })
-    return jsonify({"logged_in": False, "user_name": ""})  # Retorna falso se não estiver logado
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT nome, premium_level FROM users2 WHERE id = %s", (session['user_id'],))
+        result = cur.fetchone()
+        cur.close(); conn.close()
+
+        if result:
+            nome, plano = result
+            return jsonify({
+                "logged_in": True,
+                "user_name": nome,
+                "premium_level": plano
+            })
+
+    return jsonify({"logged_in": False})
+
 
 
 
@@ -1552,19 +1554,39 @@ def adicionar_pagina(template_id):
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # Obtém o nome e subdomínio do template
     cur.execute("""
         SELECT template_name, subdomain FROM user_templates 
         WHERE id = %s AND user_id = %s LIMIT 1
     """, (template_id, user_id))
-    template = cur.fetchone()
+    resultado = cur.fetchone()
 
-    if not template:
+    if not resultado:
         cur.close()
         conn.close()
         return jsonify({'message': 'Template original não encontrado'}), 404
 
-    template_name, subdomain = template
+    template_name, subdomain = resultado
 
+    # Verifica o plano do usuário
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
+    plano_resultado = cur.fetchone()
+    plano = plano_resultado[0] if plano_resultado and plano_resultado[0] else "free"
+
+    # Conta apenas as páginas extras (sem contar a index)
+    cur.execute("""
+        SELECT COUNT(*) FROM user_templates 
+        WHERE template_name = %s AND subdomain = %s AND user_id = %s AND page_name != 'index'
+    """, (template_name, subdomain, user_id))
+    total_paginas_extras = cur.fetchone()[0]
+
+    # Se o plano não for moderado/master, limita a 1 página extra
+    if plano not in ['moderado', 'master'] and total_paginas_extras >= 1:
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Seu plano atual permite apenas 1 página extra. Faça upgrade para criar páginas ilimitadas.'}), 403
+
+    # Cria a nova página
     cur.execute("""
         INSERT INTO user_templates (user_id, template_name, subdomain, page_name, custom_html)
         VALUES (%s, %s, %s, %s, %s)
@@ -1575,6 +1597,7 @@ def adicionar_pagina(template_id):
     conn.close()
 
     return jsonify({'message': f'Página "{page_name}" criada com sucesso!'})
+
 
 
 
@@ -1779,16 +1802,19 @@ def preco():
 @app.context_processor
 def inject_user_status():
     is_premium = False
+    premium_level = 'free'
     if 'user_id' in session:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (session['user_id'],))
+        cur.execute("SELECT is_premium, premium_level FROM users2 WHERE id = %s", (session['user_id'],))
         result = cur.fetchone()
         if result:
             is_premium = result[0]
+            premium_level = result[1]
         cur.close()
         conn.close()
-    return dict(is_premium=is_premium)
+    return dict(is_premium=is_premium, premium_level=premium_level)
+
 
 
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
@@ -1974,19 +2000,27 @@ def extrair_html_css_do_template(html):
     return body_html.strip(), css.strip()
 
 
-## Rota para exibir os templates dinâmicos
-@app.route('/template/<template_name>')
-def show_template(template_name):
-    premium_templates = ["template10", "template11"]
+@app.route('/verificar-premium/<template_name>', methods=['POST'])
+def verificar_premium(template_name):
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"pode_usar": False})
 
-    # Bloqueia templates premium se o usuário não for pagante
-    if template_name in premium_templates and not session.get('is_premium'):
-            return "Este template é exclusivo para usuários Premium. Adquira o plano!", 403
-    
-    try:
-        return render_template(f"{template_name}.html")
-    except:
-        return "Template não encontrado", 404
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
+    status = cur.fetchone()
+    cur.close(); conn.close()
+
+    is_premium = status[0] if status else False
+
+    # Aqui você define quais templates são considerados premium
+    templates_premium = ['template10', 'template4']
+    if template_name in templates_premium and not is_premium:
+        return jsonify({"pode_usar": False})
+
+    return jsonify({"pode_usar": True})
+
     
 @app.route('/buy-premium', methods=['POST'])
 def buy_premium():

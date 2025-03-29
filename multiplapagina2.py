@@ -13,6 +13,8 @@ PAGINAS_ESPECIAIS = {
     'meus-pedidos': 'template10_meuspedidos.html',
     'acompanhar-pedido': 'template10_acompanhar_pedido.html',
     'editar-dados': 'template10_editar_dados.html',
+    'login-cliente': 'login_cliente.html',
+    'cadastrar': 'cadastrar_cliente.html'
 }
 
 def extrair_css_apenas(html):
