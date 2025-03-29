@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <link rel="icon" href="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" type="image/x-icon">
+
+      
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Site Genius</title>
-    <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/c_thumb,w_200,g_face/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
-    <link rel="stylesheet" href="/static/style.css">
+   
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -335,7 +337,21 @@ footer .container {
     cursor: pointer;
     margin-top: 20px;
 }
+.logout-link,
+#meus-templates-option,
+#editar-dados-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+}
 
+.logout-link:hover,
+#meus-templates-option:hover,
+#editar-dados-option:hover {
+  transform: translateX(4px);
+  color: #ff4d4d; /* cor suave para destaque */
+}
 /* ✅ Ajuste no menu do usuário no mobile */
 .mobile-user-menu {
     position: relative;
@@ -391,7 +407,7 @@ footer .container {
 .floating-premium-btn {
     position: fixed;
     bottom: 30px;
-    right: 30px;
+    left: 30px; 
     background: gold;
     color: black;
     font-weight: bold;
@@ -404,6 +420,29 @@ footer .container {
     text-decoration: none;
     transition: all 0.3s ease;
 }
+
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  transition: all 0.2s ease-in-out;
+}
+
+.menu-link:hover {
+  transform: translateX(4px);
+  color: #0077ff;
+}
+
+.user-info-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+  padding: 10px 10px 0;
+  border-bottom: 1px dashed #ccc;
+}
+
 
 .floating-premium-btn:hover {
     background: #e0b800;
@@ -465,17 +504,21 @@ footer .container {
 </style>
 </head>
 <body> 
-    <header>    
+    <header>  
+          
         <div class="container">
-            <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
+            <h1>
+                <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo" style="height: 35px; vertical-align: middle; margin-right: 10px;">
+                Site Genius
+              </h1>
         
             <!-- ✅ Navbar Desktop Corrigida -->
             <nav class="desktop-nav">
                 <ul>
                     <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
                     <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
-                    <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
-                    <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+                    <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+                   
         
                     <!-- ✅ Avatar e Dropdown -->
                     <li class="user-menu">
@@ -485,14 +528,32 @@ footer .container {
                             </span>
                         </a>
                         <ul class="dropdown-menu" id="user-dropdown">
-                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
+                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;" class="user-info-line">
+                                <i class="fas fa-user-circle" style="margin-right: 6px; color: #555;"></i>
                                 Bem-vindo, <span id="user-name-text"></span><br>
-                                <small id="user-premium-info" style="color: #666;"></small>
-                            </li>
-                            <li><a href="/login" id="login-option">Entrar</a></li>
-                            <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Meus Templates</a></li>
-                            <li><a href="/editar-dados" id="editar-dados-option" style="display: none;">Editar Dados</a></li>
-                            <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                                <small id="user-premium-info" style="color: #666; margin-left: 22px;"></small>
+                              </li>
+                              <li>
+                                <a href="/login" id="login-option" class="menu-link">
+                                  <i class="fas fa-sign-in-alt"></i> Entrar
+                                </a>
+                              </li>
+                              
+                            <li>
+                                <a href="/meu-site" id="meus-templates-option" style="display:none;">
+                                  <i class="fas fa-layer-group"></i> Meus Templates
+                                </a>
+                              </li>                              
+                              <li>
+                                <a href="/editar-dados" id="editar-dados-option" style="display: none;">
+                                  <i class="fas fa-user-cog"></i> Editar Dados
+                                </a>
+                              </li>                              
+                              <li>
+                                <a href="#" id="logout-option" style="display: none;" onclick="logout()" class="logout-link">
+                                  <i class="fas fa-sign-out-alt"></i> Sair
+                                </a>
+                              </li>
                         </ul>
                     </li>
                 </ul>
@@ -509,8 +570,8 @@ footer .container {
             <div class="mobile-menu-content">
                 <a href="/"><i class="fas fa-home"></i> Início</a>
                 <a href="/templates"><i class="fas fa-th"></i> Templates</a>
-                <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
-                <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
+                <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+                
         
                 <!-- ✅ Avatar Mobile -->
                 <div class="mobile-user-menu">
@@ -524,10 +585,26 @@ footer .container {
                             Bem-vindo, <span id="mobile-username-text"></span><br>
                             <small id="mobile-user-premium-info" style="color: #ddd;"></small>
                         </li>
-                        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-                        <li><a href="/meu-site" id="mobile-meus-templates-option" style="display:none;">Meus Templates</a></li>
-                        <li><a href="/editar-dados" id="mobile-editar-dados-option" style="display: none;">Editar Dados</a></li>
-                        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                        <li>
+                            <a href="/login" id="mobile-login-option" class="mobile-menu-link">
+                              <i class="fas fa-sign-in-alt"></i> Entrar
+                            </a>
+                          </li>
+                          <li>
+                            <a href="/meu-site" id="mobile-meus-templates-option" style="display:none;" class="mobile-menu-link">
+                              <i class="fas fa-folder-open"></i> Meus Templates
+                            </a>
+                          </li>
+                          <li>
+                            <a href="/editar-dados" id="mobile-editar-dados-option" style="display: none;" class="mobile-menu-link">
+                              <i class="fas fa-user-cog"></i> Editar Dados
+                            </a>
+                          </li>
+                          <li>
+                            <a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()" class="mobile-menu-link logout">
+                              <i class="fas fa-sign-out-alt"></i> Sair
+                            </a>
+                          </li>
                     </ul>
                 </div>
         
@@ -540,9 +617,19 @@ footer .container {
     </header>
     <section class="hero">
         <div class="container">
-            <h2>Crie seu site e aplicativo facilmente!</h2>
+            <h2>
+                <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo SiteGenius" style="height: 35px; vertical-align: middle; margin-right: 10px;">
+                Crie seu site e aplicativo facilmente!
+              </h2>              
             <p>Escolha um template ou use nossa IA para criar um site e aplicativo personalizado em minutos.</p>
-            <a href="/templates" class="btn">Explorar Templates</a>
+            <a href="/templates" class="btn">
+                <i class="fas fa-th-large" style="margin-right: 6px;"></i> Explorar Templates
+              </a>
+              
+              <a href="/tutorial" class="btn">
+                <i class="fas fa-question-circle" style="margin-right: 6px;"></i> Dúvidas de como funciona? Ver tutorial
+              </a>
+              
         </div>
     </section>
 
@@ -743,7 +830,8 @@ document.addEventListener('click', function(event) {
 
 
     </script>
-
+<script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
+<script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
     <footer>
         <div class="container">
             <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>

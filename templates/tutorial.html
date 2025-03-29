@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central de Ajuda - Site Genius</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+
+    #bp-web-widget {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 999999 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+  }
+    header {
+      background: linear-gradient(to right, #1f2937, #374151);
+      color: white;
+      padding: 1rem 2rem;
+    }
+    .container {
+  text-align: left;
+  max-width: 1000px;
+  margin-left: 0;
+  margin-right: auto;
+  padding: 2rem;
+}
+
+    h2 {
+      color: #1f2937;
+      margin-top: 2rem;
+    }
+    .faq {
+      margin-bottom: 2rem;
+    }
+    .faq h3 {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+    .faq p {
+      color: #333;
+      line-height: 1.6;
+    }
+    .video {
+  margin: 2rem 0;
+}
+
+.video p {
+  text-align: left;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+    .video iframe {
+      width: 100%;
+      margin-left: 0;
+      max-width: 640px;
+      height: 360px;
+      border-radius: 10px;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      border-left: 5px solid #3b82f6;
+      padding-left: 10px;
+      color: #1f2937;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      gap: 20px;
+    }
+    nav ul li {
+      display: inline;
+    }
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .mobile-menu-btn, .mobile-menu-modal {
+      display: none;
+    }
+
+
+
+    .accordion {
+  margin-top: 2rem;
+}
+
+.accordion-item {
+  border-bottom: 1px solid #ddd;
+}
+
+.accordion-question {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #1e3a8a;
+  font-weight: bold;
+  width: 100%;
+  text-align: left;
+  padding: 1rem 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.accordion-question::after {
+  content: "\f107";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  position: absolute;
+  right: 0;
+  top: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.accordion-question.active::after {
+  transform: rotate(180deg);
+}
+
+.accordion-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  padding-left: 1rem;
+}
+
+.accordion-answer p {
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+    .faq-search {
+  position: relative;
+  max-width: 400px;
+  margin: 1.5rem 0;
+}
+
+.faq-search input {
+  width: 100%;
+  padding: 12px 12px 12px 42px;
+  border: 2px solid #050505;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.faq-search input:focus {
+  border-color: #03133f;
+  box-shadow: 0 0 5px rgba(1, 25, 63, 0.5);
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: #01122c;
+  font-size: 18px;
+}
+
+
+    .header-container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 768px) {
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .header-container h1 {
+    font-size: 1.2rem;
+  }
+
+  nav.desktop-nav ul {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding-left: 0;
+  }
+
+  .container {
+    padding: 1rem;
+    margin: 0 auto;
+  }
+
+  .faq-search {
+    width: 100%;
+    max-width: none;
+  }
+
+  .video iframe {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+
+  .accordion-question {
+    font-size: 1rem;
+    padding: 0.8rem 0;
+  }
+
+  .accordion-answer {
+    font-size: 0.95rem;
+  }
+}
+
+
+  </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+      <h1>
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo" style="height: 35px; vertical-align: middle; margin-right: 10px;">
+        Site Genius - Central de Ajuda
+      </h1>
+
+      <nav class="desktop-nav">
+        <ul>
+          <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+          <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+          <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    
+    <div class="faq-search">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="search-faq" placeholder="Digite sua dúvida..." />
+      </div>
+      
+      <div class="accordion">
+        <div class="accordion-item">
+          <button class="accordion-question">Para que serve um template?</button>
+          <div class="accordion-answer">
+            <p>Templates são modelos prontos de sites que você pode usar para acelerar sua criação. Basta escolher, personalizar os textos e publicar.</p>
+          </div>
+        </div>
+      
+        <div class="accordion-item">
+          <button class="accordion-question">Posso editar todo o conteúdo do site?</button>
+          <div class="accordion-answer">
+            <p>Na versão gratuita, é possível editar todos os textos, mas não é permitido editar imagens nem adicionar novas páginas.</p>
+          </div>
+        </div>
+      
+        <div class="accordion-item">
+            <button class="accordion-question">Como funciona a versão Premium?</button>
+            <div class="accordion-answer">
+              <p>A versão Premium libera edição completa: textos, imagens e criação de novas páginas ilimitadas. Ideal para quem quer total liberdade de personalização.</p>
+              <p>Além disso, o plano inclui diversas funcionalidades exclusivas como suporte técnico prioritário, mais opções de personalização, e acesso à inteligência artificial.</p>
+              <p>Você pode conferir todos os detalhes e escolher o plano ideal para você na <a href="/preco" style="color:#1e3a8a; font-weight:bold;">página de planos</a>.</p>
+              <a href="/preco" style="display:inline-block; margin-top:10px; background-color:#1e3a8a; color:white; padding:10px 15px; border-radius:6px; text-decoration:none;">
+                Ver todos os benefícios
+                <i class="fas fa-arrow-right" style="margin-left:5px;"></i>
+              </a>
+            </div>
+          </div>
+          
+      
+        <div class="accordion-item">
+          <button class="accordion-question">Não quero ser Premium, mas quero trocar imagens. E agora?</button>
+          <div class="accordion-answer">
+            <p>Você pode pagar R$ 10 para desbloquear apenas o editor de imagens, sem necessidade de assinatura Premium.</p>
+          </div>
+        </div>
+      
+        <div class="accordion-item">
+          <button class="accordion-question">Preciso saber programar para usar o Site Genius?</button>
+          <div class="accordion-answer">
+            <p>Não! Mesmo na versão gratuita, o Site Genius oferece um editor visual fácil de usar. Você pode personalizar os textos do seu site de forma intuitiva, sem precisar escrever nenhuma linha de código. Na versão Premium, esse editor visual é ainda mais completo, permitindo editar imagens e adicionar novas páginas com a mesma simplicidade.</p>
+          </div>
+        </div>
+      
+        <div class="accordion-item">
+          <button class="accordion-question">Como funciona o aplicativo do meu site?</button>
+          <div class="accordion-answer">
+            <p>Ao assinar o plano <strong>Premium Master</strong>, você também terá acesso ao seu site em formato de aplicativo, pronto para ser publicado na <strong>Play Store</strong> e na <strong>Apple Store</strong>. É como uma versão espelhada do seu site (via WebView), mas com a experiência de um app instalado no celular — ideal para fortalecer sua marca e facilitar o acesso dos seus clientes.</p>
+          </div>
+        </div>
+      
+        <div class="accordion-item">
+          <button class="accordion-question">Como funciona a criação automática com IA?</button>
+          <div class="accordion-answer">
+            <p>A funcionalidade de IA está disponível exclusivamente para usuários do plano <strong>Premium Master</strong>. Com ela, você pode simplesmente digitar uma descrição detalhada do site que deseja — como "site para clínica odontológica com formulário de contato e galeria de fotos" — e a inteligência artificial utiliza algoritmos de Processamento de Linguagem Natural (NLP) para interpretar o texto e gerar automaticamente um template responsivo.</p>
+            <p>O sistema monta a estrutura HTML, os estilos CSS e até blocos de conteúdo com textos e seções organizadas, economizando horas de trabalho. É ideal para quem quer um site completo sem precisar montar nada manualmente — basta descrever o que precisa.</p>
+          </div>
+        </div>
+      
+        <div class="accordion-item">
+          <button class="accordion-question">Qual a vantagem do Site Genius comparado a outros criadores de site?</button>
+          <div class="accordion-answer">
+            <p>O Site Genius vai muito além dos criadores tradicionais. Aqui, você encontra tudo que precisa em um só lugar: edição visual intuitiva, templates prontos gratuitos, integração com aplicativo via webview (disponível na Play Store e Apple Store para quem é Premium Master), e uma Inteligência Artificial capaz de criar sites completos com base no que você digitar.</p>
+            <p>Diferente de outras plataformas, oferecemos suporte técnico com programadores reais à disposição no plano Premium Master, prontos para te ajudar quando precisar. Além disso, como ainda estamos em crescimento, estamos abertos a sugestões para expandir nossos templates gratuitos — sua ideia pode virar realidade aqui!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <button class="accordion-question">O editor visual do Site Genius na versão gratuita é bom?</button>
+        <div class="accordion-answer">
+          <p>Sim! O editor visual do Site Genius, mesmo na versão gratuita, oferece uma experiência extremamente intuitiva e poderosa. Ele permite que você arraste e solte elementos, edite blocos de texto, organize seções do site e visualize as alterações em tempo real — tudo com precisão pixel a pixel.</p>
+          <p>Por trás da interface, ele é construído com tecnologias modernas que garantem performance, responsividade e compatibilidade com todos os navegadores. A estrutura do código gerado é limpa e adaptável, o que facilita futuras atualizações ou até migrações, caso desejado.</p>
+          <p>É uma ferramenta robusta e usada até por desenvolvedores profissionais, então mesmo quem não entende nada de programação consegue criar um site visualmente bonito e funcional com facilidade.</p>
+        </div>
+      </div>
+      
+      <div class="accordion-item">
+        <button class="accordion-question">Se eu escolher um template pronto, consigo mudar ele todo de acordo com a minha realidade desejada ?</button>
+        <div class="accordion-answer">
+          <p>Sim! Todos os templates do Site Genius são 100% personalizáveis. Mesmo na versão gratuita, você já pode modificar todos os textos, seções e organização do site usando o editor visual.</p>
+          <p>No entanto, a edição de imagens está bloqueada na versão gratuita. Se quiser alterar imagens, você pode liberar apenas essa funcionalidade pagando R$ 10 — sem a necessidade de assinatura Premium.</p>
+          <p>Com o editor visual, você consegue reorganizar e personalizar o site da forma que desejar, mesmo sem conhecimento técnico. E caso queira mais liberdade ainda, o plano <strong>Essencial</strong>, que é o mais acessível, já oferece todos os recursos necessários para modificar completamente o template visualmente, sem limitações.</p>
+        </div>
+      </div>
+      
+      
+
+    <h2 class="section-title"><i class="fas fa-video"></i> Tutoriais em Vídeo(Em criação ainda não disponível)</h2>
+    <div class="video">
+      <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen></iframe>
+      <p><em>Como usar um template passo a passo</em></p>
+    </div>
+    <div class="video">
+      <iframe src="https://www.youtube.com/embed/V-_O7nl0Ii0" frameborder="0" allowfullscreen></iframe>
+      <p><em>Como editar textos e imagens do seu site</em></p>
+    </div>
+  </div>
+  <script>
+    const searchInput = document.getElementById("search-faq");
+    const faqItems = document.querySelectorAll(".accordion-item");
+
+searchInput.addEventListener("input", () => {
+  const keyword = searchInput.value.toLowerCase();
+  faqItems.forEach(item => {
+    const question = item.querySelector(".accordion-question").textContent.toLowerCase();
+    const answer = item.querySelector(".accordion-answer").textContent.toLowerCase();
+    if (question.includes(keyword) || answer.includes(keyword)) {
+      item.style.display = "block";
+    } else {
+      item.style.display = "none";
+    }
+  });
+});
+
+    const accordions = document.querySelectorAll(".accordion-question");
+
+accordions.forEach(btn => {
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("active");
+    const answer = btn.nextElementSibling;
+    if (answer.style.maxHeight) {
+      answer.style.maxHeight = null;
+    } else {
+      answer.style.maxHeight = answer.scrollHeight + "px";
+    }
+  });
+});
+  </script>
+<script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
+<script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
+
+  
+</body>
+</html>

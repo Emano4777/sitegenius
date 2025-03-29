@@ -535,6 +535,22 @@ main {
     justify-content: center;
 }
 
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  text-decoration: none;
+  color: #333;
+  transition: all 0.2s ease-in-out;
+}
+
+.menu-link:hover {
+  transform: translateX(5px);
+  color: #0077ff;
+}
+
+
 .modal-content {
     background: white;
     padding: 20px;
@@ -663,15 +679,18 @@ iframe {
     {% endif %}
     <header>    
         <div class="container">
-            <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
+            <h1>
+                <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo" style="height: 35px; vertical-align: middle; margin-right: 10px;">
+                Site Genius
+              </h1>
     
            <!-- ✅ Navbar Desktop Corrigida -->
 <nav class="desktop-nav">
     <ul>
         <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
         <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
-        <li><a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a></li>
-        <li><a href="/contato"><i class="fas fa-envelope"></i> Contato</a></li>
+        <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+  
 
         <!-- ✅ Avatar do usuário -->
         <li class="user-menu">
@@ -685,11 +704,29 @@ iframe {
                     Olá, <span id="user-name-text"></span><br>
                     <small id="user-premium-info" style="color: #666;"></small>
                 </li>
-                <li><a href="/login" id="login-option">Entrar</a></li>
-                <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
-                <li><a href="/editar-dados" id="editar-dados-option" style="display:none;">Editar meus Dados</a></li>
-
-                <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
+                <li>
+                    <a href="/login" id="login-option" class="menu-link">
+                      <i class="fas fa-sign-in-alt"></i> Entrar
+                    </a>
+                  </li>
+                  
+                  <li>
+                    <a href="/meu-site" id="meus-templates-option" style="display:none;" class="menu-link">
+                      <i class="fas fa-folder-open"></i> Acessar os meus Templates
+                    </a>
+                  </li>
+                  
+                  <li>
+                    <a href="/editar-dados" id="editar-dados-option" style="display:none;" class="menu-link">
+                      <i class="fas fa-user-cog"></i> Editar meus Dados
+                    </a>
+                  </li>
+                  
+                  <li>
+                    <a href="#" id="logout-option" style="display:none;" onclick="logout()" class="menu-link">
+                      <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                  </li>                  
             </ul>
         </li>
     </ul>
@@ -705,28 +742,48 @@ iframe {
         <div class="mobile-menu-content">
             <a href="/"><i class="fas fa-home"></i> Início</a>
             <a href="/templates"><i class="fas fa-th"></i> Templates</a>
-            <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
-            <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
+            <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+           
     
                     <!-- ✅ Ícone do usuário no menu mobile -->
                     <div class="mobile-user-menu">
                         <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
                             <span id="mobile-user-avatar-container">
                                 <i class="fas fa-user"></i>
-                            </span>
-                            <span id="mobile-user-name-text">Entrar</span>
-                        </a>
-                        <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
-                            <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-                                Olá, <span id="mobile-username-text"></span><br>
-                                <small id="mobile-user-premium-info" style="color: #ddd;"></small>
-                            </li>
-                            <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-                            <li><a href="/meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
-                            <li><a href="/editar-dados" id="mobile-editar-dados-option" style="display:none;">Editar meus Dados</a></li>
-
-                            <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-                        </ul>
+                              </span>
+                              <span id="mobile-user-name-text">Entrar</span>
+                              </a>
+                              
+                              <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+                                <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+                                  <i class="fas fa-hand-peace"></i> Olá, <span id="mobile-username-text"></span><br>
+                                  <small id="mobile-user-premium-info" style="color: #ddd;"></small>
+                                </li>
+                              
+                                <li>
+                                  <a href="/login" id="mobile-login-option" class="mobile-link">
+                                    <i class="fas fa-sign-in-alt"></i> Entrar
+                                  </a>
+                                </li>
+                              
+                                <li>
+                                  <a href="/meu-site" id="mobile-meus-templates-option" style="display:none;" class="mobile-link">
+                                    <i class="fas fa-folder-open"></i> Acessar os meus Templates
+                                  </a>
+                                </li>
+                              
+                                <li>
+                                  <a href="/editar-dados" id="mobile-editar-dados-option" style="display:none;" class="mobile-link">
+                                    <i class="fas fa-user-cog"></i> Editar meus Dados
+                                  </a>
+                                </li>
+                              
+                                <li>
+                                  <a href="#" id="mobile-logout-option" style="display:none;" onclick="logout()" class="mobile-link">
+                                    <i class="fas fa-sign-out-alt"></i> Sair
+                                  </a>
+                                </li>
+                              </ul>                              
                     </div>
       
                     <button class="close-btn" onclick="closeMobileMenu()">

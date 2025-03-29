@@ -1124,7 +1124,7 @@ def payment_success():
         conn.commit()
         session['is_premium'] = True
         session['premium_level'] = plano
-        return redirect(url_for('templates'))
+        return redirect(url_for('admin_dashboard'))
     except psycopg2.Error:
         conn.rollback()
         return "Erro ao ativar premium", 500
@@ -1556,6 +1556,9 @@ def criar_subpagina(template_id, new_page):
 
     return jsonify({"success": True, "message": f"Subpágina '{new_page}' criada!"})
 
+@app.route("/tutorial")
+def tutorial():
+    return render_template("tutorial.html")
 
 
 @app.route('/meu-site')

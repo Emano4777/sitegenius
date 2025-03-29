@@ -1,73 +1,138 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Administrativo</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 0;
-    }
+   body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f7fa;
+  margin: 0;
+  padding: 0;
+}
 
-    header {
-      background: #343a40;
-      color: white;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+header {
+  background: linear-gradient(to right, #1f2937, #374151);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    header h1 {
-      margin: 0;
-    }
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
 
-    .container {
-      max-width: 900px;
-      margin: 2rem auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
+header a {
+  color: white;
+  font-size: 1rem;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
 
-    .menu {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-    }
+header a:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
 
-    .card {
-      padding: 1.5rem;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border-left: 5px solid #007bff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      transition: 0.3s;
-    }
+.container {
+  max-width: 1000px;
+  margin: 3rem auto;
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
 
-    .card:hover {
-      background: #e9ecef;
-    }
+.welcome {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  color: #374151;
+  text-align: center;
+}
 
-    .card h3 {
-      margin-top: 0;
-    }
+.menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
 
-    .card a {
-      text-decoration: none;
-      color: #007bff;
-      font-weight: bold;
-    }
+.card {
+  background: #f1f5f9;
+  padding: 1.8rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-left: 6px solid #3b82f6;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
-    footer {
-      text-align: center;
-      margin-top: 3rem;
-      padding: 1rem;
-      color: #777;
-    }
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  margin-top: 0;
+  font-size: 1.3rem;
+  color: #1e3a8a;
+}
+
+.card p {
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.card a {
+  text-decoration: none;
+  color: #2563eb;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.card a:hover {
+  color: #1d4ed8;
+}
+
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding: 1rem;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.floating-support-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  background-color: #1f2937;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+
+.floating-support-btn:hover {
+  background-color: #374151;
+  transform: translateY(-2px);
+}
+
+
   </style>
 </head>
 <body>
@@ -78,20 +143,44 @@
   </header>
 
   <div class="container">
+    <div class="welcome">
+      <i class="fas fa-user-shield"></i> Bem-vindo ao seu <strong>Painel Administrativo Premium</strong>. Gerencie seus recursos com facilidade e poder!
+    </div>
     <div class="menu">
       <div class="card">
-        <h3>🧾 Produtos</h3>
+        <h3><i class="fas fa-chalkboard-teacher"></i> Tutorial do Painel</h3>
+        <p>Acesse um guia prático para entender como usar cada seção do painel administrativo.</p>
+        <a href="/admin/tutorial"><i class="fas fa-book-open"></i> Ver Tutorial</a>
+      </div>
+      <div class="card">
+        
+        <h3><i class="fas fa-box-open" style="margin-right: 8px;"></i>Produtos</h3>
         <p>Gerencie os produtos cadastrados por loja.</p>
         <a href="/admin/produtos">Ir para Produtos</a>
       </div>
 
       <div class="card">
-        <h3>💳 Integração Mercado Pago</h3>
+        <h3><i class="fas fa-credit-card" style="margin-right: 8px;"></i>Integração Mercado Pago</h3>
         <p>Configure sua chave pública e secreta.</p>
         <a href="/configurar-mercado-pago">Ir para Configuração</a>
       </div>
-
-      <!-- Adicione outros cards aqui conforme crescer -->
+      <div class="card">
+        <h3><i class="fas fa-image"></i> Editor de Imagens</h3>
+        <p>Edite as imagens dos seus templates com facilidade.</p>
+        <a href="/admin/editar-imagens">Acessar Editor</a>
+      </div>
+      <div class="card">
+        <h3><i class="fas fa-layer-group"></i> Meus Templates</h3>
+        <p>Visualize e gerencie os templates que você está utilizando.</p>
+        <a href="/meu-site"><i class="fas fa-eye"></i> Ver Templates</a>
+      </div>
+      <div class="card">
+        <h3><i class="fas fa-chart-line"></i> Relatórios</h3>
+        <p>Acompanhe estoque, produtos vendidos e outros relatórios importantes.</p>
+        <a href="/admin/relatorios"><i class="fas fa-file-alt"></i> Acessar Relatórios</a>
+      </div>
+      
+      
       <!-- Exemplo: Pedidos, Clientes, Templates, Relatórios... -->
     </div>
   </div>
@@ -99,5 +188,11 @@
   <footer>
     © 2025 Painel Administrativo - Sistema SiteGenius
   </footer>
+  <a href="https://wa.me/5517991436759" class="floating-support-btn" target="_blank">
+  <img src="https://cdn-icons-png.flaticon.com/512/4140/4140047.png" 
+       alt="Suporte Homem" 
+       style="width: 22px; height: 22px; border-radius: 50%; margin-right: 8px;" />
+  Dúvidas? Fale com um especialista
+</a>
 </body>
 </html>
