@@ -548,7 +548,12 @@ footer .container {
                                 <a href="/editar-dados" id="editar-dados-option" style="display: none;">
                                   <i class="fas fa-user-cog"></i> Editar Dados
                                 </a>
-                              </li>                              
+                              </li> 
+                              <li id="admin-lojas-option" style="display: none;">
+                                <a href="/admin" class="menu-link">
+                                  <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                                </a>
+                              </li>                             
                               <li>
                                 <a href="#" id="logout-option" style="display: none;" onclick="logout()" class="logout-link">
                                   <i class="fas fa-sign-out-alt"></i> Sair
@@ -598,6 +603,11 @@ footer .container {
                           <li>
                             <a href="/editar-dados" id="mobile-editar-dados-option" style="display: none;" class="mobile-menu-link">
                               <i class="fas fa-user-cog"></i> Editar Dados
+                            </a>
+                          </li>
+                          <li id="mobile-admin-lojas-option" style="display: none;">
+                            <a href="/admin" class="mobile-menu-link">
+                              <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
                             </a>
                           </li>
                           <li>
@@ -679,6 +689,7 @@ function toggleMobileUserMenu(event) {
 fetch('/check-login')
     .then(response => response.json())
     .then(data => {
+        
         let userNameElement = document.getElementById('user-name');
         let userNameText = document.getElementById('user-name-text');
         let loginOption = document.getElementById('login-option');
@@ -715,6 +726,13 @@ fetch('/check-login')
             mobileLoginOption.style.display = 'none';
             mobileLogoutOption.style.display = 'block';
             mobileMeusTemplatesOption.style.display = 'block';
+
+            if (data.is_premium) {
+    const adminOption = document.getElementById('admin-lojas-option');
+    const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
+    if (adminOption) adminOption.style.display = 'block';
+    if (mobileAdminOption) mobileAdminOption.style.display = 'block';
+}
 
             if (data.user_name) {
                 userNameText.textContent = data.user_name;
@@ -815,6 +833,8 @@ document.addEventListener('click', function(event) {
 
 
 
+
+
     document.getElementById('mobile-logout-option').addEventListener('click', function() {
         fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
     });
@@ -830,6 +850,7 @@ document.addEventListener('click', function(event) {
 
 
     </script>
+    
 <script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
     <footer>

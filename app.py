@@ -857,6 +857,50 @@ def remover_item_carrinho(subdomain, item_id):
     conn.close()
     return jsonify({'status': 'ok', 'mensagem': 'Item removido do carrinho'})
 
+@app.route('/admin/relatorios')
+def relatorio_geral_estoque():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+       SELECT MIN(ut.id), ut.subdomain
+        FROM user_templates ut
+        WHERE ut.user_id = %s
+        GROUP BY ut.subdomain
+    """, (user_id,))
+    lojas = cur.fetchall()
+
+    relatorios = []
+
+    for loja_id, sub in lojas:
+        # Estoque atual
+        cur.execute("SELECT nome, quantidade FROM produtos WHERE loja_id = %s", (loja_id,))
+        produtos = cur.fetchall()
+        estoque_labels = [p[0] for p in produtos]
+        estoque_data = [p[1] for p in produtos]
+
+        # Vendas (quantidade de pedidos feitos para essa loja)
+        cur.execute("SELECT COUNT(*) FROM pedidos WHERE loja_id = %s", (loja_id,))
+        total_pedidos = cur.fetchone()[0]
+
+        vendas_labels = ['Pedidos Realizados']
+        vendas_data = [total_pedidos]
+
+        relatorios.append({
+            'subdomain': sub,
+            'estoque_labels': estoque_labels,
+            'estoque_data': estoque_data,
+            'vendas_labels': vendas_labels,
+            'vendas_data': vendas_data
+        })
+
+    cur.close(); conn.close()
+    return render_template('relatorios.html', relatorios=relatorios)
+
 
 
 @app.route('/api/carrinho/atualizar/<int:item_id>', methods=['PUT'])
@@ -894,12 +938,13 @@ def cadastrar_produto(subdomain):
         descricao = request.form['descricao']
         preco = request.form['preco']
         imagem = request.form['imagem']
+        quantidade = request.form['quantidade']
 
         # Insere com o loja_id correto
         cur.execute(
-            'INSERT INTO produtos (nome, descricao, preco, imagem, loja_id) VALUES (%s, %s, %s, %s, %s)',
-            (nome, descricao, preco, imagem, loja_id)
-        )
+        'INSERT INTO produtos (nome, descricao, preco, imagem, quantidade, loja_id) VALUES (%s, %s, %s, %s, %s, %s)',
+        (nome, descricao, preco, imagem, quantidade, loja_id)
+    )
         conn.commit()
         cur.close(); conn.close()
         return redirect(url_for('cadastrar_produto', subdomain=subdomain))
@@ -917,19 +962,24 @@ def admin_produtos():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Busca produtos com subdomínio da loja do usuário
+    # Busca produtos com subdomínio da loja do usuário (único por loja)
     cur.execute("""
         SELECT p.id, p.nome, p.preco, u.subdomain
         FROM produtos p
-        JOIN user_templates u ON p.loja_id = u.id
-        WHERE u.user_id = %s
+        JOIN (
+            SELECT MIN(id) AS id, subdomain
+            FROM user_templates
+            WHERE user_id = %s
+            GROUP BY subdomain
+        ) u ON p.loja_id = u.id
     """, (session['user_id'],))
     
     produtos = cur.fetchall()
 
-    # Busca todas as lojas do usuário (caso não tenha produto ainda)
+    # Busca lojas únicas do usuário
     cur.execute("""
-        SELECT subdomain FROM user_templates
+        SELECT DISTINCT subdomain 
+        FROM user_templates
         WHERE user_id = %s
     """, (session['user_id'],))
     lojas = cur.fetchall()
@@ -994,7 +1044,6 @@ def admin_produtos():
 
 
 
-
 @app.route('/admin/excluir/<int:id>')
 def excluir_produto(id):
     conn = get_db_connection()
@@ -1050,7 +1099,6 @@ def editar_produto(id):
         </form>
         <br><a href=\"/admin/produtos\">Cancelar</a>
     '''
-
 
 @app.route('/')
 def home():
@@ -1173,20 +1221,22 @@ def check_login():
     if 'user_id' in session:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT nome, premium_level,avatar_url  FROM users2 WHERE id = %s", (session['user_id'],))
+        cur.execute("SELECT nome, premium_level, avatar_url, is_premium FROM users2 WHERE id = %s", (session['user_id'],))
         result = cur.fetchone()
         cur.close(); conn.close()
 
         if result:
-            nome, plano, avatar_url = result
+            nome, plano, avatar_url, is_premium = result
             return jsonify({
                 "logged_in": True,
                 "user_name": nome,
                 "premium_level": plano,
-                "avatar_url": avatar_url
+                "avatar_url": avatar_url,
+                "is_premium": is_premium
             })
 
     return jsonify({"logged_in": False})
+
 
 
 

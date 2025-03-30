@@ -721,7 +721,11 @@ iframe {
                       <i class="fas fa-user-cog"></i> Editar meus Dados
                     </a>
                   </li>
-                  
+                  <li id="admin-lojas-option" style="display: none;">
+                    <a href="/admin" class="menu-link">
+                      <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                    </a>
+                  </li> 
                   <li>
                     <a href="#" id="logout-option" style="display:none;" onclick="logout()" class="menu-link">
                       <i class="fas fa-sign-out-alt"></i> Sair
@@ -777,6 +781,13 @@ iframe {
                                     <i class="fas fa-user-cog"></i> Editar meus Dados
                                   </a>
                                 </li>
+
+                                <li id="mobile-admin-lojas-option" style="display: none;">
+                                  <a href="/admin" class="mobile-link">
+                                    <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                                  </a>
+                                </li>
+                                
                               
                                 <li>
                                   <a href="#" id="mobile-logout-option" style="display:none;" onclick="logout()" class="mobile-link">
@@ -1357,6 +1368,12 @@ iframe {
             mobileLoginOption.style.display = 'none';
             mobileLogoutOption.style.display = 'block';
             mobileMeusTemplatesOption.style.display = 'block';
+
+            if (data.is_premium) {
+  document.getElementById('admin-lojas-option').style.display = 'block';
+  document.getElementById('mobile-admin-lojas-option').style.display = 'block';
+}
+
 
             // Avatar Desktop
             avatarContainer.innerHTML = '';
