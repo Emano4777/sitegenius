@@ -22,11 +22,15 @@
     allowfullscreen>
   </iframe>
 
-  <div style="text-align: center; margin-top: 2rem;">
-    <a href="https://wa.me/SEUNUMERO" target="_blank" class="btn-voltar" style="background-color: #25d366; color: white; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold; text-decoration: none;">
-      <i class="fab fa-whatsapp"></i> Contatar Entregador
-    </a>
+  {% if pedido.whatsapp_entregador and pedido.whatsapp_entregador.strip() %}
+  <a href="https://wa.me/{{ pedido.whatsapp_entregador | replace(' ', '') }}" target="_blank" class="btn-voltar" style="background-color: #25d366; color: white; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold; text-decoration: none;">
+    <i class="fab fa-whatsapp"></i> Contatar Entregador
+  </a>
+{% else %}
+  <div class="btn-voltar" style="background-color: gray; color: white; padding: 0.8rem 1.5rem; border-radius: 6px; font-weight: bold;">
+    <i class="fas fa-exclamation-circle"></i> Entregador ainda não atribuído
   </div>
+{% endif %}
 
   <div style="text-align: center; margin-top: 1.5rem;">
     <a class="btn-voltar" href="/{{ subdomain }}/meus-pedidos" style="background-color: #6c757d; color: white; padding: 0.7rem 1.5rem; border-radius: 6px; text-decoration: none; font-weight: bold;">

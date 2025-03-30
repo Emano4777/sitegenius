@@ -1,0 +1,78 @@
+{% block content %}
+<h2 style="text-align: center; margin: 40px 0; color: #1E2A38; font-size: 28px;">
+  <i class="fas fa-users"></i> Clientes Cadastrados
+</h2>
+
+<div class="container" style="max-width: 1000px; margin: auto;">
+
+  <!-- Gráfico de barras -->
+  <div style="margin-bottom: 40px;">
+    <canvas 
+      id="grafico-clientes"
+      data-nomes='{{ nomes | tojson | safe }}'
+      data-totais='{{ totais | tojson | safe }}'
+      width="400" 
+      height="200">
+    </canvas>
+  </div>
+
+  <!-- Tabela de clientes -->
+  <table style="width: 100%; border-collapse: collapse; text-align: left;">
+    <thead>
+      <tr style="background-color: #f0f0f0;">
+        <th style="padding: 12px;">Nome</th>
+        <th style="padding: 12px;">Email</th>
+        <th style="padding: 12px;">Total de Pedidos</th>
+        <th style="padding: 12px;">Loja</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cliente in clientes %}
+      <tr>
+        <td style="padding: 12px;">{{ cliente.nome }}</td>
+        <td style="padding: 12px;">{{ cliente.telefone }}</td>
+        <td style="padding: 12px;">{{ cliente.total_pedidos }}</td>
+        <td style="padding: 12px;">{{ cliente.subdomain }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const canvas = document.getElementById("grafico-clientes");
+    const nomesClientes = JSON.parse(canvas.dataset.nomes || "[]");
+    const pedidosClientes = JSON.parse(canvas.dataset.totais || "[]");
+
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: nomesClientes,
+        datasets: [{
+          label: 'Pedidos por Cliente',
+          data: pedidosClientes,
+          backgroundColor: '#28a745'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Quantidade de Pedidos' }
+          },
+          x: {
+            title: { display: true, text: 'Clientes' }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

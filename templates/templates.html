@@ -506,6 +506,94 @@ main {
     transition: background 0.3s ease-in-out;
 }
 
+.sugestao-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background-color: #1e3a8a;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 30px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.sugestao-form {
+  display: none;
+  position: fixed;
+  bottom: 70px;
+  left: 20px;
+  background: white;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 10000;
+}
+#sugestao-btn:hover {
+  transform: scale(1.05);
+}
+
+#tooltip-sugestao {
+  font-size: 14px;
+  animation: fadeInUp 1.2s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#sugestaoModal .modal-content {
+  max-width: 500px;
+  text-align: center;
+}
+
+#sugestaoModal .modal-content h3 {
+  margin-top: 0;
+  font-size: 22px;
+  color: #1E2A38;
+}
+
+#sugestaoModal .modal-content p {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+#sugestaoModal textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  resize: vertical;
+}
+
+#sugestaoModal button {
+  margin-top: 15px;
+  background: #28a745;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+#sugestaoModal button:hover {
+  background: #218838;
+}
 
 /* Botões premium em dourado */
 .btn.buy-premium {
@@ -652,6 +740,54 @@ iframe {
     animation: pulse 4s infinite ease-in-out;
     position: relative;
     top: -20px;
+}
+.template-search-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 30px auto;
+}
+
+.template-search-container input {
+  width: 100%;
+  padding: 12px 16px 12px 42px; /* espaço à esquerda para o ícone */
+  border-radius: 30px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  outline: none;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: border 0.3s ease;
+}
+
+.template-search-container input:focus {
+  border-color: #007bff;
+}
+
+.template-search-container .search-icon {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  color: #999;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+/* 🔽 Responsivo para celular */
+@media (max-width: 600px) {
+  .template-search-container {
+    padding: 0 15px;
+  }
+
+  .template-search-container input {
+    font-size: 15px;
+    padding: 10px 14px 10px 40px;
+  }
+
+  .template-search-container .search-icon {
+    font-size: 16px;
+    left: 14px;
+  }
 }
 
 
@@ -808,6 +944,12 @@ iframe {
             💎 Torne-se Premium e desbloqueie todos os templates exclusivos! 
             <a href="/preco" style="color: #000; text-decoration: underline;">Veja os benefícios</a>
         </div>
+        <div class="template-search-container">
+          <input type="text" id="templateSearchInput" placeholder="Buscar templates por nome, segmento ou recurso...">
+          <i class="fas fa-search search-icon"></i>
+        </div>
+        </div>
+        
         <section class="templates">
             <h2><i class="fas fa-box-open"></i> Templates disponiveis</h2>
             <div class="template-list">
@@ -1319,6 +1461,21 @@ iframe {
         let currentTemplate = '';
             document.addEventListener("DOMContentLoaded", function () {
 
+  document.getElementById("templateSearchInput").addEventListener("input", function () {
+  const search = this.value.toLowerCase();
+  const templates = document.querySelectorAll(".template");
+
+  templates.forEach(template => {
+    const texto = template.innerText.toLowerCase();
+    if (texto.includes(search)) {
+      template.style.display = "block";
+    } else {
+      template.style.display = "none";
+    }
+  });
+});
+
+
     // Logout mobile
     const mobileLogoutBtn = document.getElementById('mobile-logout-option');
     if (mobileLogoutBtn) {
@@ -1486,6 +1643,21 @@ const images = track.querySelectorAll('.carousel-img');
 images.forEach(img => {
   img.style.width = `${modal.offsetWidth}px`;
 });
+function abrirSugestaoModal() {
+  document.getElementById("formSugestao").style.display = "flex";
+}
+function fecharSugestaoModal() {
+  document.getElementById("formSugestao").style.display = "none";
+}
+function enviarSugestao() {
+  const texto = document.querySelector('#formSugestao textarea').value;
+  if (!texto.trim()) {
+    alert("Por favor, escreva sua sugestão.");
+    return false;
+  }
+  return true; // permite envio
+}
+
 
 function previewTemplate(templateURL) {
   console.log("🖼️ Abrindo preview:", templateURL);
@@ -1700,5 +1872,27 @@ document.addEventListener('click', function(event) {
             <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
         </div>
     </footer>
+   <!-- Botão flutuante de sugestão -->
+   <button class="sugestao-btn" onclick="abrirSugestaoModal()">
+  <i class="fas fa-lightbulb"></i> Tem uma ideia de template?
+</button>
+
+<!-- Modal bonito para sugestão -->
+<div id="formSugestao" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 500px; width: 90%; background: white; border-radius: 10px; padding: 20px; position: relative;">
+    <span class="close" onclick="fecharSugestaoModal()" style="position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer;">&times;</span>
+    <h2 style="margin-top: 0; color: #1E2A38;">
+      <i class="fas fa-lightbulb" style="color: #ffc107; margin-right: 8px;"></i>
+      Tem uma sugestão de template? Ou alguma ideia nova para os templates que já existem?
+    </h2>
+    <form action="/sugerir-template" method="POST">
+      <textarea name="sugestao" required placeholder="Descreva sua ideia ou sugestão..." style="width: 100%; height: 100px; padding: 10px; border-radius: 6px; border: 1px solid #ccc;"></textarea>
+      <div style="margin-top: 15px; text-align: right;">
+        <button type="submit" class="btn" style="background: #1e3a8a; color: white;"><i class="fas fa-paper-plane"></i> Enviar</button>
+        <button type="button" class="btn" style="background: #ccc; color: #333;" onclick="fecharSugestaoModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
 </body>
 </html>

@@ -164,11 +164,19 @@
         
         const TEMPLATE_ID = "{{ template_id }}";
         const PAGE_NAME = "{{ page_name }}";
+        
         console.log("TEMPLATE_ID:", TEMPLATE_ID);
     </script>
+    
+    <script>
+        const IS_PREMIUM = "{{ is_premium }}" === "true";
+        console.log("IS_PREMIUM:", IS_PREMIUM);
+      </script>
+      
     <script id="template-content" type="application/json">
         {{ html_atual | tojson | safe }}
     </script>
+    
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             fetch('/verificar-sessao', {
@@ -217,7 +225,15 @@ document.getElementById("voltar-site-btn").addEventListener("click", function ()
         editor.setComponents(bodyContent);
         editor.setStyle(styleContent);
      
-          
+        editor.on("component:selected", (model) => {
+    if (!IS_PREMIUM && model.get("tagName") === "img") {
+        const resposta = confirm("Você precisa ser um usuário Premium para editar imagens ou liberar o serviço avulso.\n\nClique em OK para saber mais na página de preços.");
+        if (resposta) {
+            window.location.href = "/preco";
+        }
+        editor.select(null); // deseleciona o componente
+    }
+});
             editor.on("component:selected", (model) => {
     if (model.is("link")) {
         editor.Panels.addButton("options", {

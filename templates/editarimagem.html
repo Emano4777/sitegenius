@@ -1,0 +1,41 @@
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: auto; padding: 20px;">
+  <h2 style="text-align: center; color: #2b7a78;">
+    <i class="fas fa-image"></i> Editar Imagens do Template
+  </h2>
+
+  {% for img in imagens %}
+  <form action="/admin/editar-imagem/{{ img.id }}" method="POST" enctype="multipart/form-data" style="margin-bottom: 40px; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+    <div style="text-align: center; margin-bottom: 15px;">
+      <img src="{{ img.image_url }}" alt="{{ img.descricao }}" style="max-width: 300px; max-height: 200px; border-radius: 6px;">
+    </div>
+  
+    <div style="margin-bottom: 10px;">
+      <label><strong>Enviar Nova Imagem:</strong></label>
+      <input type="file" name="nova_imagem_file" accept="image/*" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+  
+    <div style="margin-bottom: 10px;">
+      <label><strong>Descrição (ALT):</strong></label>
+      <input type="text" name="descricao" value="{{ img.descricao }}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+  
+    <div style="margin-bottom: 10px;">
+      <label><strong>Ordem:</strong></label>
+      <input type="number" name="ordem" value="{{ img.ordem }}" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+    </div>
+  
+    <input type="hidden" name="pagina" value="{{ img.page_name }}">
+    <input type="hidden" name="imagem_antiga" value="{{ img.image_url }}">
+  
+    <div style="text-align: right;">
+      <button type="submit" class="btn-voltar" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 6px;">
+        <i class="fas fa-save"></i> Atualizar
+      </button>
+    </div>
+  </form>
+  
+  
+  {% endfor %}
+</div>
+{% endblock %}

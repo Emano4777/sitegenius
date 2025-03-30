@@ -15,6 +15,8 @@ from datetime import datetime
 import mercadopago
 import cloudinary
 import cloudinary.uploader
+import smtplib
+from email.mime.text import MIMEText
 
 # Configuração
 cloudinary.config(
@@ -240,7 +242,6 @@ def editar_dados(subdomain):
         return "Cliente não encontrado", 404
 
     return render_template('template10_editar_dados.html', nome=dados[0], email=dados[1], subdomain=subdomain)
-
 @app.route('/<subdomain>/acompanhar-pedido/<int:pedido_id>')
 def acompanhar_pedido(subdomain, pedido_id):
     cliente_id = session.get('cliente_id')
@@ -250,12 +251,12 @@ def acompanhar_pedido(subdomain, pedido_id):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT id, data, total, status_entrega, tipo_entrega, endereco_entrega
+        SELECT id, data, total, status_entrega, tipo_entrega, endereco_entrega, whatsapp_entregador
         FROM pedidos
         WHERE id = %s AND cliente_id = %s
     """, (pedido_id, cliente_id))
     
-    row = cur.fetchone()  # <- isso estava faltando
+    row = cur.fetchone()
     cur.close(); conn.close()
 
     if not row:
@@ -267,10 +268,137 @@ def acompanhar_pedido(subdomain, pedido_id):
         'total': row[2],
         'status_entrega': row[3],
         'tipo_entrega': row[4],
-        'endereco_entrega': row[5]
+        'endereco_entrega': row[5],
+        'whatsapp_entregador': row[6] or ''  # <- evita erro com None
     }
 
     return render_template("template10_acompanhar_pedido.html", pedido=pedido, subdomain=subdomain)
+
+
+@app.route("/admin/editar-imagem/<int:imagem_id>", methods=["POST"])
+def editar_imagem(imagem_id):
+    descricao = request.form["descricao"]
+    ordem = request.form["ordem"]
+    imagem_antiga = request.form["imagem_antiga"]
+    page_name = request.form["pagina"]
+
+    nova_imagem = None
+    imagem_file = request.files.get("nova_imagem_file")
+
+    # Se o usuário enviou uma nova imagem, fazemos upload no Cloudinary
+    if imagem_file and imagem_file.filename != "":
+        upload_result = cloudinary.uploader.upload(imagem_file)
+        nova_imagem = upload_result['secure_url']
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 1. Atualiza a tabela de imagens
+    if nova_imagem:
+        cur.execute("""
+            UPDATE template_images 
+            SET descricao = %s, ordem = %s, image_url = %s
+            WHERE id = %s
+        """, (descricao, ordem, nova_imagem, imagem_id))
+    else:
+        cur.execute("""
+            UPDATE template_images 
+            SET descricao = %s, ordem = %s
+            WHERE id = %s
+        """, (descricao, ordem, imagem_id))
+
+ # 2. Atualiza o custom_html nos templates do usuário logado
+    if nova_imagem:
+        cur.execute("""
+            SELECT id, custom_html 
+            FROM user_templates 
+            WHERE custom_html LIKE %s AND user_id = %s
+        """, (f"%{imagem_antiga}%", session['user_id']))
+        resultados = cur.fetchall()
+
+        for template_id, html in resultados:
+            html_atualizado = html.replace(imagem_antiga, nova_imagem)
+            cur.execute("""
+                UPDATE user_templates
+                SET custom_html = %s
+                WHERE id = %s
+            """, (html_atualizado, template_id))
+
+    conn.commit()
+    cur.close(); conn.close()
+
+    return redirect("/admin/editar-imagens")
+
+
+
+@app.route("/admin/editar-imagens")
+def listar_imagens():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, template_name, page_name, image_url, descricao, ordem FROM template_images ORDER BY template_name, page_name, ordem")
+    imagens = [dict(id=row[0], template_name=row[1], page_name=row[2], image_url=row[3], descricao=row[4], ordem=row[5]) for row in cur.fetchall()]
+    cur.close(); conn.close()
+    return render_template("editarimagem.html", imagens=imagens)
+
+
+
+
+@app.route("/admin/clientescadastrados")
+def clientes_cadastrados():
+    if 'user_id' not in session:
+            return redirect('/login')
+
+    if not session.get('is_premium'):
+            return redirect('/preco')  # Redireciona para a página de planos
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Recuperar as lojas do usuário
+    cur.execute("""
+        SELECT MIN(id), subdomain
+        FROM user_templates
+        WHERE user_id = %s
+        GROUP BY subdomain
+    """, (user_id,))
+    lojas = cur.fetchall()
+
+    clientes_info = []
+
+    for loja_id, sub in lojas:
+        # Buscar clientes da loja com total de pedidos
+        cur.execute("""
+            SELECT 
+                cl.id, 
+                cl.nome, 
+                cl.email,
+                COUNT(p.id) AS total_pedidos
+            FROM clientes_loja cl
+            LEFT JOIN pedidos p ON cl.id = p.cliente_id AND p.loja_id = %s
+            WHERE cl.loja_id = %s
+            GROUP BY cl.id, cl.nome, cl.email
+            ORDER BY total_pedidos DESC
+        """, (loja_id, loja_id))
+
+        clientes = cur.fetchall()
+
+        for c in clientes:
+            clientes_info.append({
+                'nome': c[1],
+                'telefone': c[2],
+                'total_pedidos': c[3],
+                'subdomain': sub
+            })
+
+    cur.close()
+    conn.close()
+
+    # Agora sim, extraímos de clientes_info (que contém todos os clientes)
+    nomes = [c['nome'] for c in clientes_info]
+    totais = [c['total_pedidos'] for c in clientes_info]
+
+    return render_template("clientescadastrados.html", clientes=clientes_info, nomes=nomes, totais=totais)
 
 
 
@@ -647,7 +775,11 @@ def admin_dashboard():
     if 'user_id' not in session:
         return redirect('/login')
 
+    if not session.get('is_premium'):
+        return redirect('/preco')  # redireciona para página de planos
+
     return render_template('admin_dashboard.html')
+
 
 
 @app.route('/api/carrinho')
@@ -827,6 +959,104 @@ def gerar_preferencia_pagamento():
     init_point = preference_response["response"]["init_point"]
     return jsonify({'success': True, 'link': init_point})
 
+@app.route("/admin/controlepedidos")
+def controle_pedidos():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    if not session.get('is_premium'):
+        return redirect('/preco')  # Redireciona para a página de planos
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT MIN(ut.id), ut.subdomain
+        FROM user_templates ut
+        WHERE ut.user_id = %s
+        GROUP BY ut.subdomain
+    """, (user_id,))
+    lojas = cur.fetchall()
+
+    pedidos = []
+
+    for loja_id, sub in lojas:
+        cur.execute("""
+            SELECT 
+                p.id, 
+                p.data, 
+                p.total, 
+                p.status_entrega, 
+                p.tipo_entrega, 
+                p.nome_entregador, 
+                p.whatsapp_entregador, 
+                p.endereco_entrega,
+                c.nome AS nome_cliente,
+                ut.subdomain
+            FROM pedidos p
+            JOIN clientes_loja c ON p.cliente_id = c.id
+            JOIN user_templates ut ON p.loja_id = ut.id
+            WHERE p.loja_id = %s
+            ORDER BY p.data DESC
+        """, (loja_id,))
+        pedidos_loja = cur.fetchall()
+
+        for p in pedidos_loja:
+            pedidos.append({
+                'id': p[0],
+                'data': p[1],
+                'total': p[2],
+                'status_entrega': p[3],
+                'tipo_entrega': p[4],
+                'nome_entregador': p[5],
+                'whatsapp_entregador': p[6],
+                'endereco_entrega': p[7],
+                'nome_cliente': p[8],
+                'subdomain': p[9]
+            })
+
+    cur.close(); conn.close()
+    return render_template("controlepedidos.html", pedidos=pedidos)
+
+
+
+@app.route("/admin/atualizar-pedido", methods=["POST"])
+def atualizar_pedido():
+    if 'user_id' not in session:
+        return redirect("/login")
+
+    pedido_id = request.form.get("pedido_id")
+    status_entrega = request.form.get("status_entrega")
+    nome_entregador = request.form.get("nome_entregador")
+    whatsapp_entregador = request.form.get("whatsapp_entregador")
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT MIN(id)
+        FROM user_templates
+        WHERE user_id = %s
+        GROUP BY subdomain
+    """, (user_id,))
+    loja_ids = [row[0] for row in cur.fetchall()]
+
+    # Atualiza o pedido se ele pertencer a uma loja do usuário
+    cur.execute("""
+        UPDATE pedidos
+        SET status_entrega = %s,
+            nome_entregador = %s,
+            whatsapp_entregador = %s
+        WHERE id = %s AND loja_id = ANY(%s)
+    """, (status_entrega, nome_entregador, whatsapp_entregador, pedido_id, loja_ids))
+    
+    conn.commit()
+    cur.close(); conn.close()
+
+    return redirect("/admin/controlepedidos")
+
 
 
 
@@ -861,6 +1091,9 @@ def remover_item_carrinho(subdomain, item_id):
 def relatorio_geral_estoque():
     if 'user_id' not in session:
         return redirect('/login')
+
+    if not session.get('is_premium'):
+        return redirect('/preco')  # Redireciona para a página de planos
 
     user_id = session['user_id']
     conn = get_db_connection()
@@ -920,6 +1153,9 @@ def cadastrar_produto(subdomain):
     if 'user_id' not in session:
         return redirect('/login')
 
+    if not session.get('is_premium'):
+        return redirect('/preco')  # Redireciona para a página de planos
+    
     conn = get_db_connection()
     cur = conn.cursor()
     
@@ -958,6 +1194,9 @@ def cadastrar_produto(subdomain):
 def admin_produtos():
     if 'user_id' not in session:
         return redirect('/login')
+
+    if not session.get('is_premium'):
+        return redirect('/preco')  # Redireciona para a página de planos
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1215,6 +1454,28 @@ def register():
             conn.close()
 
     return render_template('register.html')
+
+@app.route("/sugerir-template", methods=["POST"])
+def sugerir_template():
+    sugestao = request.form.get("sugestao")
+    if not sugestao:
+        return redirect("/templates")
+
+    corpo_email = f"Sugestão recebida no Site Genius:\n\n{sugestao}"
+    
+    msg = MIMEText(corpo_email)
+    msg["Subject"] = "Nova sugestão de template"
+    msg["From"] = "emano4775@gmail.com"
+    msg["To"] = "emano4775@gmail.com"
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login("emano4775@gmail.com", "xgyq bidt ftpb fyfy ")
+            server.send_message(msg)
+        return redirect("/templates")
+    except Exception as e:
+        print("Erro ao enviar e-mail:", e)
+        return "Erro ao enviar sugestão", 500
 
 @app.route('/check-login')
 def check_login():
@@ -2047,16 +2308,24 @@ def editar_pagina(template_id, page_name):
 
         return jsonify({"message": "Página atualizada com sucesso!"})
 
+   # Descobre se o usuário é premium antes de fechar a conexão
+    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
+    premium_result = cur.fetchone()
+
     cur.close()
     conn.close()
 
     if not html_salvo:
         html_salvo = "<h1>Nova Página</h1><p>Comece a editar seu conteúdo aqui.</p>"
 
-    return render_template('editar_template.html',
-                           html_atual=html_salvo,
-                           template_id=template_id,
-                           page_name=page_name)
+    is_premium = "true" if premium_result and premium_result[0] else "false"
+    return render_template(
+    "editar_template.html",
+    html_atual=html_salvo,
+    template_id=template_id,
+    page_name=page_name,
+    is_premium=is_premium  # 👈 isso aqui é importante
+)
 
 
 

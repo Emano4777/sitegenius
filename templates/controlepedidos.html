@@ -1,0 +1,71 @@
+<h2 style="text-align: center; margin-top: 40px; font-size: 32px; color: #1E2A38; font-weight: bold; position: relative;">
+    <i class="fas fa-clipboard-list"></i> Controle de Pedidos
+     <!-- Link correto para importar o FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Linha decorativa abaixo -->
+    <div style="width: 100px; height: 4px; background: #28a745; margin: 10px auto 0; border-radius: 5px;"></div>
+  </h2>
+  
+  <div class="container" style="max-width: 1000px; margin: 40px auto; padding: 20px;">
+    {% for pedido in pedidos %}
+    <form method="POST" action="/admin/atualizar-pedido" class="pedido-form" style="border: 1px solid #ddd; background: #fdfdfd; box-shadow: 0px 6px 14px rgba(0,0,0,0.07); padding: 25px; border-radius: 14px; margin-bottom: 35px; transition: 0.3s;">
+      <input type="hidden" name="pedido_id" value="{{ pedido.id }}">
+  
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 280px;">
+            <p><strong><i class="fas fa-user"></i> Cliente:</strong> {{ pedido.nome_cliente }}</p>
+            <p><strong><i class="fas fa-calendar-alt"></i> Data:</strong> {{ pedido.data.strftime('%d/%m/%Y %H:%M') }}</p>
+            <p><strong><i class="fas fa-dollar-sign"></i> Total:</strong> R$ {{ pedido.total }}</p>
+            <p><strong><i class="fas fa-truck"></i> Tipo de Entrega:</strong> {{ pedido.tipo_entrega }}</p>
+            <p><strong><i class="fas fa-map-marker-alt"></i> Endereço:</strong> {{ pedido.endereco_entrega }}</p>
+            <p><strong><i class="fas fa-store"></i> Loja:</strong> {{ pedido.subdomain }}</p>            
+        </div>
+  
+        <div style="flex: 1; min-width: 280px;">
+          <label><strong>Status da Entrega:</strong></label><br>
+          <select name="status_entrega" required style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc;">
+            <option value="Em preparação" {% if pedido.status_entrega == 'Em preparação' %}selected{% endif %}>🛠 Em preparação</option>
+            <option value="Saiu para entrega" {% if pedido.status_entrega == 'Saiu para entrega' %}selected{% endif %}>🏍 Saiu para entrega</option>
+            <option value="Entregue" {% if pedido.status_entrega == 'Entregue' %}selected{% endif %}>✅ Entregue</option>
+          </select>
+  
+          <br><br>
+          <label><strong>Nome do Entregador:</strong></label><br>
+          <input type="text" name="nome_entregador" value="{{ pedido.nome_entregador or '' }}" placeholder="Ex: João Motoboy" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+  
+          <br><br>
+          <label><strong>WhatsApp do Entregador:</strong></label><br>
+          <input type="text" name="whatsapp_entregador" value="{{ pedido.whatsapp_entregador or '' }}" placeholder="Ex: 17912345678" required style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+        </div>
+      </div>
+  
+      <div style="text-align: right; margin-top: 25px;">
+        <button type="submit" class="btn salvar-btn" style="background-color: #28a745; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 16px;">
+          <i class="fas fa-save"></i> Salvar Atualizações
+        </button>
+      </div>
+    </form>
+    {% endfor %}
+  </div>
+  
+  <script>
+    const forms = document.querySelectorAll('.pedido-form');
+  
+    forms.forEach(form => {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault(); // Evita envio automático
+  
+        const botao = form.querySelector('.salvar-btn');
+        botao.disabled = true;
+        botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+  
+        // Simula envio e redirecionamento
+        setTimeout(() => {
+          botao.innerHTML = '<i class="fas fa-check-circle"></i> Salvo!';
+          botao.style.background = '#198754';
+          form.submit(); // Envia o form depois de mostrar o feedback
+        }, 800);
+      });
+    });
+  </script>
+  
