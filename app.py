@@ -10,7 +10,7 @@ import re
 from bs4 import BeautifulSoup
 from werkzeug.security import check_password_hash
 from functools import wraps
-from flask import session, redirect, url_for, jsonify, request,flash
+from flask import session, redirect, url_for, jsonify, request,flash,send_from_directory
 from datetime import datetime
 import mercadopago
 import cloudinary
@@ -66,6 +66,15 @@ def login_required_cliente(f):
             return redirect(url_for('login_cliente', subdomain=kwargs.get('subdomain', '')))
         return f(*args, **kwargs)
     return decorated_function
+
+@app.route('/ads.txt')
+def ads_txt():
+    return send_from_directory('.', 'ads.txt')
+
+
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_from_directory('.', 'sitemap.xml')
 
 # Rota para buscar todos os produtos
 @app.route('/api/produtos')
