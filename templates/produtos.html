@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos - Site Genius</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+           body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+
+    header {
+      background-color: #343a40;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+    }
+    nav.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+nav.navbar-links a,
+.perfil-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  text-decoration: none;
+  background: none;
+  border: none;
+  font-size: 1rem;
+}
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 1rem;
+    }
+
+    .container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+.titulo-produtos {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: #333;
+  position: relative;
+}
+
+.titulo-produtos::after {
+  content: "";
+  display: block;
+  width: 80px;
+  height: 4px;
+  background-color: #28a745;
+  margin: 10px auto 0;
+  border-radius: 5px;
+}
+
+.produto {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.promocao-tag {
+  display: inline-block;
+  background-color: #ff4d4f;
+  color: white;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border-radius: 20px;
+  font-weight: bold;
+  margin-top: 5px;
+}
+.produto:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.produto img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.produto h3 {
+  font-size: 1.1rem;
+  margin: 0.5rem 0 0.3rem;
+  color: #333;
+}
+
+.produto p {
+  margin: 0.3rem 0;
+  color: #28a745;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.produto-card button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 50px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  width: 100%;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.produto-card button:hover {
+  background-color: #218838;
+  transform: scale(1.03);
+}
+
+
+.produto input[type="number"] {
+  width: 60px;
+  padding: 0.3rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .titulo-produtos {
+    font-size: 1.5rem;
+  }
+
+  .produto {
+    padding: 0.8rem;
+  }
+
+  .produto h3 {
+    font-size: 1rem;
+  }
+
+  .produto p {
+    font-size: 1rem;
+  }
+
+  .produto button {
+    font-size: 0.9rem;
+  }
+}
+#link-login {
+  cursor: pointer;
+}
+    .carrinho-item {
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 5px solid #007bff;
+    }
+
+    .carrinho-item button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 0.3rem 0.8rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    footer {
+      background-color: #eee;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 3rem;
+    }
+
+    .finalizar {
+      background-color: #ffc107;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 30px;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+      display: block;
+      margin: 2rem auto;
+      text-align: center;
+    }
+
+    .perfil-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.perfil-dropdown button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.perfil-dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: black;
+  color: white;
+  min-width: 100px;
+  border-radius: 4px;
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+  z-index: 1;
+}
+
+.perfil-dropdown-content a {
+  display: block;
+  padding: 10px;
+  text-decoration: none;
+  color: white;
+}
+.perfil-dropdown:hover .perfil-dropdown-content {
+  display: block;
+}
+
+
+
+
+#btn-finalizar {
+  background-color: #00c851;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  width: 100%;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+#btn-finalizar:hover {
+  background-color: #007e3a;
+}
+
+#sidebar-carrinho .close-btn {
+  float: right;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #dc3545;
+  border: none;
+  background: none;
+}
+
+#banner-carousel {
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+  position: relative;
+}
+
+.banner-slide {
+  display: none;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.banner-slide.ativo {
+  display: block;
+  animation: fade 0.8s ease-in-out;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.badge-carrinho {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  background-color: red;
+  color: white;
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  border-radius: 50%;
+  animation: pulse 0.3s ease;
+  z-index: 10000;
+}
+
+.carousel-inner {
+  width: 100%;
+  max-height: 400px; /* altura máxima */
+  overflow: hidden;
+}
+
+.carousel-item img,
+.carousel-img {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+}
+
+.carousel-inner {
+    width: 100vw !important;
+    height: auto;
+    max-height: 400px;
+}
+.carousel-item img {
+    width: 100vw !important;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover; /* Ajuste para cobrir sem distorção */
+}
+
+/* Indicadores do Carrossel */
+.carousel-indicators {
+    bottom: 15px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.carousel-img {
+    width: 100vw !important; /* Ocupa 100% da largura da tela */
+    height: auto;
+    max-height: 400px;
+    object-fit: cover; /* Garante que preenche o espaço sem distorcer */
+}
+
+.header-loja {
+  background-color: #343a40;
+  color: white;
+  padding: 1.2rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.header-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.8rem;
+  font-weight: bold;
+  animation: slideIn 0.6s ease;
+}
+
+.btn-flutuante-wpp {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #25d366;
+  color: white;
+  font-size: 1.8rem;
+  padding: 15px;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 9999;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.btn-flutuante-wpp:hover {
+  transform: scale(1.1);
+}
+
+:root {
+  --bg: #f8f9fa;
+  --text: #333;
+  --card: #fff;
+  --header: #343a40;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.produto, .carrinho-item {
+  background-color: var(--card);
+}
+
+.dark-mode {
+  --bg: #121212;
+  --text: #f1f1f1;
+  --card: #1e1e1e;
+  --header: #1c1c1c;
+}
+
+header, .header-loja {
+  background-color: var(--header);
+}
+
+#toggle-darkmode {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.3rem;
+  margin-left: 1rem;
+  cursor: pointer;
+}
+
+#toggle-darkmode:hover {
+  color: #ffc107;
+}
+.avaliacao {
+  margin: 8px 0;
+}
+
+.avaliacao i {
+  color: #ccc;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.avaliacao i.hover,
+.avaliacao i.selecionado {
+  color: #ffc107;
+}
+
+
+.header-titulo i {
+  font-size: 1.6rem;
+  color: #ffc107;
+}
+
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  display: none;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+.mobile-menu-modal {
+  position: fixed;
+  top: 70px;
+  right: 0;
+  background: #343a40;
+  color: white;
+  width: 100%;
+  max-width: 300px;
+  height: calc(100% - 70px);
+  z-index: 9998;
+  display: none;
+  padding: 1rem;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from { right: -300px; opacity: 0; }
+  to   { right: 0; opacity: 1; }
+}
+.sessao-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+
+.sessao-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.sessao-scroll::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+
+.sessao-scroll .produto {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: 260px;
+  min-height: 380px;
+}
+.mobile-menu-content a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 10px 0;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.mobile-user-menu {
+  margin-top: 1rem;
+}
+
+.mobile-user-link {
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.mobile-dropdown-menu {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.5rem;
+}
+
+.comentario-texto {
+  width: 100%;
+  min-height: 60px;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+  font-family: Arial, sans-serif;
+  font-size: 0.95rem;
+  color: #333;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.btn-enviar-comentario {
+  margin-top: 6px;
+  width: 100%;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-enviar-comentario:hover {
+  background-color: #0056b3;
+}
+#comentarios-rodape {
+  background: #343a40;
+  color: white;
+  padding: 1rem;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  position: relative;
+}
+
+#comentarios-rodape span {
+  display: inline-block;
+  margin-right: 2rem;
+  animation: deslizarComentarios 30s linear infinite;
+}
+
+@keyframes deslizarComentarios {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.mobile-dropdown-menu li a {
+  color: white;
+  text-decoration: none;
+  padding: 5px 0;
+  display: block;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  nav.navbar-links {
+    display: none !important;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Ajuste para celular */
+@media (max-width: 600px) {
+  .header-titulo {
+    font-size: 1.3rem;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .navbar-links {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+
+@keyframes pulse {
+  0% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.banner-slide.ativo {
+  display: block;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .produtos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+
+        #sidebar-carrinho {
+  position: fixed;
+  top: 0;
+  right: -320px; /* garante que feche totalmente */
+  width: 320px;
+  height: 100vh;
+  background: #fff;
+  padding: 15px;
+  box-shadow: -3px 0 10px rgba(0,0,0,0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: right 0.3s ease, opacity 0.3s ease;
+  z-index: 10000;
+  overflow-y: auto;
+}
+
+
+
+#sidebar-carrinho.ativo {
+  right: 0;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.close-btn {
+  float: right;
+  cursor: pointer;
+  color: #dc3545;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+}
+
+.campo-pesquisa {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.campo-pesquisa input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem 1rem;
+  padding-left: 2.5rem;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 50px;
+  outline: none;
+  background: white url('https://cdn-icons-png.flaticon.com/512/622/622669.png') no-repeat 10px center;
+  background-size: 20px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: border-color 0.3s;
+}
+
+.campo-pesquisa input:focus {
+  border-color: #28a745;
+}
+
+.badge-carrinho {
+  background-color: red;
+  color: white;
+  padding: 3px 7px;
+  border-radius: 50%;
+  position: relative;
+  top: -8px;
+  right: -4px;
+  font-size: 0.7rem;
+}
+
+.titulo-profissional {
+  text-align: center;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: #343a40;
+  position: relative;
+  animation: fadeIn 0.6s ease;
+}
+
+.titulo-profissional::after {
+  content: "";
+  display: block;
+  width: 50px;
+  height: 4px;
+  background-color: #28a745;
+  margin: 10px auto 0;
+  border-radius: 5px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+        .produto-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .produto-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .produto-info {
+            padding: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .desktop-nav { display: none; }
+            .mobile-menu-btn { display: block; }
+
+            .mobile-menu-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: #111;
+                color: white;
+                display: none;
+                flex-direction: column;
+                padding: 30px;
+                z-index: 999;
+            }
+
+            .mobile-menu-content a {
+                color: white;
+                display: block;
+                margin: 15px 0;
+                font-size: 1.2rem;
+                text-decoration: none;
+            }
+
+            .close-btn {
+                background: none;
+                color: white;
+                border: none;
+                font-size: 1.5rem;
+                margin-top: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+  
+            <header>
+              <div class="header-titulo">
+                <i class="fas fa-store-alt"></i>
+                <span>Minha Loja Virtual</span>
+              </div>
+            
+              <button class="mobile-menu-btn" onclick="openMobileMenu()">
+                <i class="fas fa-bars"></i>
+              </button>
+            
+              <nav class="navbar-links">
+                <a href="#"><i class="fas fa-box"></i> Produtos</a>
+                <a href="#" onclick="mostrarCarrinho()" style="position: relative;">
+                  <i class="fas fa-shopping-cart"></i> Carrinho
+                  <span id="contador-carrinho" class="badge-carrinho">0</span>
+                </a>
+                <div id="area-login">
+                  <a href="/{{ subdomain }}/login-cliente">Entrar</a>
+                </div>
+                <button id="toggle-darkmode" title="Alternar modo escuro">
+                  <i class="fas fa-moon"></i>
+                </button>
+              </nav>
+            </header>
+            
+            <div id="sidebar-carrinho">
+              <button class="close-btn" onclick="fecharCarrinho()">×</button>
+              <h2>🛒 Seu Carrinho</h2>
+              <div id="lista-carrinho"></div>
+              <div style="margin-top: 1rem;">
+                <label><strong>Tipo de Entrega:</strong></label><br>
+                <select id="tipo_entrega" required onchange="toggleEndereco()" style="width:100%;padding:0.5rem;margin-top:0.3rem;">
+                  <option value="">Selecione</option>
+                  <option value="retirada">Retirar na loja</option>
+                  <option value="delivery">Receber em casa</option>
+                </select>
+              </div>
+            
+              <div id="campo-endereco" style="display:none;margin-top:1rem;">
+                <label><strong>Endereço de Entrega:</strong></label><br>
+                <input type="text" id="rua" placeholder="Rua" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+                <input type="text" id="numero" placeholder="Número" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+                <input type="text" id="bairro" placeholder="Bairro" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+                <input type="text" id="cidade" placeholder="Cidade" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+                <input type="text" id="cep" placeholder="CEP (somente números)" pattern="\d{5}-?\d{3}" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+              </div>
+            
+              <p id="total"></p>
+              <button id="btn-finalizar" class="whatsapp-button">
+                <i class="fas fa-credit-card"></i> Finalizar Pagamento
+              </button>
+            </div>
+            
+           <!-- Sidebar e Campo de Filtro -->
+<div class="container" style="display: flex; gap: 2rem;">
+    
+  
+    <main style="flex: 1;">
+      <h2 class="titulo-profissional">🛍️ Produtos</h2>
+      <div class="campo-pesquisa" style="display: flex; align-items: center; gap: 1rem;">
+        <input type="text" id="campo-busca" placeholder="Buscar produtos...">
+        <!-- dentro do <aside> -->
+<h4 style="margin-top:2rem;">Filtrar por:</h4>
+<select id="select-categoria" style="width: 100%; padding: 0.5rem; border-radius: 6px; margin-top: 0.5rem;">
+  <option value="Todos">Todas as categorias</option>
+  {% for categoria in produtos_por_categoria.keys() %}
+    <option value="{{ categoria }}">{{ categoria }}</option>
+  {% endfor %}
+</select>
+      </div>
+  
+      {% if produtos_por_categoria %}
+        {% for categoria, lista in produtos_por_categoria.items() %}
+          <div class="bloco-categoria" data-categoria="{{ categoria }}">
+            <h3 style="margin-top: 2rem; color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 0.3rem;">
+              {{ categoria }}
+            </h3>
+            <div class="produtos-grid">
+              {% for produto in lista %}
+                <div class="produto-card">
+                  <img src="{{ produto.imagem }}" alt="{{ produto.nome }}">
+                  <div class="produto-info">
+                    <h3>{{ produto.nome }}</h3>
+                    <p>R$ {{ produto.preco }}</p>
+                    <p>{{ produto.quantidade }} disponíveis</p>
+                    <input type="number" id="qtd-{{ produto.id }}" value="1" min="1">
+                    <button onclick="adicionarCarrinho('{{ produto.id }}')">
+                      <i class="fas fa-cart-plus"></i> Adicionar ao carrinho
+                    </button>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p>Nenhum produto cadastrado.</p>
+      {% endif %}
+              </div>
+            </div>
+    
+            <script>
+                const subdomain = "{{ subdomain }}";
+              </script>
+<script>
+
+
+document.getElementById('campo-busca').addEventListener('input', function () {
+  const termo = this.value.toLowerCase();
+  const produtos = document.querySelectorAll('.produto-card');
+
+  produtos.forEach(prod => {
+    const nome = prod.querySelector('h3').textContent.toLowerCase();
+    prod.style.display = nome.includes(termo) ? 'block' : 'none';
+  });
+});
+
+const filtroCategoria = document.querySelectorAll('.filtro-categoria');
+  const blocosCategoria = document.querySelectorAll('.bloco-categoria');
+  const selectCategoria = document.getElementById('select-categoria');
+
+  filtroCategoria.forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const categoria = e.target.dataset.categoria;
+      filtrarCategoria(categoria);
+      selectCategoria.value = categoria;
+    });
+  });
+
+  selectCategoria.addEventListener('change', () => {
+    filtrarCategoria(selectCategoria.value);
+  });
+
+  function filtrarCategoria(categoria) {
+    blocosCategoria.forEach(div => {
+      if (categoria === 'Todos' || div.dataset.categoria === categoria) {
+        div.style.display = 'block';
+      } else {
+        div.style.display = 'none';
+      }
+    });
+  }
+
+document.getElementById('btn-finalizar').addEventListener('click', async () => {
+  const tipoEntrega = document.getElementById('tipo_entrega').value;
+
+  let enderecoEntrega = '';
+  if (tipoEntrega === 'delivery') {
+    const rua = document.getElementById('rua').value.trim();
+    const numero = document.getElementById('numero').value.trim();
+    const bairro = document.getElementById('bairro').value.trim();
+    const cidade = document.getElementById('cidade').value.trim();
+    const cep = document.getElementById('cep').value.trim();
+
+    if (!rua || !numero || !bairro || !cidade || !cep) {
+      alert('Preencha todos os campos de endereço corretamente.');
+      return;
+    }
+
+    // Montar o endereço no padrão correto
+    enderecoEntrega = `${rua}, ${numero} - ${bairro}, ${cidade} - CEP ${cep}`;
+  }
+
+  const res = await fetch(`/${subdomain}/api/mercado-pago/pagamento`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tipo_entrega: tipoEntrega,
+      endereco_entrega: enderecoEntrega
+    })
+  });
+
+  
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.message);
+    return;
+  }
+
+  window.location.href = data.link;
+
+});
+
+    function mostrarCarrinho() {
+  document.getElementById('sidebar-carrinho').classList.add('ativo');
+  atualizarCarrinho();
+}
+
+function fecharCarrinho() {
+  document.getElementById('sidebar-carrinho').classList.remove('ativo');
+}
+
+function toggleEndereco() {
+    const tipo = document.getElementById('tipo_entrega').value;
+    document.getElementById('campo-endereco').style.display = tipo === 'delivery' ? 'block' : 'none';
+  }
+
+  function openMobileMenu() {
+  const menu = document.getElementById('mobileMenuModal');
+  menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+function toggleMobileUserMenu(event) {
+  event.preventDefault();
+  const dropdown = document.getElementById('mobile-user-dropdown');
+  dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+
+
+document.addEventListener('click', function (e) {
+  const menu = document.getElementById('mobileMenuModal');
+  const btn = document.querySelector('.mobile-menu-btn');
+  if(menu && btn){
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.style.display = 'none';
+    }
+  }
+});
+
+function adicionarCarrinho(id) {
+  const qtd = document.getElementById(`qtd-${id}`).value || 1;
+  fetch(`/${subdomain}/api/carrinho/adicionar/${id}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantidade: parseInt(qtd) })
+  }).then(() => {
+    mostrarToast('Produto adicionado ao carrinho!');
+    atualizarCarrinho();
+  });
+}
+
+    async function atualizarCarrinho() {
+  const res = await fetch(`/${subdomain}/api/carrinho`);
+  const itens = await res.json();
+  const lista = document.getElementById('lista-carrinho');
+  const totalEl = document.getElementById('total');
+  lista.innerHTML = '';
+  let total = 0;
+
+  itens.forEach(item => {
+    total += item.preco * item.quantidade;
+    const div = document.createElement('div');
+    div.className = 'carrinho-item';
+    div.innerHTML = `
+      <div>
+        <strong>${item.nome}</strong> x ${item.quantidade}<br>
+        R$ ${(item.preco * item.quantidade).toFixed(2)}
+      </div>
+      <button onclick="removerItem(${item.id})">Remover</button>
+    `;
+    lista.appendChild(div);
+  });
+
+  
+ document.getElementById('contador-carrinho').textContent = itens.length;
+
+  totalEl.innerText = `Total: R$ ${total.toFixed(2)}`;
+}
+
+
+function removerItem(id) {
+  fetch(`/${subdomain}/api/carrinho/remover/${id}`, { method: 'DELETE' })
+    .then(() => atualizarCarrinho());
+}
+
+
+
+function mostrarToast(msg, tipo = 'success') {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.position = 'fixed';
+  toast.style.bottom = '20px';
+  toast.style.right = '20px';
+  toast.style.backgroundColor = tipo === 'success' ? '#28a745' : '#dc3545';
+  toast.style.color = 'white';
+  toast.style.padding = '10px 20px';
+  toast.style.borderRadius = '8px';
+  toast.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+  toast.style.zIndex = '10000';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+
+    function openMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'flex';
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'none';
+    }
+</script>
+
+<script>function verificarLoginCliente() {
+    fetch(`/${subdomain}/api/check-login-cliente`)
+      .then(res => res.json())
+      .then(data => {
+        // ====== DESKTOP ======
+        const areaLogin = document.getElementById('area-login');
+        if (areaLogin) {
+          if (data.logado) {
+            areaLogin.innerHTML = `
+              <div class="perfil-dropdown">
+                <button><i class="fas fa-user-circle"></i> Perfil</button>
+                <div class="perfil-dropdown-content">
+                  <a href="/${subdomain}/meus-pedidos">🧾 Meus Pedidos</a>
+                  <a href="/${subdomain}/editar-dados">📝 Editar Dados</a>
+                  <a href="/${subdomain}/logout-cliente">🚪 Sair</a>
+                </div>
+              </div>
+            `;
+          } else {
+            areaLogin.innerHTML = `<a id="link-login" href="/${subdomain}/login-cliente">Login</a>`;
+          }
+        }
+  
+        // ====== MOBILE ======
+        const mobileUserText = document.getElementById('mobile-user-name-text');
+        const mobileUsernameDisplay = document.getElementById('mobile-user-name');
+        const mobileUsernameText = document.getElementById('mobile-username-text');
+        const mobileEntrarLink = document.querySelector('.mobile-dropdown-menu a[href*="login-cliente"]');
+        const mobileMeusPedidos = document.getElementById('mobile-meus-pedidos');
+        const mobileEditarDados = document.getElementById('mobile-editar-dados');
+        const mobileLogout = document.getElementById('mobile-logout-option');
+  
+        if (data.logado) {
+          mobileUserText.textContent = 'Perfil';
+          mobileUsernameText.textContent = data.nome || '';
+          mobileUsernameDisplay.style.display = 'block';
+  
+          if (mobileEntrarLink) mobileEntrarLink.style.display = 'none';
+          if (mobileMeusPedidos) {
+            mobileMeusPedidos.href = `/${subdomain}/meus-pedidos`;
+            mobileMeusPedidos.style.display = 'block';
+          }
+          if (mobileEditarDados) {
+            mobileEditarDados.href = `/${subdomain}/editar-dados`;
+            mobileEditarDados.style.display = 'block';
+          }
+          if (mobileLogout) mobileLogout.style.display = 'block';
+  
+        } else {
+          mobileUserText.textContent = 'Entrar';
+          mobileUsernameDisplay.style.display = 'none';
+  
+          if (mobileEntrarLink) mobileEntrarLink.style.display = 'block';
+          if (mobileMeusPedidos) mobileMeusPedidos.style.display = 'none';
+          if (mobileEditarDados) mobileEditarDados.style.display = 'none';
+          if (mobileLogout) mobileLogout.style.display = 'none';
+        }
+     });
+  }
+  
+  // Executa a função ao carregar
+  window.addEventListener('load', verificarLoginCliente);
+  </script>
+</body>
+</html>

@@ -860,7 +860,6 @@ def configurar_mercado_pago():
     return jsonify({'success': True, 'message': 'Token salvo com sucesso!'})
 
 
-
 @app.route('/api/mercado-pago/pagamento', methods=['POST'])
 def gerar_preferencia_pagamento():
     user_id = session.get('user_id')
@@ -1096,6 +1095,55 @@ def remover_item_carrinho(subdomain, item_id):
     conn.close()
     return jsonify({'status': 'ok', 'mensagem': 'Item removido do carrinho'})
 
+@app.route('/<subdomain>/produtos')
+def produtos(subdomain):
+    cliente_id = session.get('cliente_id')
+    if not cliente_id:
+        return jsonify({'success': False, 'message': 'Você precisa estar logado.'}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Pega o id da loja diretamente do user_templates pelo subdominio
+    cur.execute("SELECT id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    loja = cur.fetchone()
+
+    if not loja:
+        cur.close(); conn.close()
+        return "Loja não encontrada", 404
+
+    loja_id = loja[0]
+
+    # Agora confronta a loja_id encontrada diretamente com a coluna loja_id em produtos
+    cur.execute("""
+    SELECT id, nome, preco, quantidade, imagem, categoria
+    FROM produtos
+    WHERE loja_id = %s
+    ORDER BY categoria, nome
+""", (loja_id,))
+    produtos = cur.fetchall()
+    produtos_por_categoria = {}
+
+    for p in produtos:
+        categoria = p[5] or "Outros"
+        if categoria not in produtos_por_categoria:
+            produtos_por_categoria[categoria] = []
+        produtos_por_categoria[categoria].append({
+            'id': p[0],
+            'nome': p[1],
+            'preco': p[2],
+            'quantidade': p[3],
+            'imagem': p[4]
+        })
+
+
+    cur.close(); conn.close()
+
+    return render_template('produtos.html', produtos_por_categoria=produtos_por_categoria, subdomain=subdomain)
+
+
+
+
 @app.route('/admin/relatorios')
 def relatorio_geral_estoque():
     if 'user_id' not in session:
@@ -1184,12 +1232,12 @@ def cadastrar_produto(subdomain):
         preco = request.form['preco']
         imagem = request.form['imagem']
         quantidade = request.form['quantidade']
+        categoria = request.form.get('categoria', 'Outros')
 
-        # Insere com o loja_id correto
         cur.execute(
-        'INSERT INTO produtos (nome, descricao, preco, imagem, quantidade, loja_id) VALUES (%s, %s, %s, %s, %s, %s)',
-        (nome, descricao, preco, imagem, quantidade, loja_id)
-    )
+            'INSERT INTO produtos (nome, descricao, preco, imagem, quantidade, categoria, loja_id) VALUES (%s, %s, %s, %s, %s, %s, %s)',
+            (nome, descricao, preco, imagem, quantidade, categoria, loja_id)
+        )
         conn.commit()
         cur.close(); conn.close()
         return redirect(url_for('cadastrar_produto', subdomain=subdomain))
@@ -1321,32 +1369,42 @@ def editar_produto(id):
         descricao = request.form['descricao']
         preco = request.form['preco']
         imagem = request.form['imagem']
+        categoria = request.form['categoria']
+
         cur.execute('''
             UPDATE produtos
-            SET nome=%s, descricao=%s, preco=%s, imagem=%s
+            SET nome=%s, descricao=%s, preco=%s, imagem=%s, categoria=%s
             WHERE id=%s
-        ''', (nome, descricao, preco, imagem, id))
+        ''', (nome, descricao, preco, imagem, categoria, id))
+
         conn.commit()
         cur.close()
         conn.close()
-        return '<p style=\"color:green;\">Produto atualizado com sucesso! <a href=\"/admin/produtos\">Voltar</a></p>'
+        return '<p style="color:green;">Produto atualizado com sucesso! <a href="/admin/produtos">Voltar</a></p>'
 
-    cur.execute('SELECT nome, descricao, preco, imagem FROM produtos WHERE id = %s', (id,))
+    cur.execute('SELECT nome, descricao, preco, imagem, categoria FROM produtos WHERE id = %s', (id,))
     produto = cur.fetchone()
     cur.close()
     conn.close()
 
+
     return f'''
-        <h2>Editar Produto</h2>
-        <form method=\"POST\">
-            <input name=\"nome\" value=\"{produto[0]}\" required><br>
-            <textarea name=\"descricao\">{produto[1]}</textarea><br>
-            <input name=\"preco\" type=\"number\" step=\"0.01\" value=\"{produto[2]}\" required><br>
-            <input name=\"imagem\" value=\"{produto[3]}\"><br>
-            <button type=\"submit\">Salvar</button>
-        </form>
-        <br><a href=\"/admin/produtos\">Cancelar</a>
-    '''
+    <h2>Editar Produto</h2>
+    <form method="POST" style="max-width: 500px; margin: auto;">
+        <input name="nome" value="{produto[0]}" placeholder="Nome do produto" required><br><br>
+        <textarea name="descricao" placeholder="Descrição do produto">{produto[1]}</textarea><br><br>
+        <input name="preco" type="number" step="0.01" value="{produto[2]}" placeholder="Preço (R$)" required><br><br>
+        <input name="imagem" value="{produto[3]}" placeholder="URL da imagem"><br><br>
+        <input name="categoria" value="{produto[4]}" placeholder="Categoria (ex: Medicamentos, Cosméticos)" required><br><br>
+        <button type="submit" style="padding: 0.6rem 1.2rem; background-color: #28a745; color: white; border: none; border-radius: 6px;">Salvar</button>
+    </form>
+
+    <br>
+    <div style="text-align: center;">
+      <a href="/admin/produtos" style="text-decoration: none; color: #007bff;">Cancelar</a>
+    </div>
+'''
+
 
 @app.route('/')
 def home():
