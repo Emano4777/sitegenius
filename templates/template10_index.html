@@ -2,6 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.3/dist/css/splide.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.3/dist/js/splide.min.js"></script>
   <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minha Loja Virtual</title>
@@ -11,6 +13,7 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      overflow-x: hidden;
       background-color: #f8f9fa;
     }
 
@@ -167,25 +170,58 @@ nav.navbar-links a,
 #link-login {
   cursor: pointer;
 }
-    .carrinho-item {
-      background-color: white;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-left: 5px solid #007bff;
-    }
+.carrinho-item {
+  background-color: #ffffff;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease;
+}
+.carrinho-item-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+.carrinho-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
 
-    .carrinho-item button {
-      background-color: #dc3545;
-      color: white;
-      border: none;
-      padding: 0.3rem 0.8rem;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+.carrinho-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.carrinho-item-info strong {
+  font-size: 1rem;
+  color: #333;
+}
+
+.carrinho-item-info span {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.carrinho-item button {
+  background-color: transparent;
+  color: #dc3545;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.carrinho-item button:hover {
+  color: #a71d2a;
+}
 
     footer {
       background-color: #eee;
@@ -211,6 +247,34 @@ nav.navbar-links a,
   position: relative;
   display: inline-block;
 }
+
+.carrossel-container {
+  position: relative;
+}
+
+.seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.seta-esquerda {
+  left: -10px;
+}
+
+.seta-direita {
+  right: -10px;
+}
+
 
 .perfil-dropdown button {
   background: none;
@@ -296,28 +360,26 @@ nav.navbar-links a,
 }
 
 #banner-carousel {
-  width: 100%;
-  height: 300px;
+  width: 100vw;
+  height: auto;
+  max-height: 100vh;
   overflow: hidden;
   position: relative;
 }
 
-.banner-slide {
-  display: none;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: absolute;
-  top: 0;
-  left: 0;
+#banner-carousel .splide__slide {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.banner-slide.ativo {
+#banner-carousel img {
+  width: 100%;
+  height: auto;
   display: block;
-  animation: fade 0.8s ease-in-out;
+  object-fit: contain;
 }
+
 
 @keyframes fade {
   from { opacity: 0; }
@@ -337,45 +399,6 @@ nav.navbar-links a,
   z-index: 10000;
 }
 
-.carousel-inner {
-  width: 100%;
-  max-height: 400px; /* altura máxima */
-  overflow: hidden;
-}
-
-.carousel-item img,
-.carousel-img {
-  width: 100%;
-  height: auto;
-  max-height: 400px;
-  object-fit: cover;
-}
-
-.carousel-inner {
-    width: 100vw !important;
-    height: auto;
-    max-height: 400px;
-}
-.carousel-item img {
-    width: 100vw !important;
-    height: auto;
-    max-height: 400px;
-    object-fit: cover; /* Ajuste para cobrir sem distorção */
-}
-
-/* Indicadores do Carrossel */
-.carousel-indicators {
-    bottom: 15px !important;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-.carousel-img {
-    width: 100vw !important; /* Ocupa 100% da largura da tela */
-    height: auto;
-    max-height: 400px;
-    object-fit: cover; /* Garante que preenche o espaço sem distorcer */
-}
 
 .header-loja {
   background-color: #343a40;
@@ -508,14 +531,18 @@ header, .header-loja {
 }
 .sessao-scroll {
   display: flex;
+  flex-wrap: nowrap; /* impede quebrar linha */
   overflow-x: auto;
+  overflow-y: hidden;
   gap: 1rem;
   padding: 1rem 0;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sessao-scroll::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
 }
 
 .sessao-scroll::-webkit-scrollbar-thumb {
@@ -555,6 +582,118 @@ header, .header-loja {
   list-style: none;
   padding-left: 0;
   margin-top: 0.5rem;
+}
+
+
+.card-conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  padding: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.card-conteudo:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.card-img {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.card-titulo {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.badge-promocao {
+  background-color: #ff4d4f;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.card-marca {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.avaliacao {
+  margin: 5px 0;
+}
+
+.avaliacao i {
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.avaliacao i.selecionado,
+.avaliacao i.hover {
+  color: #ffc107;
+}
+
+.card-preco {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #28a745;
+  margin: 0.3rem 0;
+}
+
+.card-frete {
+  font-size: 0.8rem;
+  color: #00c851;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.card-acao {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  align-items: center;
+  margin-top: auto;
+}
+
+.card-qtd {
+  width: 60px;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.card-btn {
+  flex: 1;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.6rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.card-btn:hover {
+  background-color: #0056b3;
 }
 
 .comentario-texto {
@@ -668,9 +807,7 @@ header, .header-loja {
   100% { transform: scale(1); }
 }
 
-.banner-slide.ativo {
-  display: block;
-}
+
 
 @keyframes fade {
   from { opacity: 0; }
@@ -762,41 +899,48 @@ header, .header-loja {
       </button>
     </nav>
   </header>
-  <div class="carousel-inner">
-    <!-- Banner fixo 1 -->
-    <div class="carousel-item active">
-        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743029719/capa-blog-loja-virtual_pagzb2.jpg" class="d-block w-100 carousel-img" alt="Banner 1">
+  <div id="banner-carousel" class="splide">
+    <div class="splide__track">
+      <ul class="splide__list">
+        <li class="splide__slide">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743457357/ChatGPT_Image_31_de_mar._de_2025_18_22_59_1_1_uwagwf.png" alt="Banner 1">
+        </li>
+        <li class="splide__slide">
+          <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743458646/ChatGPT_Image_31_de_mar._de_2025_19_03_30_1_hmz3uf.png" alt="Banner 2">
+        </li>
+        <!-- Você pode gerar dinamicamente com Jinja: -->
+        {% for banner in banners %}
+        <li class="splide__slide">
+          <img src="{{ banner }}" alt="Banner">
+        </li>
+        {% endfor %}
+      </ul>
     </div>
-    <!-- Banner fixo 2 -->
-    <div class="carousel-item">
-        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743031037/E-CommerceSTG_vhvgtg.webp" class="d-block w-100 carousel-img" alt="Banner 2">
+  </div>
+  
+  <div class="container">
+    <h2 class="titulo-produtos"><i class="fa-solid fa-fire"></i> Mais Vendidos</h2>
+    <div class="carrossel-container">
+      <button class="seta seta-esquerda" onclick="scrollCarrossel('mais-vendidos', -1)">❮</button>
+      <div class="sessao-scroll" id="mais-vendidos"></div>
+      <button class="seta seta-direita" onclick="scrollCarrossel('mais-vendidos', 1)">❯</button>
     </div>
-
-    <!-- Banners dinâmicos -->
-    {% for banner in banners %}
-    <div class="carousel-item">
-        <img src="{{ banner }}" class="d-block w-100 carousel-img" alt="Banner extra">
+  
+    <h2 class="titulo-produtos"><i class="fa-solid fa-bullseye"></i> Ofertas do Dia</h2>
+    <div class="carrossel-container">
+      <button class="seta seta-esquerda" onclick="scrollCarrossel('ofertas', -1)">❮</button>
+      <div class="sessao-scroll" id="ofertas"></div>
+      <button class="seta seta-direita" onclick="scrollCarrossel('ofertas', 1)">❯</button>
     </div>
-    {% endfor %}
-</div>
-
-<div class="container">
-  <h2 class="titulo-produtos">
-    <i class="fa-solid fa-fire"></i> Mais Vendidos
-  </h2>
-  <div class="sessao-scroll" id="mais-vendidos"></div>
-
-  <h2 class="titulo-produtos">
-    <i class="fa-solid fa-bullseye"></i> Ofertas do Dia
-  </h2>
-  <div class="sessao-scroll" id="ofertas"></div>
-
-  <h2 class="titulo-produtos">
-    <i class="fa-solid fa-rocket"></i> Lançamentos
-  </h2>
-  <div class="sessao-scroll" id="lancamentos"></div>
-</div>
-
+  
+    <h2 class="titulo-produtos"><i class="fa-solid fa-rocket"></i> Lançamentos</h2>
+    <div class="carrossel-container">
+      <button class="seta seta-esquerda" onclick="scrollCarrossel('lancamentos', -1)">❮</button>
+      <div class="sessao-scroll" id="lancamentos"></div>
+      <button class="seta seta-direita" onclick="scrollCarrossel('lancamentos', 1)">❯</button>
+    </div>
+  </div>
+  
 
 
     </div>
@@ -918,38 +1062,51 @@ async function carregarProdutos() {
   data.forEach((prod, index) => {
     const div = document.createElement('div');
     div.className = 'produto';
+    div.style.minWidth = '220px';
+    div.style.maxWidth = '220px';
+    div.style.flex = '0 0 auto';
+    div.style.scrollSnapAlign = 'start';
     div.innerHTML = `
-      <div>
-        <img src="${prod.imagem}" alt="${prod.nome}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 8px;">
-        <h3>${prod.nome}</h3>
-        ${prod.marca ? `<small><i class="fas fa-tag"></i> ${prod.marca}</small><br>` : ''}
-        ${prod.promocao ? `<span class="promocao-tag">🔥 Promoção</span><br>` : ''}
-        <div class="avaliacao" data-id="${prod.id}">
-          <i class="fas fa-star" data-value="1"></i>
-          <i class="fas fa-star" data-value="2"></i>
-          <i class="fas fa-star" data-value="3"></i>
-          <i class="fas fa-star" data-value="4"></i>
-          <i class="fas fa-star" data-value="5"></i>
-        </div>
-        <textarea class="comentario-texto" placeholder="Deixe seu comentário..." style="width:100%; margin-top:10px; resize: vertical;"></textarea>
-<button class="btn-enviar-comentario" data-id="${prod.id}" style="margin-top:5px; width:100%; background-color:#007bff; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">
-  <i class="fas fa-paper-plane"></i> Enviar Comentário
-</button>
-        <p style="font-size: 1.2rem;"><strong>R$ ${prod.preco.toFixed(2)}</strong></p>
-        <input type="number" value="1" min="1" style="width: 60px;" id="qtd-${prod.id}">
-        <button onclick="adicionarCarrinho(${prod.id})">
-          <i class="fas fa-cart-plus"></i> Adicionar
+  <div class="card-conteudo">
+    <img src="${prod.imagem}" alt="${prod.nome}" class="card-img">
+    
+    <div class="card-info">
+      <h3 class="card-titulo">
+        ${prod.nome}
+        ${prod.promocao ? `<span class="badge-promocao">Promoção</span>` : ''}
+      </h3>
+
+      ${prod.marca ? `<span class="card-marca">${prod.marca}</span>` : ''}
+
+      <div class="avaliacao" data-id="${prod.id}">
+        <i class="fas fa-star" data-value="1"></i>
+        <i class="fas fa-star" data-value="2"></i>
+        <i class="fas fa-star" data-value="3"></i>
+        <i class="fas fa-star" data-value="4"></i>
+        <i class="fas fa-star" data-value="5"></i>
+      </div>
+
+      <div class="card-preco">R$ ${prod.preco.toFixed(2)}</div>
+      <div class="card-frete">Frete grátis</div>
+
+      <div class="card-acao">
+        <input type="number" value="1" min="1" class="card-qtd" id="qtd-${prod.id}">
+        <button onclick="adicionarCarrinho(${prod.id})" class="card-btn">
+          <i class="fas fa-cart-plus"></i> Comprar
         </button>
       </div>
-    `;
+    </div>
+  </div>
+`;
+
 
     // Adiciona no grid geral
     grid.appendChild(div);
 
     // Distribui em sessões
-    if (index % 2 === 0) maisVendidos.appendChild(div.cloneNode(true));
+    maisVendidos.appendChild(div.cloneNode(true));
     if (prod.promocao) ofertas.appendChild(div.cloneNode(true));
-    if (index % 3 === 0) lancamentos.appendChild(div.cloneNode(true));
+    lancamentos.appendChild(div.cloneNode(true));
   });
 
   container.appendChild(grid);
@@ -978,12 +1135,17 @@ async function carregarProdutos() {
     const div = document.createElement('div');
     div.className = 'carrinho-item';
     div.innerHTML = `
-      <div>
-        <strong>${item.nome}</strong> x ${item.quantidade}<br>
-        R$ ${(item.preco * item.quantidade).toFixed(2)}
-      </div>
-      <button onclick="removerItem(${item.id})">Remover</button>
-    `;
+  <img src="${item.imagem}" alt="${item.nome}" class="carrinho-item-img">
+  <div class="carrinho-item-info">
+    <strong>${item.nome}</strong>
+    <span>Qtd: ${item.quantidade} | Total: R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+  </div>
+  <button onclick="removerItem(${item.id})" title="Remover do carrinho">
+    <i class="fas fa-trash-alt"></i>
+  </button>
+`;
+
+
     lista.appendChild(div);
   });
 
@@ -1169,6 +1331,23 @@ document.addEventListener('click', function (e) {
     atualizarComentariosRodape();
   }
 });
+
+new Splide('#banner-carousel', {
+  type: 'loop',
+  perPage: 1,
+  autoplay: true,
+  interval: 5000,
+}).mount();
+
+
+function scrollCarrossel(id, direcao) {
+  const container = document.getElementById(id);
+  const larguraCard = 240; // largura aproximada do card
+  container.scrollBy({
+    left: direcao * larguraCard,
+    behavior: 'smooth'
+  });
+}
 
 
 </script>

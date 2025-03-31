@@ -161,16 +161,19 @@
     #link-login {
       cursor: pointer;
     }
-        .carrinho-item {
-          background-color: white;
-          padding: 1rem;
-          border-radius: 8px;
-          margin-bottom: 1rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-left: 5px solid #007bff;
-        }
+    .carrinho-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.carrinho-item-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
     
         .carrinho-item button {
           background-color: #dc3545;
@@ -691,15 +694,33 @@
 </head>
 <body>
 
-  <!-- Carrinho lateral -->
-  <div id="sidebar-carrinho" class="sidebar-carrinho">
+  <div id="sidebar-carrinho">
     <button class="close-btn" onclick="fecharCarrinho()">×</button>
     <h2>🛒 Seu Carrinho</h2>
     <div id="lista-carrinho"></div>
+    <div style="margin-top: 1rem;">
+      <label><strong>Tipo de Entrega:</strong></label><br>
+      <select id="tipo_entrega" required onchange="toggleEndereco()" style="width:100%;padding:0.5rem;margin-top:0.3rem;">
+        <option value="">Selecione</option>
+        <option value="retirada">Retirar na loja</option>
+        <option value="delivery">Receber em casa</option>
+      </select>
+    </div>
+    
+    <div id="campo-endereco" style="display:none;margin-top:1rem;">
+      <label><strong>Endereço de Entrega:</strong></label><br>
+    
+      <input type="text" id="rua" placeholder="Rua" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="numero" placeholder="Número" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="bairro" placeholder="Bairro" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="cidade" placeholder="Cidade" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+      <input type="text" id="cep" placeholder="CEP (somente números)" pattern="\d{5}-?\d{3}" required style="width:100%; padding: 0.5rem; margin-top:0.3rem;">
+    </div>
     <p id="total"></p>
     <button id="btn-finalizar" class="whatsapp-button">
       <i class="fas fa-credit-card"></i> Finalizar Pagamento
     </button>
+
   </div>
 
   <!-- Cabeçalho -->
@@ -710,7 +731,7 @@
     </div>
   
     <nav class="navbar-links">
-      <a href="#"><i class="fas fa-box"></i> Produtos</a>
+      <a href="/{{ subdomain }}/produtos"><i class="fas fa-box"></i> Produtos</a>
       <a href="#" onclick="mostrarCarrinho()" style="position: relative;">
         <i class="fas fa-shopping-cart"></i> Carrinho
         <span id="contador-carrinho" class="badge-carrinho">0</span>
@@ -759,9 +780,6 @@
   <!-- Conteúdo principal -->
   {% block content %}{% endblock %}
 
-  <footer>
-    <p>© 2025 Minha Loja Virtual - Todos os direitos reservados</p>
-  </footer>
 
   <script>
     const sub = window.location.pathname.split('/')[1];
@@ -804,17 +822,44 @@ function openMobileMenu() {
     }
   });
 
-document.getElementById('btn-finalizar').addEventListener('click', async () => {
-      const res = await fetch(`/${sub}/api/mercado-pago/pagamento`, { method: 'POST' });
-      const data = await res.json();
+  document.getElementById('btn-finalizar').addEventListener('click', async () => {
+  const tipoEntrega = document.getElementById('tipo_entrega').value;
 
-      if (!data.success) {
-        alert(data.message);
-        return;
-      }
+  let enderecoEntrega = '';
+  if (tipoEntrega === 'delivery') {
+    const rua = document.getElementById('rua').value.trim();
+    const numero = document.getElementById('numero').value.trim();
+    const bairro = document.getElementById('bairro').value.trim();
+    const cidade = document.getElementById('cidade').value.trim();
+    const cep = document.getElementById('cep').value.trim();
 
-      window.location.href = data.link;
-    });
+    if (!rua || !numero || !bairro || !cidade || !cep) {
+      alert('Preencha todos os campos de endereço corretamente.');
+      return;
+    }
+
+    // Montar o endereço no padrão correto
+    enderecoEntrega = `${rua}, ${numero} - ${bairro}, ${cidade} - CEP ${cep}`;
+  }
+
+  const res = await fetch(`/${sub}/api/mercado-pago/pagamento`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tipo_entrega: tipoEntrega,
+      endereco_entrega: enderecoEntrega
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data.success) {
+    alert(data.message);
+    return;
+  }
+
+  window.location.href = data.link;
+});
 
     async function carregarProdutos() {
   const response = await fetch(`/${sub}/api/produtos`);
@@ -882,12 +927,15 @@ async function atualizarCarrinho() {
     const div = document.createElement('div');
     div.className = 'carrinho-item';
     div.innerHTML = `
-      <div>
-        <strong>${item.nome}</strong> x ${item.quantidade}<br>
-        R$ ${(item.preco * item.quantidade).toFixed(2)}
-      </div>
-      <button onclick="removerItem(${item.id})">Remover</button>
-    `;
+  <img src="${item.imagem}" alt="${item.nome}" class="carrinho-item-img">
+  <div class="carrinho-item-info">
+    <strong>${item.nome}</strong>
+    <span>Qtd: ${item.quantidade} | Total: R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+  </div>
+  <button onclick="removerItem(${item.id})" title="Remover do carrinho">
+    <i class="fas fa-trash-alt"></i>
+  </button>
+`;
     lista.appendChild(div);
   });
 
@@ -902,7 +950,10 @@ async function atualizarCarrinho() {
       fetch(`/${sub}/api/carrinho/remover/${id}`, { method: 'DELETE' })
         .then(() => mostrarCarrinho());
     }
-
+    function toggleEndereco() {
+    const tipo = document.getElementById('tipo_entrega').value;
+    document.getElementById('campo-endereco').style.display = tipo === 'delivery' ? 'block' : 'none';
+  }
 
     function verificarLoginCliente() {
   fetch(`/${sub}/api/check-login-cliente`)

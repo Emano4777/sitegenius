@@ -761,7 +761,7 @@ def listar_carrinho_cliente(subdomain):
     loja_id = loja[0]
 
     cur.execute('''
-        SELECT p.nome, c.quantidade, p.preco, c.id
+        SELECT p.nome, c.quantidade, p.preco, c.id, p.imagem
         FROM carrinho c
         JOIN produtos p ON c.produto_id = p.id
         WHERE c.cliente_id = %s AND c.loja_id = %s
@@ -773,7 +773,8 @@ def listar_carrinho_cliente(subdomain):
         'nome': r[0],
         'quantidade': r[1],
         'preco': float(r[2]),
-        'id': r[3]
+        'id': r[3],
+        'imagem': r[4]  # 👈 aqui adiciona a imagem
     } for r in rows]
 
     return jsonify(itens)
