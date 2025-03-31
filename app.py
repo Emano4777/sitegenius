@@ -1351,11 +1351,26 @@ def excluir_produto(id):
         cur.close(); conn.close()
         return "⚠️ Não é possível excluir: produto está em um carrinho.", 400
 
+    # Busca a categoria do produto
+    cur.execute('SELECT categoria FROM produtos WHERE id = %s', (id,))
+    categoria_result = cur.fetchone()
+    categoria = categoria_result[0] if categoria_result else None
+
+    # Exclui o produto
     cur.execute('DELETE FROM produtos WHERE id = %s', (id,))
+
+    # Verifica se a categoria ainda está em uso
+    if categoria:
+        cur.execute('SELECT 1 FROM produtos WHERE categoria = %s LIMIT 1', (categoria,))
+        ainda_em_uso = cur.fetchone()
+        if not ainda_em_uso:
+            print(f"Categoria '{categoria}' não está mais em uso e pode ser removida da UI.")
+
     conn.commit()
     cur.close(); conn.close()
 
     return redirect('/admin/produtos')
+
 
 
 
