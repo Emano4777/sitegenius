@@ -1492,39 +1492,39 @@ def generate_payment():
     if not user_info:
         return "Usuário não encontrado", 404
 
+    # Dados do pagamento via Pix
     payment_data = {
-        "items": [{
-            "title": f"Plano {planos_info[plano]['title']} - Site Genius",
-            "quantity": 1,
-            "currency_id": "BRL",
-            "unit_price": planos_info[plano]["price"]
-        }],
+        "transaction_amount": planos_info[plano]["price"],
+        "description": f"Plano {planos_info[plano]['title']} - Site Genius",
+        "payment_method_id": "pix",
         "payer": {
             "email": user_info[1],
-            "name": user_info[0]
-        },
-        "back_urls": {
-            "success": f"{BASE_URL}/payment-success?plano={plano}",
-            "failure": f"{BASE_URL}/payment-failure"
-        },
-        "auto_return": "approved"
+            "first_name": user_info[0]
+        }
     }
 
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"
     }
+
     print("🔍 Dados do pagador:", user_info)
     print("📦 Payload enviado ao Mercado Pago:", payment_data)
 
-    response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)
+    response = requests.post("https://api.mercadopago.com/v1/payments", json=payment_data, headers=headers)
 
     if response.status_code == 201:
-        return redirect(response.json()["init_point"])
+        pix_data = response.json()["point_of_interaction"]["transaction_data"]
+        return f'''
+        <h3>Escaneie o QR Code Pix:</h3>
+        <img src="data:image/png;base64,{pix_data['qr_code_base64']}" alt="QR Code Pix"><br><br>
+        <h4>Ou copie o código abaixo:</h4>
+        <textarea rows="4" cols="80">{pix_data['qr_code']}</textarea>
+        '''
     else:
-        print("Erro:", response.text)  # Pode ajudar no debug
-        print("Detalhes:", response.json())
-        return "Erro ao gerar pagamento", 500
+        print("Erro:", response.text)
+        return "Erro ao gerar pagamento Pix", 500
+
 
 
     
