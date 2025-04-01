@@ -1469,7 +1469,7 @@ def generate_payment():
         return "Plano não informado", 400
 
     planos_info = {
-        "essential": {"price": 10.00, "title": "Premium Essential"},
+        "essential": {"price": 1.00, "title": "Premium Essential"},
         "moderado": {"price": 59.90, "title": "Premium Moderado"},
         "master": {"price": 120.90, "title": "Premium Master"}
     }
@@ -1567,6 +1567,7 @@ def webhook():
 def notificacoes():
     print("📦 Webhook Mercado Pago recebido")
     data = request.get_json()
+    print("📩 Notificação recebida:", data)
     print(data)
     return 'OK', 200
 
