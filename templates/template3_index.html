@@ -89,6 +89,33 @@
       color: #555;
     }
 
+    .slider {
+  overflow: hidden;
+  position: relative;
+  height: 320px;
+  margin-top: 30px;
+}
+
+.slide-track {
+  display: flex;
+  width: calc(250px * 6);
+  animation: scroll 20s linear infinite;
+}
+
+.slide-track img {
+  width: 250px;
+  height: auto;
+  border-radius: 8px;
+  margin-right: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+
     .footer {
       text-align: center;
       padding: 25px;
@@ -136,9 +163,46 @@
     <a href="/template/sobre"><i class="fas fa-scissors"></i> Sobre</a>
   </nav>
 
+
   <section class="hero">
     <h1>Barbearia Estilo</h1>
     <p>Seu visual em boas mãos. Agende seu horário com estilo!</p>
+  </section>
+
+  <section class="section" style="background-color:#fffbe7;">
+    <h2>🎧 Mensagem de boas-vindas da barbearia</h2>
+    <p>Ouça isso para você nos conhecer melhor(opção para você adicionar um audio seu no site, o audio explicito é um exemplo)</p>
+    <audio controls style="margin-top:15px;">
+      <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+      Seu navegador não suporta áudio.
+    </audio>
+  </section>
+  
+
+  <section class="section" style="background-color: #fffbe6;">
+    <h2>🧠 Monte seu estilo</h2>
+    <p>Responda 2 perguntas e descubra o estilo ideal pra você</p>
+    <div style="max-width: 500px; margin: auto; text-align: left;">
+      <label>1. Prefere um estilo mais:</label><br>
+      <select id="pergunta1" style="width: 100%; padding: 10px; margin: 10px 0;">
+        <option value="">Selecione</option>
+        <option value="classico">Clássico</option>
+        <option value="moderno">Moderno</option>
+        <option value="ousado">Ousado</option>
+      </select>
+      
+      <label>2. Frequência de corte:</label><br>
+      <select id="pergunta2" style="width: 100%; padding: 10px; margin: 10px 0;">
+        <option value="">Selecione</option>
+        <option value="1semana">Toda semana</option>
+        <option value="15dias">A cada 15 dias</option>
+        <option value="mensal">1 vez por mês</option>
+      </select>
+  
+      <button onclick="mostrarEstilo()" style="margin-top: 10px; padding: 10px 20px; background: #1e1e1e; color: white; border: none; border-radius: 6px;">Ver meu estilo</button>
+  
+      <div id="resultadoEstilo" style="margin-top: 20px; font-weight: bold;"></div>
+    </div>
   </section>
 
   <section class="section">
@@ -161,6 +225,22 @@
     </div>
   </section>
 
+  <section class="section" style="background-color:#eee;">
+    <h2>Antes & Depois</h2>
+    <p>Veja as transformações reais feitas por nossos barbeiros</p>
+    <div class="slider">
+      <div class="slide-track">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743536014/hq720_khobqz.jpg" alt="Transformação 1" />
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743536023/images_2_pk3gzy.jpg" alt="Transformação 2" />
+      
+        <!-- Repete para loop infinito -->
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743536014/hq720_khobqz.jpg" />
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743536023/images_2_pk3gzy.jpg" />
+    
+      </div>
+    </div>
+  
+
   <section class="section" style="background-color:#f9f9f9;">
     <h2>Nosso diferencial</h2>
     <p>Ambiente moderno, produtos profissionais e barbeiros apaixonados pelo que fazem.</p>
@@ -180,6 +260,38 @@
   <a href="https://wa.me/SEUNUMEROAQUI" target="_blank" class="whatsapp-float" title="Agende via WhatsApp">
     <i class="fab fa-whatsapp"></i>
   </a>
+
+  <script>
+    function mostrarEstilo() {
+      const estilo = document.getElementById("pergunta1").value;
+      const frequencia = document.getElementById("pergunta2").value;
+      let resultado = "";
+  
+      if (estilo && frequencia) {
+        if (estilo === "classico" && frequencia !== "mensal") {
+          resultado = "Você combina com o estilo Clássico Moderno. Corte alinhado com fade e barba na régua.";
+        } else if (estilo === "moderno") {
+          resultado = "Seu estilo é Urbano Atual. Experimente degradê alto com risco e barba marcada.";
+        } else if (estilo === "ousado") {
+          resultado = "Você manda bem no Estilo Autêntico. Corte freestyle e linhas definidas!";
+        } else {
+          resultado = "Um bom degradê + contorno já te coloca no estilo.";
+        }
+      } else {
+        resultado = "Responda as duas perguntas para ver seu estilo!";
+      }
+  
+      document.getElementById("resultadoEstilo").innerText = resultado;
+    }
+
+    function tocarAudio() {
+  const audio = document.getElementById('audioBoasVindas');
+  if (audio) {
+    audio.play();
+  }
+}
+  </script>
+  
 
 </body>
 </html>
