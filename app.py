@@ -1514,6 +1514,8 @@ def generate_payment():
         "Content-Type": "application/json",
         "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"
     }
+    print("🔍 Dados do pagador:", user_info)
+    print("📦 Payload enviado ao Mercado Pago:", payment_data)
 
     response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)
 
