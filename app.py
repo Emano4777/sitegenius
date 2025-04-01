@@ -1493,22 +1493,26 @@ def generate_payment():
         return "Usuário não encontrado", 404
 
     payment_data = {
-        "items": [{
-            "title": f"Plano {planos_info[plano]['title']} - Site Genius",
-            "quantity": 1,
-            "currency_id": "BRL",
-            "unit_price": planos_info[plano]["price"]
-        }],
-        "payer": {
-            "email": user_info[1],
-            "name": user_info[0]
-        },
-        "back_urls": {
-            "success": f"{BASE_URL}/payment-success?plano={plano}",
-            "failure": f"{BASE_URL}/payment-failure"
-        },
-        "auto_return": "approved"
-    }
+    "items": [{
+        "title": f"Plano {planos_info[plano]['title']} - Site Genius",
+        "quantity": 1,
+        "currency_id": "BRL",
+        "unit_price": planos_info[plano]["price"]
+    }],
+    "payer": {
+        "email": user_info[1],
+        "name": user_info[0]
+    },
+    "metadata": {
+        "user_id": user_id,
+        "plano": plano
+    },
+    "back_urls": {
+        "success": f"{BASE_URL}/payment-success?plano={plano}&payment_id={{payment_id}}",
+        "failure": f"{BASE_URL}/payment-failure"
+    },
+    "auto_return": "approved"
+}
 
     headers = {
         "Content-Type": "application/json",
@@ -1538,11 +1542,31 @@ def verificar_sessao():
 @app.route('/payment-success')
 def payment_success():
     plano = request.args.get("plano")
-    if 'user_id' not in session or not plano:
+    payment_id = request.args.get("payment_id")
+
+    if 'user_id' not in session or not plano or not payment_id:
         return "Acesso inválido", 401
 
-    user_id = session['user_id']
+    # Verifica status do pagamento via API do Mercado Pago
+    response = requests.get(
+        f"https://api.mercadopago.com/v1/payments/{payment_id}",
+        headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+    )
 
+    if response.status_code != 200:
+        return "Erro ao verificar pagamento", 500
+
+    payment_info = response.json()
+    if payment_info.get('status') != 'approved':
+        return "Pagamento ainda não aprovado", 400
+
+    # Verifica se esse pagamento é mesmo do usuário
+    metadata = payment_info.get('metadata', {})
+    user_id = session['user_id']
+    if str(metadata.get("user_id")) != str(user_id) or metadata.get("plano") != plano:
+        return "Pagamento não corresponde ao usuário logado", 403
+
+    # Atualiza banco
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -1571,7 +1595,45 @@ def notificacoes():
     print("📦 Webhook Mercado Pago recebido")
     data = request.get_json()
     print("📩 Notificação recebida:", data)
-    print(data)
+
+    if data.get('type') == 'payment':
+        payment_id = data['data']['id']
+        
+        response = requests.get(
+            f"https://api.mercadopago.com/v1/payments/{payment_id}",
+            headers={
+                "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"
+            }
+        )
+
+        if response.status_code == 200:
+            payment_info = response.json()
+            print("✅ Pagamento consultado:", payment_info)
+
+            if payment_info.get('status') == 'approved':
+                metadata = payment_info.get('metadata', {})
+                user_id = metadata.get('user_id')
+                plano = metadata.get('plano')
+
+                if user_id and plano:
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    try:
+                        cur.execute(
+                            "UPDATE users2 SET is_premium = TRUE, premium_level = %s WHERE id = %s",
+                            (plano, user_id)
+                        )
+                        conn.commit()
+                        print(f"🎉 Plano {plano} ativado para o usuário {user_id}")
+                    except Exception as e:
+                        print("❌ Erro ao atualizar usuário:", str(e))
+                        conn.rollback()
+                    finally:
+                        cur.close()
+                        conn.close()
+        else:
+            print("❌ Falha ao consultar pagamento:", response.text)
+
     return 'OK', 200
 
 
