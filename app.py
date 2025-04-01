@@ -1576,7 +1576,6 @@ def webhook():
 
     return '', 200
 
-
 # Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
 def register():
