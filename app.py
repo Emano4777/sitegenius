@@ -39,9 +39,9 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_PATH'] = '/'
 
 
-MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
+MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-2694841338174545-032011-c45585f95cff8baeac33dda92abce761-2342791238"
 # Conexão com o Banco de Dados
-BASE_URL = "https://sitegenius.vercel.app"
+BASE_URL = "https://sitegenius.com.br"
 
 def get_db_connection():
     return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
@@ -1467,7 +1467,7 @@ def generate_payment():
         return "Plano não informado", 400
 
     planos_info = {
-        "essential": {"price": 32.90, "title": "Premium Essential"},
+        "essential": {"price": 10.00, "title": "Premium Essential"},
         "moderado": {"price": 59.90, "title": "Premium Moderado"},
         "master": {"price": 120.90, "title": "Premium Master"}
     }
@@ -1479,6 +1479,17 @@ def generate_payment():
     if not user_id:
         return redirect(url_for("login"))
 
+    # Buscar nome e email do usuário
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT nome, email FROM users2 WHERE id = %s", (user_id,))
+    user_info = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not user_info:
+        return "Usuário não encontrado", 404
+
     payment_data = {
         "items": [{
             "title": f"Plano {planos_info[plano]['title']} - Site Genius",
@@ -1486,6 +1497,10 @@ def generate_payment():
             "currency_id": "BRL",
             "unit_price": planos_info[plano]["price"]
         }],
+        "payer": {
+            "email": user_info[1],
+            "name": user_info[0]
+        },
         "back_urls": {
             "success": f"{BASE_URL}/payment-success?plano={plano}",
             "failure": f"{BASE_URL}/payment-failure"
@@ -1503,7 +1518,9 @@ def generate_payment():
     if response.status_code == 201:
         return redirect(response.json()["init_point"])
     else:
+        print("Erro:", response.text)  # Pode ajudar no debug
         return "Erro ao gerar pagamento", 500
+
 
     
 @app.route('/verificar-sessao')
