@@ -1,21 +1,16 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "app.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "^/webhook$",
-      "methods": ["POST"],
-      "dest": "app.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "app.py"
-    }
-  ],
-  "trailingSlash": false
-}
+    "version": 2,
+    "builds": [
+      {
+        "src": "app.py",
+        "use": "@vercel/python"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "app.py"
+      }
+    ]
+  }
+  
