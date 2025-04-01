@@ -140,7 +140,6 @@ def auth_google_callback():
 @app.route('/sitemap.xml')
 def sitemap():
     return send_from_directory('.', 'sitemap.xml')
-
 # Rota para buscar todos os produtos
 @app.route('/api/produtos')
 def listar_produtos():
