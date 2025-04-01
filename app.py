@@ -1554,7 +1554,14 @@ def payment_success():
         conn.close()
 
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json
+    print("🔔 Webhook recebido:", data)
 
+    # Opcional: você pode salvar no banco, validar o tipo de evento, etc.
+
+    return '', 200
 
 # Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
