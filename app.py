@@ -944,7 +944,8 @@ def gerar_preferencia_pagamento():
 
     conn.commit()
     cur.close(); conn.close()
-
+    subdomain = session.get("subdomain") or "www"  # fallback para www se não tiver subdomínio
+    plano = data.get("plano") or "default"  # caso o plano seja usado na URL
     # 🔁 Criar preferência Mercado Pago
     sdk = mercadopago.SDK(access_token)
     preference_data = {
@@ -956,17 +957,50 @@ def gerar_preferencia_pagamento():
                 "currency_id": "BRL"
             } for nome, quantidade, preco in itens
         ],
-        "back_urls": {
-            "success": "https://seusite.com/sucesso",  # ← depois trocamos isso pelo subdomínio
-            "failure": "https://seusite.com/erro",
-            "pending": "https://seusite.com/pendente"
-        },
+      "back_urls": {
+    "success": f"https://{subdomain}.sitegenius.com.br/payment-success?plano={plano}",
+    "failure": f"https://{subdomain}.sitegenius.com.br/payment-failure",
+    "pending": f"https://{subdomain}.sitegenius.com.br/payment-pending"
+},
         "auto_return": "approved"
     }
 
     preference_response = sdk.preference().create(preference_data)
     init_point = preference_response["response"]["init_point"]
     return jsonify({'success': True, 'link': init_point})
+
+@app.route('/payment-failure')
+def payment_failure():
+    return """
+    <div style="text-align: center; margin-top: 80px; font-family: Arial, sans-serif;">
+        <h2 style="color: #d9534f;">Pagamento não foi concluído 😞</h2>
+        <p style="font-size: 18px;">Algo deu errado com o seu pagamento.<br>
+        Você pode tentar novamente ou escolher outro método.</p>
+        <a href="/preco" style="display: inline-block; margin-top: 20px; padding: 10px 20px; 
+           background-color: #d9534f; color: white; text-decoration: none; border-radius: 6px;">
+           Voltar para a Loja
+        </a>
+    </div>
+    """
+
+
+
+
+@app.route('/payment-pending')
+def payment_pending():
+    return """
+    <div style="text-align: center; margin-top: 80px; font-family: Arial, sans-serif;">
+        <h2 style="color: #f0ad4e;">Pagamento em análise ⏳</h2>
+        <p style="font-size: 18px;">Seu pagamento está sendo processado.<br>
+        Assim que for confirmado, você será notificado.</p>
+        <a href="/preco" style="display: inline-block; margin-top: 20px; padding: 10px 20px; 
+           background-color: #f0ad4e; color: white; text-decoration: none; border-radius: 6px;">
+           Voltar para a Loja
+        </a>
+    </div>
+    """
+
+
 
 @app.route("/admin/controlepedidos")
 def controle_pedidos():
