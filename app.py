@@ -1674,7 +1674,7 @@ def login():
         user = cur.fetchone()
 
         if user:
-            senha_hash = bytes.fromhex(user[2][2:]).decode()
+            senha_hash = user[2]
 
             if bcrypt.checkpw(senha.encode('utf-8'), senha_hash.encode('utf-8')):
                 user_id = user[0]
