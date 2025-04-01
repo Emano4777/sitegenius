@@ -1556,7 +1556,7 @@ def payment_success():
         conn.close()
 
 
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['POST'], strict_slashes=False)
 def webhook():
     received_signature = request.headers.get('X-Hub-Signature')
     payload = request.get_data()
@@ -1575,6 +1575,7 @@ def webhook():
     print("✅ Webhook válido:", data)
 
     return '', 200
+
 
 # Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
