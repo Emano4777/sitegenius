@@ -1469,7 +1469,7 @@ def generate_payment():
         return "Plano não informado", 400
 
     planos_info = {
-        "essential": {"price": 1.00, "title": "Premium Essential"},
+        "essential": {"price": 30.00, "title": "Premium Essential"},
         "moderado": {"price": 59.90, "title": "Premium Moderado"},
         "master": {"price": 120.90, "title": "Premium Master"}
     }
@@ -1521,6 +1521,7 @@ def generate_payment():
         return redirect(response.json()["init_point"])
     else:
         print("Erro:", response.text)  # Pode ajudar no debug
+        print("Detalhes:", response.json())
         return "Erro ao gerar pagamento", 500
 
 
