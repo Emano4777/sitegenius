@@ -1576,7 +1576,6 @@ def notificacoes():
 
 
 
-# Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -1584,20 +1583,22 @@ def register():
         email = request.form['email']
         senha = request.form['senha']
         avatar_url = None
-    if 'avatar' in request.files:
-        avatar_file = request.files['avatar']
-        if avatar_file.filename != '':
-            upload_result = cloudinary.uploader.upload(avatar_file)
-            avatar_url = upload_result['secure_url']
-        hashed_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
+
+        if 'avatar' in request.files:
+            avatar_file = request.files['avatar']
+            if avatar_file.filename != '':
+                upload_result = cloudinary.uploader.upload(avatar_file)
+                avatar_url = upload_result['secure_url']
+
+        hashed_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode()
 
         conn = get_db_connection()
         cur = conn.cursor()
         try:
-            cur.execute("INSERT INTO users2 (nome, email, senha, avatar_url) VALUES (%s, %s, %s, %s)", 
-                (nome, email, hashed_senha.hex(), avatar_url))
-
-
+            cur.execute(
+                "INSERT INTO users2 (nome, email, senha, avatar_url) VALUES (%s, %s, %s, %s)", 
+                (nome, email, hashed_senha, avatar_url)
+            )
             conn.commit()
             return redirect(url_for('login'))
         except psycopg2.Error:
@@ -1608,6 +1609,7 @@ def register():
             conn.close()
 
     return render_template('register.html')
+
 
 @app.route("/sugerir-template", methods=["POST"])
 def sugerir_template():
@@ -1670,13 +1672,15 @@ def login():
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, nome, senha::TEXT, is_premium, avatar_url FROM users2 WHERE email = %s", (email,))
+        cur.execute("SELECT id, nome, senha, is_premium, avatar_url FROM users2 WHERE email = %s", (email,))
         user = cur.fetchone()
+        print("DEBUG - Tipo do hash retornado:", type(user[2]))
+        print("DEBUG - Valor do hash retornado:", user[2])
 
         if user:
             senha_hash = user[2]
 
-            if bcrypt.checkpw(senha.encode('utf-8'), senha_hash.encode('utf-8')):
+            if bcrypt.checkpw(senha.encode('utf-8'), senha_hash.encode('utf-8') if isinstance(senha_hash, str) else senha_hash):
                 user_id = user[0]
                 session['user_id'] = user_id
                 session['user_name'] = user[1]
