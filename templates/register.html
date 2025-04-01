@@ -363,6 +363,30 @@ header {
   text-decoration: underline;
 }
 
+.btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    font-weight: bold;
+    gap: 10px;
+    text-decoration: none;
+    color: #444;
+    background-color: white;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-google:hover {
+    background-color: #f0f0f0;
+  }
+
+  .google-icon {
+    width: 20px;
+    height: 20px;
+  }
 
 
 
@@ -477,6 +501,12 @@ header {
         <i class="fa-solid fa-user-check" style="font-size: 0.9rem; margin-right: 9px;"></i> 
         Cadastrar
       </button>
+
+      
+    <a href="{{ url_for('login_google') }}" class="btn-google">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
+      Cadastre-se com o Google
+    </a>
   
       {% if erro %}
         <div class="error">
@@ -484,6 +514,7 @@ header {
         </div>
       {% endif %}
     </form>
+
   
     <a href="/login">Já tem conta? Faça login</a>
   
