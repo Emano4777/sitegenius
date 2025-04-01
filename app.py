@@ -1581,38 +1581,7 @@ def webhook():
     return '', 200
 
 
-# Rota para cadastrar usuário
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        nome = request.form['nome']
-        email = request.form['email']
-        senha = request.form['senha']
-        avatar_url = None
-    if 'avatar' in request.files:
-        avatar_file = request.files['avatar']
-        if avatar_file.filename != '':
-            upload_result = cloudinary.uploader.upload(avatar_file)
-            avatar_url = upload_result['secure_url']
-        hashed_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
 
-        conn = get_db_connection()
-        cur = conn.cursor()
-        try:
-            cur.execute("INSERT INTO users2 (nome, email, senha, avatar_url) VALUES (%s, %s, %s, %s)", 
-                (nome, email, hashed_senha.hex(), avatar_url))
-
-
-            conn.commit()
-            return redirect(url_for('login'))
-        except psycopg2.Error:
-            conn.rollback()
-            return "Erro ao cadastrar usuário", 500
-        finally:
-            cur.close()
-            conn.close()
-
-    return render_template('register.html')
 
 @app.route("/sugerir-template", methods=["POST"])
 def sugerir_template():
