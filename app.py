@@ -1556,9 +1556,11 @@ def payment_success():
         conn.close()
 
 
-@app.route('/webhook', methods=['POST'], strict_slashes=False)
+@app.route('/webhook', methods=['GET', 'POST'], strict_slashes=False)
 def webhook():
-    return '', 200
+    print("🚀 Rota /webhook acessada")
+    return 'Webhook ativo', 200
+
 
 
 # Rota para cadastrar usuário
