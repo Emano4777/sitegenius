@@ -1567,9 +1567,14 @@ def webhook():
         digestmod=hashlib.sha256
     ).hexdigest()
 
+# Se não tiver assinatura (ex: teste manual), apenas aceita para debug
+    if not received_signature:
+        print("⚠️ Webhook recebido sem assinatura (teste manual?):", request.json)
+        return '', 200
+
     if received_signature != expected_signature:
         print("❌ Webhook com assinatura inválida!")
-        return '', 400
+        return '', 403
 
     data = request.json
     print("✅ Webhook válido:", data)
