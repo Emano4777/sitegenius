@@ -8,6 +8,14 @@
   ],
   "routes": [
     {
+      "src": "/webhook/?",
+      "methods": ["POST"],
+      "headers": {
+        "cache-control": "no-cache"
+      },
+      "dest": "app.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }
