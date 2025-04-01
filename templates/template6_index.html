@@ -96,6 +96,52 @@
     <p>Descubra produtos que despertam todos os seus sentidos</p>
   </section>
 
+
+  <section class="section" style="background-color:#000; color:white;">
+    <h2>🎥 Experimente o clima</h2>
+    <p>Um gostinho do que te espera...</p>
+    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:12px; margin-top:20px;">
+      <iframe src="https://www.youtube-nocookie.com/embed/HipON4i8ejU" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen 
+              style="position:absolute; top:0; left:0; width:100%; height:100%;">
+      </iframe>
+    </div>
+  </section>
+
+  <section class="section" style="background-color:#fffbe7; padding: 40px 20px;">
+    <div style="max-width: 600px; margin: auto; background: #fff0f5; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;">
+      <h2 style="color:#d6336c;">🎧 Mensagem Rápida e Envolvente</h2>
+      <p style="font-size: 16px; color:#444;">Ouça antes de explorar... essa experiência foi feita pra você. <br><em>(Áudio gerado com IA sensual)</em></p>
+      <audio controls style="margin-top:20px; width:100%; border-radius:8px;">
+        <source src="https://res.cloudinary.com/dizfq460q/video/upload/v1743540660/audio_ia_sensual_mundodoprazer.mp3" type="audio/mpeg">
+        Seu navegador não suporta áudio.
+      </audio>
+    </div>
+  </section>
+
+  <section class="section" style="background-color:#fff0f5; padding: 40px 20px; text-align: center;">
+    <h2 style="color:#d6336c;">🎲 Roleta do Prazer</h2>
+    <p style="color:#444;">Clique e deixe o destino escolher sua brincadeira 😈</p>
+    
+    <div id="roleta" style="width:120px;height:120px;margin:20px auto;border-radius:50%;border:10px solid #ff4b91;position:relative;animation:none;">
+      <div style="width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:20px solid #ff4b91;position:absolute;top:-30px;left:40px;"></div>
+      <img src="https://cdn-icons-png.flaticon.com/512/2107/2107845.png" style="width:80px;margin-top:20px;" />
+    </div>
+  
+    <button onclick="girarRoleta()" style="padding:12px 28px;background-color:#ff4b91;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">
+      Girar Roleta 💞
+    </button>
+  
+    <p id="resultadoRoleta" style="margin-top:20px;font-size:20px;font-weight:bold;color:#d6336c;"></p>
+    
+    <audio id="audioGiro" preload="auto">
+      <source src="https://www.fesliyanstudios.com/play-mp3/387" type="audio/mpeg">
+    </audio>
+  </section>
+  
+
   <h2 class="section-title">Nossos Produtos</h2>
   <section class="products">
     <div class="product">
@@ -111,6 +157,44 @@
       <h3>Massageador Relaxante</h3>
     </div>
   </section>
+
+  <section class="section" style="background-color:#ffeef5; padding: 40px 20px;">
+    <h2 style="color:#d6336c;">💋 Rodada da Sorte</h2>
+    <p style="color:#444;">Clique no botão e receba uma sugestão picante especialmente pra hoje...</p>
+    <button onclick="rodadaSorte()" style="margin-top: 15px; padding: 12px 28px; background-color:#ff4b91; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">
+      Surpreenda-me 💘
+    </button>
+    <div id="resultadoSorte" style="margin-top: 20px; font-weight: bold; font-size: 18px; color: #d6336c;"></div>
+  </section>
+
+  
+  <section class="agendamento" style="background:#ffe4ec;">
+    <h2 style="color:#d6336c;">🔥 Descubra seu estilo de prazer</h2>
+    <p>Responda 2 perguntas rápidas e veja a sugestão perfeita:</p>
+    <div style="max-width:400px; margin:auto; text-align:left;">
+      <label>1. Prefere momentos mais:</label>
+      <select id="pergunta1" style="width:100%; padding:10px; margin:10px 0;">
+        <option value="">Selecione</option>
+        <option value="romantico">Românticos</option>
+        <option value="intenso">Intensos</option>
+        <option value="explorador">Exploradores</option>
+      </select>
+      <label>2. Você costuma usar produtos eróticos:</label>
+      <select id="pergunta2" style="width:100%; padding:10px; margin:10px 0;">
+        <option value="">Selecione</option>
+        <option value="sim">Sim, adoro!</option>
+        <option value="curioso">Tenho curiosidade</option>
+        <option value="nao">Nunca usei</option>
+      </select>
+      <button onclick="mostrarResultado()" style="margin-top:10px; padding:10px 20px; background:#ff4b91; color:white; border:none; border-radius:6px;">
+        Ver sugestão 💘
+      </button>
+      <div id="resultadoQuiz" style="margin-top:20px; font-weight:bold;"></div>
+    </div>
+  </section>
+  
+
+ 
   <h2 class="section-title">Agende um Atendimento Especial</h2>
   <section class="agendamento">
     <form action="https://formsubmit.co/email@example.com" method="POST">
@@ -122,5 +206,96 @@
     </form>
   </section>
 
+  <section class="section" style="background:#ffeef5;">
+    <h2 style="color:#d6336c;">Por que escolher a Desejos & Prazer?</h2>
+    <ul style="list-style:none; padding:0; max-width:600px; margin:auto; text-align:left; color:#444;">
+      <li>💨 Entrega discreta e rápida</li>
+      <li>🔐 Embalagem 100% sigilosa</li>
+      <li>❤️ Produtos testados e aprovados</li>
+      <li>🎁 Brinde surpresa nas compras acima de R$100</li>
+    </ul>
+  </section>
+  
+
+  <a href="https://wa.me/SEUNUMEROAQUI" target="_blank"
+   style="position: fixed; bottom: 20px; right: 20px; background: #25D366; padding: 14px 20px; border-radius: 50px; color: white; font-weight:bold; text-decoration:none; box-shadow:0 2px 10px rgba(0,0,0,0.3); z-index: 999;">
+  💬 Fale com a gente
+</a>
+
+  <script>
+    function mostrarResultado() {
+      const p1 = document.getElementById("pergunta1").value;
+      const p2 = document.getElementById("pergunta2").value;
+      let resultado = "";
+  
+      if (p1 && p2) {
+        if (p1 === "romantico") {
+          resultado = "✨ Kit Sensual Romântico: velas, óleo e surpresa. Ideal para momentos a dois.";
+        } else if (p1 === "intenso") {
+          resultado = "🔥 Linha BDSM Intenso: chicotes leves, algemas e vendas suaves. Prazer com emoção.";
+        } else {
+          resultado = "🎁 Kit Descoberta: vibrador discreto, gel excitante e lubrificante. Explore sem pressa.";
+        }
+      } else {
+        resultado = "Responda às duas perguntas para ver sua sugestão!";
+      }
+  
+      document.getElementById("resultadoQuiz").innerText = resultado;
+    }
+
+
+    function rodadaSorte() {
+    const opcoes = [
+      "Hoje o seu prazer é com... <strong>Gel de Aquecimento 🔥</strong>",
+      "Você merece um... <strong>Vibrador Discreto ✨</strong>",
+      "Sua noite vai brilhar com... <strong>Calcinha comestível 🍓</strong>",
+      "O clima vai esquentar com... <strong>Algemas suaves 🔒</strong>",
+      "Surpreenda com... <strong>Lubrificante com sabor 😋</strong>",
+      "Explore novas sensações com... <strong>Massageador Relaxante 💆</strong>"
+    ];
+    const sorteio = opcoes[Math.floor(Math.random() * opcoes.length)];
+    document.getElementById("resultadoSorte").innerHTML = sorteio;
+  }
+
+
+  function girarRoleta() {
+  const desafios = [
+    "💆‍♀️ Massagem vendado – sem falar por 3 minutos.",
+    "🍓 Lambuzar com calda e explorar o corpo.",
+    "🔒 Algemar com lenço e dar comandos suaves.",
+    "🎧 Striptease com a sua playlist favorita.",
+    "🗣 Conte uma fantasia – e ouça uma também.",
+    "🔥 5 beijos intensos em lugares aleatórios.",
+    "🧠 Jogo da verdade apimentada.",
+    "🧴 Usar óleo ou vela de massagem erótica."
+  ];
+
+  const roleta = document.getElementById("roleta");
+  const resultado = document.getElementById("resultadoRoleta");
+  const audio = document.getElementById("audioGiro");
+
+  // Reset e animação
+  roleta.style.animation = "spin 2s ease-out";
+  audio.play();
+
+  // Escolhe e mostra o desafio
+  setTimeout(() => {
+    const sorteado = desafios[Math.floor(Math.random() * desafios.length)];
+    resultado.innerHTML = `Você tirou: <br><span style="font-size:22px;">${sorteado}</span>`;
+    roleta.style.animation = "none";
+  }, 2000);
+}
+
+// Animação da roleta
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(1080deg); }
+}`;
+document.head.appendChild(style);
+
+  </script>
+  
 </body>
 </html>

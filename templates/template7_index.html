@@ -2,6 +2,8 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Construtora Concretiza+</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -76,6 +78,21 @@
       display: flex;
       flex-direction: column;
     }
+
+    .loader {
+    border: 8px solid #e0e0e0;
+    border-top: 8px solid #1f2937;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
     .orcamento-form input,
     .orcamento-form textarea,
     .orcamento-form button {
@@ -95,17 +112,45 @@
   </style>
 </head>
 <body>
-
-  <nav class="navbar">
+  <nav class="navbar" data-aos="fade-up">
     <div>
       <a href="/template/index"><i class="fas fa-home"></i> Início</a>
       <a href="/template/sobre"><i class="fas fa-user"></i> Sobre</a>
     </div>
   </nav>
+  
 
   <section class="hero">
     <h1>Construindo com Excelência</h1>
     <p>Projetos residenciais, comerciais e industriais com qualidade garantida.</p>
+  </section>
+
+  <section class="section" style="background-color:#f4f4f4;">
+    <h2>Assista nosso vídeo institucional(você adapta para o vídeo da sua empresa)</h2>
+    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; max-width:100%; border-radius:12px; margin-top:20px;">
+      <iframe src="https://www.youtube.com/embed/sJ7HUu2Oa5w" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              allowfullscreen 
+              style="position:absolute; top:0; left:0; width:100%; height:100%;">
+      </iframe>
+    </div>
+  </section>
+
+  <section class="section" style="background-color:#fff;">
+    <h2>Descubra qual projeto é ideal pra você</h2>
+    <select id="tipoObra" style="padding:10px; margin:10px;">
+      <option value="">Selecione</option>
+      <option value="residencial">Residencial</option>
+      <option value="comercial">Comercial</option>
+      <option value="industrial">Industrial</option>
+    </select>
+    <button onclick="verSugestao()" style="padding:10px 20px; margin-left:10px;">Ver sugestão</button>
+    <div id="sugestaoObra" style="margin-top:20px; font-weight:bold;"></div>
+  </section>
+  <section class="section">
+    <h2>Estamos sempre construindo algo incrível...</h2>
+    <div class="loader" style="margin: 30px auto;"></div>
   </section>
   <section class="section">
     <h2>Galeria de Obras</h2>
@@ -117,7 +162,19 @@
     </div>
   </section>
 
-  <section class="section">
+  
+
+  <section class="section" style="background-color:#f9fafb;">
+    <h2>+ Resultados em números</h2>
+    <div style="display:flex; justify-content:center; gap:30px; flex-wrap:wrap; margin-top:30px;">
+      <div><i class="fas fa-building" style="font-size:32px;"></i><p><strong>+120</strong><br>Obras finalizadas</p></div>
+      <div><i class="fas fa-user-check" style="font-size:32px;"></i><p><strong>+300</strong><br>Clientes satisfeitos</p></div>
+      <div><i class="fas fa-calendar-check" style="font-size:32px;"></i><p><strong>10 anos</strong><br>de experiência</p></div>
+    </div>
+  </section>
+  
+
+  <section class="section" id="orcamento">
     <h2>Solicite um Orçamento</h2>
     <div class="orcamento-form">
       <form action="https://formsubmit.co/email@example.com" method="POST">
@@ -129,5 +186,66 @@
       </form>
     </div>
   </section>
+
+  
+
+  <section class="section" style="background-color:#f1f1f1;">
+    <h2>Parcerias e Qualificações</h2>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/ISO_9001-Logo.svg/1200px-ISO_9001-Logo.svg.png" 
+         alt="ISO" style="max-width:120px; margin:10px;">
+    <!-- Adicione mais se quiser -->
+  </section>
+  <section class="section" style="background-color:#e5e7eb;">
+    <h2>Etapas da Construção</h2>
+    <div style="display:flex; justify-content:center; gap:30px; flex-wrap:wrap; margin-top:30px;">
+      <div data-aos="zoom-in"><i class="fas fa-drafting-compass" style="font-size:40px;"></i><p>Projeto</p></div>
+      <div data-aos="zoom-in" data-aos-delay="100"><i class="fas fa-truck-loading" style="font-size:40px;"></i><p>Fundação</p></div>
+      <div data-aos="zoom-in" data-aos-delay="200"><i class="fas fa-hard-hat" style="font-size:40px;"></i><p>Obra</p></div>
+      <div data-aos="zoom-in" data-aos-delay="300"><i class="fas fa-paint-roller" style="font-size:40px;"></i><p>Acabamento</p></div>
+      <div data-aos="zoom-in" data-aos-delay="400"><i class="fas fa-home" style="font-size:40px;"></i><p>Entrega</p></div>
+    </div>
+  </section>
+  
+
+  <section class="section" style="background-color:#e5e7eb;">
+    <h2>Por que escolher a Concretiza+</h2>
+    <p><strong>Ideal para:</strong> Clientes residenciais, investidores, empresas e indústrias que buscam excelência na construção.</p>
+    <p><strong>Inclui:</strong> Obras do zero, reformas, projetos personalizados, acompanhamento técnico e suporte total.</p>
+    <p><strong>Diferencial:</strong> Entrega no prazo, equipe qualificada, visual moderno e experiência completa com foco em qualidade e confiança.</p>
+  </section>
+
+  <section class="section" style="background-color:#fff;">
+    <h2>O que nossos clientes dizem</h2>
+    <blockquote style="max-width:600px;margin:20px auto;font-style:italic;">
+      “A Concretiza+ entregou nossa obra antes do prazo e com acabamento impecável. Superou expectativas!”<br>
+      <span style="display:block; margin-top:10px; font-weight:bold;">— João Silva, cliente residencial</span>
+    </blockquote>
+  </section>
+
+
+<script>
+
+  function verSugestao() {
+    const tipo = document.getElementById('tipoObra').value;
+    let texto = "";
+    if (tipo === "residencial") texto = "🏡 Ideal para quem busca aconchego e funcionalidade com design moderno.";
+    else if (tipo === "comercial") texto = "🏢 Pensado para atrair clientes e valorizar seu negócio.";
+    else if (tipo === "industrial") texto = "🏭 Soluções robustas, seguras e com foco em produtividade.";
+    else texto = "Selecione uma opção acima.";
+
+    document.getElementById('sugestaoObra').innerText = texto;
+  }
+
+
+
+  AOS.init();
+</script>
+<a href="#orcamento" title="Solicite um orçamento"
+   style="position:fixed; bottom:100px; right:20px; background-color:#1f2937; color:white;
+          padding:12px 18px; border-radius:6px; font-weight:bold; text-decoration:none;
+          box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:9999;">
+ ✏️ Orçamento Rápido
+</a>
+
 </body>
 </html>

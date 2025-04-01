@@ -38,6 +38,8 @@ app.secret_key = 'minha-chave-segura'
 CORS(app, supports_credentials=True)
 
 load_dotenv()
+
+
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
