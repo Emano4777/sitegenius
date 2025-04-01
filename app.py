@@ -1570,7 +1570,7 @@ def generate_payment():
         "plano": plano
     },
     "back_urls": {
-        "success": f"{BASE_URL}/payment-success?plano={plano}&payment_id={{payment_id}}",
+        "success": f"{BASE_URL}/payment-success?plano={plano}",
         "failure": f"{BASE_URL}/payment-failure"
     },
     "auto_return": "approved"
@@ -1604,7 +1604,7 @@ def verificar_sessao():
 @app.route('/payment-success')
 def payment_success():
     plano = request.args.get("plano")
-    payment_id = request.args.get("payment_id")
+    payment_id = request.args.get("collection_id") or request.args.get("payment_id")
 
     if 'user_id' not in session or not plano or not payment_id:
         return "Acesso inválido", 401
