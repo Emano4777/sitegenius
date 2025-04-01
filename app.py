@@ -17,6 +17,8 @@ import cloudinary
 import cloudinary.uploader
 import smtplib
 from email.mime.text import MIMEText
+import hmac
+import hashlib
 
 # Configuração
 cloudinary.config(
@@ -1556,10 +1558,21 @@ def payment_success():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.json
-    print("🔔 Webhook recebido:", data)
+    received_signature = request.headers.get('X-Hub-Signature')
+    payload = request.get_data()
 
-    # Opcional: você pode salvar no banco, validar o tipo de evento, etc.
+    expected_signature = 'sha256=' + hmac.new(
+        b"2ce98bda0abca69bbf820cbb940eb91bcfd2f2ad6ed33fca8180616e50868b7d",
+        msg=payload,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+
+    if received_signature != expected_signature:
+        print("❌ Webhook com assinatura inválida!")
+        return '', 400
+
+    data = request.json
+    print("✅ Webhook válido:", data)
 
     return '', 200
 
