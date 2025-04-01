@@ -1567,7 +1567,6 @@ def webhook():
         digestmod=hashlib.sha256
     ).hexdigest()
 
-# Se não tiver assinatura (ex: teste manual), apenas aceita para debug
     if not received_signature:
         print("⚠️ Webhook recebido sem assinatura (teste manual?):", request.json)
         return '', 200
@@ -1580,6 +1579,7 @@ def webhook():
     print("✅ Webhook válido:", data)
 
     return '', 200
+
 
 # Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
