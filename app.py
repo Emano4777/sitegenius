@@ -19,6 +19,9 @@ import smtplib
 from email.mime.text import MIMEText
 import hmac
 import hashlib
+from dotenv import load_dotenv
+from authlib.integrations.flask_client import OAuth
+
 
 # Configuração
 cloudinary.config(
@@ -34,7 +37,15 @@ app = Flask(__name__)
 app.secret_key = 'minha-chave-segura'
 CORS(app, supports_credentials=True)
 
-
+load_dotenv()
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
 # CONFIG ESSENCIAL
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -73,6 +84,58 @@ def login_required_cliente(f):
 def ads_txt():
     return send_from_directory('.', 'ads.txt')
 
+
+@app.route('/login/google')
+def login_google():
+    redirect_uri = url_for('auth_google_callback', _external=True)
+    print("🔁 Redirect URI enviado para o Google:", redirect_uri)
+    return google.authorize_redirect(redirect_uri)
+
+
+
+@app.route('/auth/google/callback')
+def auth_google_callback():
+    token = google.authorize_access_token()
+    userinfo = token['userinfo']  # ou use google.parse_id_token(token)
+
+    email = userinfo['email']
+    nome = userinfo.get('name')
+    avatar_url = userinfo.get('picture')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, nome, is_premium, avatar_url FROM users2 WHERE email = %s", (email,))
+    user = cur.fetchone()
+
+    if user:
+        user_id = user[0]
+        nome = user[1]
+        is_premium = user[2]
+        avatar_url = user[3]
+    else:
+        senha_fake = bcrypt.hashpw(uuid.uuid4().hex[:10].encode('utf-8'), bcrypt.gensalt()).decode()
+        cur.execute(
+            "INSERT INTO users2 (nome, email, senha, is_premium, avatar_url) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (nome, email, senha_fake, False, avatar_url)
+        )
+        user_id = cur.fetchone()[0]
+        conn.commit()
+        is_premium = False
+
+    session['user_id'] = user_id
+    session['user_name'] = nome
+    session['is_premium'] = is_premium
+    session['avatar_url'] = avatar_url
+
+    session_token = str(uuid.uuid4())
+    cur.execute("UPDATE users2 SET session_token = %s WHERE id = %s", (session_token, user_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    resp = make_response(redirect(url_for('home')))
+    resp.set_cookie('session_token', session_token, samesite='None', secure=True)
+    return resp
 
 @app.route('/sitemap.xml')
 def sitemap():

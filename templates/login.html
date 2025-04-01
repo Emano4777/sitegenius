@@ -141,6 +141,31 @@ header h1 {
   display: none;
 }
 
+.btn-google {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    font-weight: bold;
+    gap: 10px;
+    text-decoration: none;
+    color: #444;
+    background-color: white;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-google:hover {
+    background-color: #f0f0f0;
+  }
+
+  .google-icon {
+    width: 20px;
+    height: 20px;
+  }
+
 @media (max-width: 768px) {
   .mobile-menu-btn {
     display: block;
@@ -312,6 +337,10 @@ header h1 {
           </div>
         {% endif %}
       </form>
+      <a href="{{ url_for('login_google') }}" class="btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon">
+        Entrar com Google
+      </a>
 
       <a href="/register" class="register-link">Não tem uma conta? Registre-se</a>
 
