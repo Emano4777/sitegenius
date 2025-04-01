@@ -2638,7 +2638,7 @@ def verificar_premium(template_name):
     is_premium = status[0] if status else False
 
     # Aqui você define quais templates são considerados premium
-    templates_premium = ['template10', 'template4']
+    templates_premium = ['template10']
     if template_name in templates_premium and not is_premium:
         return jsonify({"pode_usar": False})
 
