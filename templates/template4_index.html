@@ -14,6 +14,33 @@
       padding: 0;
     }
 
+
+    .slider {
+  overflow: hidden;
+  position: relative;
+  height: 320px;
+  margin-top: 30px;
+}
+
+.slide-track {
+  display: flex;
+  width: calc(250px * 6);
+  animation: scroll 20s linear infinite;
+}
+
+.slide-track img {
+  width: 250px;
+  height: auto;
+  border-radius: 8px;
+  margin-right: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
     .navbar {
       background-color: #0a0a23;
       overflow: hidden;
@@ -141,36 +168,133 @@
     <p>Seu corpo, sua melhor versão. Agende seu treino personalizado!</p>
   </section>
 
-  <section class="section">
-    <h2>Serviços Oferecidos</h2>
-    <p>Treinos personalizados, acompanhamento profissional e foco nos seus resultados.</p>
+  <section class="section" style="background-color: #f9f9f9;">
+    <h2>Monte seu plano agora</h2>
+    <p>Descubra como seria sua rotina de treino com base na sua meta!</p>
+    <input type="number" placeholder="Quantos kg quer perder?" id="metaKg" style="padding: 10px; font-size: 16px; margin-top: 15px;">
+    <br>
+    <button onclick="gerarPlano()" style="margin-top: 15px; padding: 12px 24px; background-color: #0a0a23; color: white; border: none; border-radius: 8px;">Ver meu plano</button>
+    <div id="resultadoPlano" style="margin-top: 20px; font-weight: bold;"></div>
+  </section>
+  
+  <section class="section" style="background-color: #f0f8ff;">
+    <h2>💪 Qual tipo de treino combina com você?</h2>
+    <p>Responda 3 perguntinhas rápidas e descubra seu estilo ideal!</p>
+  
+    <div id="quiz" style="margin-top: 20px; text-align: left; max-width: 500px; margin-inline:auto;">
+      <div>
+        <p><strong>1. Onde você prefere treinar?</strong></p>
+        <label><input type="radio" name="q1" value="casa"> Em casa</label><br>
+        <label><input type="radio" name="q1" value="academia"> Na academia</label><br>
+        <label><input type="radio" name="q1" value="ar_livre"> Ao ar livre</label>
+      </div>
+  
+      <div style="margin-top:20px;">
+        <p><strong>2. Quanto tempo você tem disponível por dia?</strong></p>
+        <label><input type="radio" name="q2" value="20"> Até 20 minutos</label><br>
+        <label><input type="radio" name="q2" value="40"> 30 a 40 minutos</label><br>
+        <label><input type="radio" name="q2" value="60"> 1 hora ou mais</label>
+      </div>
+  
+      <div style="margin-top:20px;">
+        <p><strong>3. Qual seu principal objetivo?</strong></p>
+        <label><input type="radio" name="q3" value="emagrecer"> Emagrecer</label><br>
+        <label><input type="radio" name="q3" value="definir"> Definir corpo</label><br>
+        <label><input type="radio" name="q3" value="ganhar_massa"> Ganhar massa</label>
+      </div>
+  
+      <button onclick="finalizarQuiz()" style="margin-top: 25px; padding: 12px 24px; background-color: #0a0a23; color: white; border: none; border-radius: 8px;">Ver Resultado</button>
+  
+      <div id="resultadoQuiz" style="margin-top: 25px; font-weight: bold;"></div>
+    </div>
+  </section>
+  <section class="section" style="background-color:#fffbe7;">
+    <h2>🎧 Mensagem Rápida do Treinador</h2>
+    <p>Ouça isso antes de começar sua jornada!(opção para você adicionar um audio seu no site, audio explicito é um exemplo)</p>
+    <audio controls style="margin-top:15px;">
+      <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+      Seu navegador não suporta áudio.
+    </audio>
+  </section>
 
-    <div class="packages">
-      <div class="package">
-        <h3>Treino Personalizado</h3>
-        <p>Avaliação física + programação de treino individual com metas claras.</p>
-      </div>
-      <div class="package">
-        <h3>Consultoria Online</h3>
-        <p>Para quem deseja treinar em casa ou na academia com orientação especializada.</p>
-      </div>
-      <div class="package">
-        <h3>Acompanhamento Nutricional</h3>
-        <p>Em parceria com nutricionistas, alinhamos treino e alimentação para seu objetivo.</p>
+  <section class="section" style="background-color: #ffe9d6;">
+    <h2>🎯 Desafio 5 Dias de Foco Total</h2>
+    <p>Baixe agora o PDF com o treino + metas diárias pra destravar sua disciplina e mudar sua rotina.</p>
+    <a href="https://drive.google.com/uc?export=download&id=1d0nlseiNrp1CshlApFX6DJ1GTToJqE24" target="_blank" style="padding: 12px 24px; background-color: #e05c00; color: white; border-radius: 8px; text-decoration: none; font-weight: bold; display:inline-block; margin-top: 15px;">
+      Quero o desafio agora!
+    </a>
+  </section>
+
+  <section class="section" style="background-color:#eee;">
+    <h2>Resultados dos meus alunos</h2>
+    <p>Transformações reais alcançadas com muito foco, treino e dedicação.</p>
+    <div class="slider">
+      <div class="slide-track">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743531673/ANTES_E_DEPOIS_DE_EMAGRECER_GABI_TIOSSI_1_zkx0ck.jpg" alt="Aluno 1" />
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743531679/whatsapp-image-2021-03-11-at-16.27.36_vao056.webp" alt="Aluno 2" />
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743531682/ana-paula-1-1585170597237_v2_450x450_db4swf.jpg" alt="Aluno 3" />
+        <!-- Duplicados para efeito de loop -->
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743531673/ANTES_E_DEPOIS_DE_EMAGRECER_GABI_TIOSSI_1_zkx0ck.jpg" alt="Aluno 1" />
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743531679/whatsapp-image-2021-03-11-at-16.27.36_vao056.webp" alt="Aluno 2" />
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743531682/ana-paula-1-1585170597237_v2_450x450_db4swf.jpg" alt="Aluno 3" />
       </div>
     </div>
   </section>
-
-  <section class="section" style="background-color:#f9f9f9;">
-    <h2>Nosso diferencial</h2>
-    <p>Treinamentos personalizados, foco em resultados reais, motivação e suporte constante.</p>
-  </section>
-
+  
   <section class="section">
     <h2>Depoimentos</h2>
     <p>“O acompanhamento fez toda a diferença na minha evolução. Hoje me sinto mais disposto e feliz!”</p>
     <p>“Treinar com orientação mudou minha rotina e meus resultados.”</p>
   </section>
+
+  <section class="section" style="background-color: #f4f4f4;">
+    <h2>Por que treinar comigo?</h2>
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap: 30px; margin-top: 30px;">
+      <div style="flex:1 1 200px; max-width:250px;">
+        <i class="fas fa-user-check fa-3x" style="color:#0a0a23;"></i>
+        <h3>Atendimento Personalizado</h3>
+        <p>Planos de treino adaptados à sua rotina e objetivos.</p>
+      </div>
+      <div style="flex:1 1 200px; max-width:250px;">
+        <i class="fas fa-bolt fa-3x" style="color:#0a0a23;"></i>
+        <h3>Resultados Acelerados</h3>
+        <p>Foco no que realmente dá resultado, sem enrolação.</p>
+      </div>
+      <div style="flex:1 1 200px; max-width:250px;">
+        <i class="fas fa-heartbeat fa-3x" style="color:#0a0a23;"></i>
+        <h3>Saúde em Primeiro Lugar</h3>
+        <p>Cuido do seu progresso com responsabilidade.</p>
+      </div>
+    </div>
+  </section>
+  
+  <section class="section" style="background-color:#0a0a23; color:white;">
+    <h2>Pronto para transformar seu corpo?</h2>
+    <p>Chega de adiar seus objetivos. Comece agora com acompanhamento profissional!</p>
+    <a href="https://wa.me/SEUNUMEROAQUI" target="_blank" style="display:inline-block; margin-top:20px; padding:14px 28px; background-color:#25D366; color:white; border-radius:8px; text-decoration:none; font-weight:bold;">
+      Falar com o Treinador no WhatsApp
+    </a>
+  </section>
+
+
+  <section class="section" style="background-color:#fff;">
+    <h2>Nossa trajetória em números</h2>
+    <div style="display:flex; justify-content:center; gap:60px; margin-top:30px;">
+      <div>
+        <h1 style="color:#0a0a23;">+120</h1>
+        <p>Alunos Atendidos</p>
+      </div>
+      <div>
+        <h1 style="color:#0a0a23;">+5</h1>
+        <p>Anos de Experiência</p>
+      </div>
+      <div>
+        <h1 style="color:#0a0a23;">98%</h1>
+        <p>Satisfação dos Clientes</p>
+      </div>
+    </div>
+  </section>
+  
 
   <div class="footer">
     <p><i class="fas fa-dumbbell"></i> Treine com Estilo © 2025</p>
@@ -181,5 +305,86 @@
     <i class="fab fa-whatsapp"></i>
   </a>
 
+  <script>
+     function gerarPlano() {
+    const kg = parseFloat(document.getElementById('metaKg').value);
+    const resultado = document.getElementById('resultadoPlano');
+
+    if (!kg || kg <= 0) {
+      resultado.innerHTML = "<span style='color:red;'>Digite uma meta válida.</span>";
+      return;
+    }
+
+    let intensidade = "";
+    let recomendacao = "";
+
+    if (kg <= 3) {
+      intensidade = "Plano Leve";
+      recomendacao = "Treinos 3x semana, foco em constância e ajustes simples na alimentação.";
+    } else if (kg <= 7) {
+      intensidade = "Plano Moderado";
+      recomendacao = "Treinos 4x semana, alimentação com déficit calórico, apoio psicológico.";
+    } else {
+      intensidade = "Plano Agressivo";
+      recomendacao = "Treinos diários com foco em HIIT, dieta supervisionada, controle de estresse.";
+    }
+
+    const semanas = Math.ceil(kg * 0.8);
+    const progresso = Math.min(kg * 10, 100);
+
+    resultado.innerHTML = `
+      <div style="background:#f0f0f0; border-radius:8px; padding:20px; text-align:left;">
+        <h3>🔍 Diagnóstico Personalizado</h3>
+        <p><strong>Meta:</strong> perder ${kg}kg</p>
+        <p><strong>Classificação:</strong> <span style="color:#e05c00;">${intensidade}</span></p>
+        <p><strong>Recomendação:</strong> ${recomendacao}</p>
+        <p><strong>Estimativa de tempo:</strong> ${semanas} semanas</p>
+        <div style="background:#ddd; border-radius:10px; overflow:hidden; height:20px; margin:10px 0;">
+          <div style="width:${progresso}%; background:#0a0a23; height:100%; transition:width 0.4s;"></div>
+        </div>
+        <a href="https://wa.me/SEUNUMEROAQUI" target="_blank" style="padding:10px 20px; background-color:#25D366; color:white; text-decoration:none; border-radius:6px; display:inline-block; margin-top:10px;">
+          Falar com o Treinador no WhatsApp
+        </a>
+      </div>
+    `;
+  }
+
+  function finalizarQuiz() {
+  const q1 = document.querySelector('input[name="q1"]:checked');
+  const q2 = document.querySelector('input[name="q2"]:checked');
+  const q3 = document.querySelector('input[name="q3"]:checked');
+  const resultado = document.getElementById('resultadoQuiz');
+
+  if (!q1 || !q2 || !q3) {
+    resultado.innerHTML = "<span style='color:red;'>Responda todas as perguntas.</span>";
+    return;
+  }
+
+  let sugestao = "";
+
+  if (q1.value === "casa" && q2.value === "20") {
+    sugestao = "🏠 Você combina com treinos rápidos em casa com foco em core e cardio!";
+  } else if (q1.value === "academia" && q3.value === "ganhar_massa") {
+    sugestao = "🏋️‍♂️ Treinos de musculação intensa 5x por semana são perfeitos pra você.";
+  } else if (q1.value === "ar_livre") {
+    sugestao = "🌳 Caminhadas, corrida leve e treinos funcionais ao ar livre são sua vibe!";
+  } else if (q3.value === "emagrecer" && q2.value !== "60") {
+    sugestao = "🔥 Treinos HIIT de curta duração vão te dar resultados rápidos e eficientes.";
+  } else {
+    sugestao = "⚡ Um plano de treino personalizado pode te dar resultados surpreendentes!";
+  }
+
+  resultado.innerHTML = `
+    <div style="background:#e0ffe0; padding:20px; border-radius:8px;">
+      ${sugestao}
+      <br><br>
+      <a href="https://wa.me/SEUNUMEROAQUI" target="_blank" style="color:green; text-decoration:underline;">Falar com o treinador e montar meu plano</a>
+    </div>
+  `;
+}
+
+
+
+  </script>
 </body>
 </html>
