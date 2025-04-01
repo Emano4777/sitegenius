@@ -8,7 +8,7 @@
   ],
   "routes": [
     {
-      "src": "/webhook",
+      "src": "/notificacoes-mercado-pago",
       "methods": ["POST"],
       "dest": "app.py"
     },

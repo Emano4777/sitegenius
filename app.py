@@ -1563,6 +1563,14 @@ def webhook():
     return 'Webhook ativo', 200
 
 
+@app.route('/notificacoes-mercado-pago', methods=['POST'])
+def notificacoes():
+    print("📦 Webhook Mercado Pago recebido")
+    data = request.get_json()
+    print(data)
+    return 'OK', 200
+
+
 
 # Rota para cadastrar usuário
 @app.route('/register', methods=['GET', 'POST'])
