@@ -10,18 +10,15 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <script defer src="/static/script.js"></script>
     <style>
-        /* Estilos para os templates */
-        .template-list {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 40px;
+       .template-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
 }
+
 .template {
-  flex: 1 1 300px;
-  max-width: 350px;
-  width: 100%;
+  flex: 1 1 calc(50% - 20px);
+  box-sizing: border-box;
 }
 footer {
     background: white;
@@ -763,6 +760,22 @@ iframe {
   border-color: #007bff;
 }
 
+.categoria-titulo {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1E2A38;
+  margin: 40px 0 20px 0;
+  border-left: 5px solid #ffc107;
+  padding-left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 10px 15px;
+}
+
+
 .template-search-container .search-icon {
   position: absolute;
   top: 50%;
@@ -949,411 +962,33 @@ iframe {
           <i class="fas fa-search search-icon"></i>
         </div>
         </div>
+        <div style="text-align: center; margin: 30px 30px;">
+          <label for="categoriaSelect" style="font-size: 18px; font-weight: bold; margin-bottom: 10px; display: block;">Escolha a categoria do template desejado:</label>
+          <select id="categoriaSelect" class="btn" style="padding: 10px 20px; font-size: 16px;" onchange="filtrarCategoria()">
+            <option value="todas">🔍 Todas as categorias</option>
+            <option value="premium">💎 Premium</option>
+            <option value="gourmet">🍰 Gourmet</option>
+            <option value="moda">👗 Beleza e bem-estar</option>
+            <option value="construcao">🏗️ Construção</option>
+            <option value="sexyshop">💋 Sexyshop</option>
+            <option value="petshop">🐾 Petshop</option>
+          </select>
+        </div>
+        
+        
+        
         <div class="template-container" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">  
-        <section class="templates">
-            <h2><i class="fas fa-box-open"></i> Templates disponiveis</h2>
-            <div class="template-list">
-                <div class="template" style="
-                background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80');
-                background-size: cover;
-                background-position: center;
-                color: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                margin-bottom: 30px;
-            ">
+          <section class="templates">
+            <h2 style="font-size: 28px; color: #1f1f1f; text-align: center; margin-bottom: 40px; background: linear-gradient(to right, #ffd700, #fff8dc); padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+              <i class="fas fa-box-open" style="color: #d4af37;"></i> 
+              Explore nossa coleção exclusiva de Templates prontos para usar
+            </h2>
             
-            <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-                <h3 style="margin: 0; color: white;">
-                  <i class="fas fa-heart"></i> Template para agência de viagens
-                </h3>
-              </div>
-            
-                <button class="btn" onclick="previewTemplate('/template-preview/template1/index')">
-                    <i class="fas fa-eye"></i> Visualizar
-                </button>
-            
-                <button class="btn" onclick="toggleDetalhes('detalhes-template1')">
-                    <i class="fas fa-info-circle"></i> Detalhes
-                </button>
-            
-                <div id="detalhes-template1" style="
-    display: none;
-    text-align: left;
-    margin-top: 10px;
-    background: rgba(255, 255, 255, 0.85);
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #333;
-    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-">
-  <p><strong>Ideal para:</strong> Agências de Viagem, Turismo e Guias</p>
-  <p><strong>Recursos:</strong></p>
-  <ul style="margin-top: 5px; padding-left: 18px; list-style: disc;">
-    <li>Design visual impactante e 100% responsivo</li>
-    <li>Seções de pacotes turísticos com ícones personalizados</li>
-    <li>Formulário de depoimentos com armazenamento local</li>
-    <li>Quiz interativo para ajudar o cliente a escolher um pacote</li>
-    <li>Depoimentos exibidos também no rodapé</li>
-    <li>Barra de progresso de leitura no topo da tela</li>
-    <li>Notificações em tempo real tipo: “João acabou de reservar para Cancún!”</li>
-  </ul>
-  <p><strong>Diferencial:</strong> Ferramentas interativas e efeitos sutis que aumentam o engajamento e mantêm o visitante mais tempo no site.</p>
-</div>
 
-            </div>
-            <div class="template" style="
-            background-image: url('https://images.unsplash.com/photo-1567958451986-2de427a4a0be?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-bottom: 30px;
-        ">
-                    <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: #080808;">
-                        <i class="fas fa-tshirt"></i> Template Loja de Roupas
-                    </h3>
-                
-                    <!-- Botão de Visualizar -->
-                    <button class="btn" onclick="previewTemplate('/template-preview/template2/index')">
-                        <i class="fas fa-eye"></i> Visualizar
-                    </button>
-                
-                    <!-- Botão de Detalhes -->
-                    <button class="btn" onclick="toggleDetalhes('detalhes-template2')">
-                        <i class="fas fa-info-circle"></i> Detalhes
-                    </button>
-                
-                  <!-- Painel oculto com informações -->
-<div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-    <p><strong>Ideal para:</strong> Lojas de roupas, boutiques, brechós e vitrines de moda.</p>
-    <p><strong>Inclui:</strong> Galeria de fotos por produto, layout responsivo, seção de destaques, vitrine e depoimentos de clientes.</p>
-    <p><strong>Diferencial:</strong> Carrinho de compras que envia diretamente para o WhatsApp com os produtos escolhidos, sistema de quiz interativo para sugestão de looks, e formulário de comentários com salvamento local.</p>
-  </div>
-  
-                </div>       
-                <div class="template" style="
-                background-image: url('https://images.unsplash.com/photo-1549271568-e87e07c5406b?auto=format&fit=crop&w=1600&q=80');
-                background-size: cover;
-                background-position: center;
-                color: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                margin-bottom: 30px;
-            ">
-                       <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-                        <h3 style="margin: 0; color: white;">
-                          <i class="fas fa-scissors"></i> Template para Barbearia
-                        </h3>
-                      </div>
-                        <!-- Botão de Visualizar -->
-                        <button class="btn" onclick="previewTemplate('/template-preview/template3/index')">
-                            <i class="fas fa-eye"></i> Visualizar
-                        </button>
-                    
-                        <!-- Botão de Detalhes -->
-                        <button class="btn" onclick="toggleDetalhes('detalhes-template3')">
-                            <i class="fas fa-info-circle"></i> Detalhes
-                        </button>
-                    
-                       <!-- Painel oculto com informações -->
-                    <div id="detalhes-template3" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
-                      <p><strong>Ideal para:</strong> Barbearias, salões masculinos e estúdios de corte.</p>
-                      <p><strong>Inclui:</strong> Sessão com serviços, agendamento por WhatsApp, carrossel de fotos antes/depois, quiz "Monte seu estilo" e botão com áudio de boas-vindas personalizado.</p>
-                      <p><strong>Diferencial:</strong> Layout moderno e impactante, interações que geram engajamento, visual 100% responsivo e pronto para conversão de novos clientes.</p>
-                    </div>
-                    </div>        
-                    <div class="template" style="
-                    background-image: url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1600&q=80');
-                    background-size: cover;
-                    background-position: center;
-                    color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                    margin-bottom: 30px;
-                ">
-  <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-    <h3 style="margin: 0; color: white;">
-      <i class="fas fa-running"></i> Template para personal trainer/nutricionista
-    </h3>
-  </div>
-                
-                    <!-- Botão de Visualizar -->
-                    <button class="btn" onclick="previewTemplate('/template-preview/template4/index')">
-                        <i class="fas fa-eye"></i> Visualizar
-                    </button>
-                
-                    <!-- Botão de Detalhes -->
-                    <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
-                        <i class="fas fa-info-circle"></i> Detalhes
-                    </button>
-                
-                    <!-- Painel oculto com informações -->
-                    <div id="detalhes-template4" style="
-                        display: none;
-                        text-align: left;
-                        margin-top: 10px;
-                        background: rgba(255,255,255,0.95);
-                        padding: 10px;
-                        border-radius: 6px;
-                        font-size: 14px;
-                        color: #333;
-                        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-                    ">
-                         <p><strong>Ideal para:</strong> Personal trainers, coaches fitness, assessorias esportivas e academias individuais.</p>
+            <h2 id="premium" class="categoria-titulo" style="scroll-margin-top: 10px;"><i class="fas fa-lock"></i> Templates Premium</h2>
+<div class="template-list">
 
-                         <p><strong>Inclui:</strong></p>
-                         <ul style="padding-left:18px; margin-top:5px;">
-                           <li>✅ Diagnóstico de plano com base na meta de peso</li>
-                           <li>✅ Download gratuito de PDF de desafio (5 dias de foco)</li>
-                           <li>✅ Quiz interativo: "Qual treino combina com você?"</li>
-                           <li>✅ Galeria animada com resultados reais de alunos</li>
-                           <li>✅ Depoimentos e diferenciais profissionais</li>
-                           <li>✅ Integração direta com WhatsApp</li>
-                           <li>✅ Player de áudio motivacional (com sua voz se quiser!)</li>
-                         </ul>
-                     
-                         <p><strong>Diferencial:</strong> Esse template é <u><b>completamente gratuito</b></u> e entrega funções que você <b>não consegue nas redes sociais</b>. Ideal para quem quer profissionalizar o atendimento, gerar mais conversões e mostrar autoridade no seu método.</p>
-                    </div>
-                </div>   
-                <div class="template" style="
-                 background-image: url('https://plus.unsplash.com/premium_photo-1670505062582-fdaa83c23c9e?auto=format&fit=crop&w=1600&q=80');
-                background-size: cover;
-                background-position: center;
-                color: white;
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                margin-bottom: 30px;
-            ">
-  <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-    <h3 style="margin: 0; color: white;">
-      <i class="fas fa-dumbbell"></i> Template para Academia
-    </h3>
-  </div>
-                <!-- Botão de Visualizar -->
-                <button class="btn" onclick="previewTemplate('/template-preview/template5/index')">
-                    <i class="fas fa-eye"></i> Visualizar
-                </button>
-            
-                <!-- Botão de Detalhes -->
-                <button class="btn" onclick="toggleDetalhes('detalhes-template5')">
-                    <i class="fas fa-info-circle"></i> Detalhes
-                </button>
-            
-                <!-- Painel oculto com informações -->
-                <div id="detalhes-template5" style="
-                    display: none;
-                    text-align: left;
-                    margin-top: 10px;
-                    background: rgba(255,255,255,0.95);
-                    padding: 10px;
-                    border-radius: 6px;
-                    font-size: 14px;
-                    color: #333;
-                    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-                ">
-<p><strong>Ideal para:</strong> Academias de bairro, studios fitness, box de crossfit e redes de musculação que desejam uma presença forte online.</p>
-
-<p><strong>Inclui:</strong> Página com vídeo institucional, quiz para sugestão de treino, calculadora de IMC, galeria de antes & depois, planos mensais, integração com WhatsApp e botão de matrícula.</p>
-
-<p><strong>Diferencial:</strong> Visual moderno, layout imersivo, seções interativas (como o quiz e IMC), totalmente responsivo e pensado para gerar engajamento, agendamentos e conversões com foco nos treinos HIIT, funcional e musculação.</p>
-
-                </div>
-            </div>      
-            <div class="template" style="
-            background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743545386/depositphotos_641020570-stock-photo-handcuffs-sex-shop-heels-bra_h1ncgm.webp');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            margin-bottom: 30px;
-          ">
-              <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-                <h3 style="margin: 0; color: white;">
-                  <i class="fas fa-kiss-wink-heart"></i> Template para sexyshop
-                </h3>
-              </div>
-          
-            <!-- Botão de Visualizar -->
-            <button class="btn" onclick="previewTemplate('/template-preview/template6/index')">
-              <i class="fas fa-eye"></i> Visualizar
-            </button>
-          
-            <!-- Botão de Detalhes -->
-            <button class="btn" onclick="toggleDetalhes('detalhes-template6')">
-              <i class="fas fa-info-circle"></i> Detalhes
-            </button>
-          
-            <!-- Painel oculto com informações -->
-            <div id="detalhes-template6" style="
-              display: none;
-              text-align: left;
-              margin-top: 10px;
-              background: rgba(255,255,255,0.95);
-              padding: 10px;
-              border-radius: 6px;
-              font-size: 14px;
-              color: #333;
-              box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-            ">
-             <p><strong>Ideal para:</strong> Lojas sensuais, boutiques eróticas e empreendimentos focados em prazer, autoconhecimento e bem-estar íntimo.</p>
-
-             <p><strong>Inclui:</strong> Vitrine de produtos, quiz de estilo sensual, agendamento de atendimento especial, integração com WhatsApp, player de áudio com voz IA personalizada, vídeo embutido do clima e sessão especial de “Rodada da Sorte”.</p>
-             
-             <p><strong>Diferencial:</strong> Visual provocante e moderno, com seções interativas como a Roleta do Prazer com som e animação, linguagem ousada, 100% responsivo e otimizadíssimo para conversão. Ideal para gerar desejo, engajamento e aumentar suas vendas no segmento íntimo.</p>
-             
-            </div>
-          </div>
-
-          <div class="template" style="
-          background-image: url('https://plus.unsplash.com/premium_photo-1681992176054-e2f410194b02?auto=format&fit=crop&w=1974&q=80');
-          background-size: cover;
-          background-position: center;
-          color: white;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-          margin-bottom: 30px;
-        ">
-            <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-                <h3 style="margin: 0; color: white;">
-                  <i class="fas fa-hard-hat"></i> Template para construtora
-                </h3>
-              </div>
-        
-          <!-- Botão de Visualizar -->
-          <button class="btn" onclick="previewTemplate('/template-preview/template7/index')">
-            <i class="fas fa-eye"></i> Visualizar
-          </button>
-        
-          <!-- Botão de Detalhes -->
-          <button class="btn" onclick="toggleDetalhes('detalhes-template7')">
-            <i class="fas fa-info-circle"></i> Detalhes
-          </button>
-        
-          <!-- Painel oculto com informações -->
-          <div id="detalhes-template7" style="
-            display: none;
-            text-align: left;
-            margin-top: 10px;
-            background: rgba(255,255,255,0.95);
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #333;
-            box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-          ">
-          <section class="section" style="background-color:#fff; padding:2rem; border-radius:10px; max-width:900px; margin:auto;">
-            <h2 style="color:#1f2937;"><i class="fas fa-star"></i> Detalhes do Template</h2>
-            <p><strong>Ideal para:</strong> Construtoras, engenheiros civis, arquitetos, empresas de reformas e empreendimentos que desejam apresentar seus serviços com credibilidade e impacto visual.</p>
-            <p><strong>Inclui:</strong> Página institucional com seções sobre etapas da obra, galeria de projetos realizados, formulário de orçamento, vídeo institucional, diferenciais e integração com WhatsApp.</p>
-            <p><strong>Diferencial:</strong> Design moderno, layout limpo e responsivo, animações suaves, foco em conversão e apresentação profissional da empresa e seus projetos.</p>
-          </section>
-          
-          </div>
-        </div>
-
-        <div class="template" style="
-          background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940658/pingyangsp_1681758139_3083133193474159437_56007568342_hyghhf.jpg');
-          background-size: cover;
-          background-position: center;
-          color: white;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-          margin-bottom: 30px;
-        ">
-         <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-            <h3 style="margin: 0; color: white;">
-              <i class="fas fa-utensils"></i> Template Restaurante, lanchonete, pizzaria, etc ...
-            </h3>
-          </div>
-          
-        
-          <!-- Botão de Visualizar -->
-          <button class="btn" onclick="previewTemplate('/template-preview/template8/index')">
-            <i class="fas fa-eye"></i> Visualizar
-          </button>
-        
-          <!-- Botão de Detalhes -->
-          <button class="btn" onclick="toggleDetalhes('detalhes-template8')">
-            <i class="fas fa-info-circle"></i> Detalhes
-          </button>
-        
-          <div id="detalhes-template8" style="
-          display: none;
-          text-align: left;
-          margin-top: 10px;
-          background: rgba(255,255,255,0.95);
-          padding: 10px;
-          border-radius: 6px;
-          font-size: 14px;
-          color: #333;
-          box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-        ">
-          <p><strong>Ideal para:</strong> Restaurantes, lanchonetes, pizzarias e estabelecimentos gastronômicos que desejam vender online de forma simples e direta.</p>
-          <p><strong>Inclui:</strong> Cardápio com imagens dos pratos, galeria de fotos do ambiente, botão flutuante de modo escuro/claro, pedidos via WhatsApp com carrinho integrado, QR Code automático para acesso rápido ao site.</p>
-          <p><strong>Diferenciais:</strong> Sistema de carrinho simples que monta o pedido completo no WhatsApp, aviso em tempo real se o restaurante está aberto ou fechado, design moderno, leve, e totalmente responsivo para celular.</p>
-        </div>
-        
-        </div>
-
-
-        <div class="template" style="
-        background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943535/download_j452gq.jpg');
-        background-size: cover;
-        background-position: center;
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        margin-bottom: 30px;
-      ">
-       <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
-        <h3 style="margin: 0; color: white;">
-          <i class="fas fa-paw"></i> Template para Petshop
-        </h3>
-      </div>
-      
-      <!-- Botão de Visualizar -->
-      <button class="btn" onclick="previewTemplate('/template-preview/template9/index')">
-        <i class="fas fa-eye"></i> Visualizar
-      </button>
-      
-      <!-- Botão de Detalhes -->
-      <button class="btn" onclick="toggleDetalhes('detalhes-template9')">
-        <i class="fas fa-info-circle"></i> Detalhes
-      </button>
-      
-      <div id="detalhes-template9" style="
-        display: none;
-        text-align: left;
-        margin-top: 10px;
-        background: rgba(255,255,255,0.95);
-        padding: 10px;
-        border-radius: 6px;
-        font-size: 14px;
-        color: #333;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
-      ">
-
-        <p><strong>Ideal para:</strong> Petshops, clínicas veterinárias, banho e tosa, lojas de produtos para pets e serviços de cuidado animal.</p>
-        <p><strong>Inclui:</strong> Página moderna com seções como: serviços (banho, tosa, consultas), produtos em destaque, botão de WhatsApp, formulário de agendamento e galeria de pets felizes.</p>
-        <p><strong>Diferenciais:</strong> Visual atrativo com ícones fofos, totalmente responsivo, integração direta com WhatsApp, formulário funcional e foco total em conversão para negócios do mundo pet.</p>
- 
-      </div>
-     
-    </div> 
-    <div class="template premium-locked" style="
+  <div class="template premium-locked" style="
     background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743218379/istockphoto-1221651371-612x612_zopivk.jpg');
     background-size: cover;
     background-position: center;
@@ -1368,15 +1003,15 @@ iframe {
         <i class="fas fa-lock"></i> Template Loja Virtual Completa
       </h3>
     </div>
-  
+
     <button class="btn" onclick="previewTemplate('/template-preview/template10/index')">
       <i class="fas fa-eye"></i> Ver Template Premium
     </button>
-  
+
     <button class="btn" onclick="toggleDetalhes('detalhes-template10')">
       <i class="fas fa-info-circle"></i> Detalhes
     </button>
-  
+
     <div id="detalhes-template10" style="
       display: none;
       text-align: left;
@@ -1388,40 +1023,409 @@ iframe {
       color: #333;
       box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
     ">
-                        <p><strong>Ideal para:</strong> Lojas que desejam vender online com uma estrutura completa e profissional.</p>
-                        
-                        <p><strong>Inclui:</strong></p>
-                        <ul style="padding-left: 1.2rem; margin: 0;">
-                          <li>✅ Banner rotativo personalizável</li>
-                          <li>✅ Integração com WhatsApp (botão flutuante)</li>
-                          <li>✅ Carrinho de compras com cálculo total e entrega</li>
-                          <li>✅ Checkout via Mercado Pago</li>
-                          <li>✅ Disponibilidade para qualquer integração de pagamento online que desejar</li>
-                          <li>✅ Sistema de Delivery</li>
-                          <li>✅ Layout da loja personalizável</li>
-                          <li>✅ Seção de mais vendidos, ofertas e lançamentos</li>
-                          <li>✅ Comentários com avaliação por estrelas</li>
-                          <li>✅ Login de cliente com área de pedidos</li>
-                          <li>✅ Modo escuro (Dark Mode)</li>
-                          <li>✅ Menu responsivo com design mobile</li>
-                          <li>✅ Sistema de comentários e avaliações com armazenamento</li>
-                          <li>✅ Layout 100% responsivo e moderno</li>
-                        </ul>
-                      
-                        <p><strong>Diferenciais Premium:</strong></p>
-                        <ul style="padding-left: 1.2rem; margin: 0;">
-                          <li>📊 Painel completo de vendas com gráficos e relatórios</li>
-                          <li>📦 Controle de estoque e produtos mais vendidos</li>
-                          <li>👨‍💼 Integração com banco de dados para gestão total</li>
-                          <li>🛠️ Suporte para personalização e extensões futuras</li>
-                        </ul>
-                      
-                        <p><strong>Observação:</strong> Este template é exclusivo para assinantes do plano Premium.</p>
-                      </div>
-                    </div>
+      <p><strong>Ideal para:</strong> Lojas que desejam vender online com uma estrutura completa e profissional.</p>
+      <p><strong>Inclui:</strong></p>
+      <ul style="padding-left: 1.2rem; margin: 0;">
+        <li>✅ Banner rotativo personalizável</li>
+        <li>✅ Integração com WhatsApp (botão flutuante)</li>
+        <li>✅ Carrinho de compras com cálculo total e entrega</li>
+        <li>✅ Checkout via Mercado Pago</li>
+        <li>✅ Disponibilidade para qualquer integração de pagamento online</li>
+        <li>✅ Sistema de Delivery</li>
+        <li>✅ Layout da loja personalizável</li>
+        <li>✅ Seção de mais vendidos, ofertas e lançamentos</li>
+        <li>✅ Comentários com avaliação por estrelas</li>
+        <li>✅ Login de cliente com área de pedidos</li>
+        <li>✅ Modo escuro (Dark Mode)</li>
+        <li>✅ Menu responsivo com design mobile</li>
+        <li>✅ Sistema de comentários e avaliações com armazenamento</li>
+        <li>✅ Layout 100% responsivo e moderno</li>
+      </ul>
+
+      <p><strong>Diferenciais Premium:</strong></p>
+      <ul style="padding-left: 1.2rem; margin: 0;">
+        <li>📊 Painel completo de vendas com gráficos e relatórios</li>
+        <li>📦 Controle de estoque e produtos mais vendidos</li>
+        <li>👨‍💼 Integração com banco de dados para gestão total</li>
+        <li>🛠️ Suporte para personalização e extensões futuras</li>
+      </ul>
+
+      <p><strong>Observação:</strong> Este template é exclusivo para assinantes do plano Premium.</p>
+    </div>
+  </div>
+
+  <div class="template premium-locked" style="
+    background-image: url('URL_DA_IMAGEM_AQUI');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+  ">
+
+    <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+      <h3 style="margin: 0; color: white;">
+        <i class="fas fa-lock"></i> Template IA faz tudo
+      </h3>
+    </div>
+
+    {% if is_premium %}
+      <button class="btn" onclick="previewTemplate('/template/template4')">
+        <i class="fas fa-eye"></i> Ver Template Premium
+      </button>
+    {% else %}
+      <button class="btn buy-premium" onclick="handlePremiumPurchase()">
+        <i class="fas fa-credit-card"></i> Adquirir Premium
+      </button>
+    {% endif %}
+
+    <button class="btn" onclick="toggleDetalhes('')">
+      <i class="fas fa-info-circle"></i> Detalhes
+    </button>
+
+    <div id="" style="
+      display: none;
+      text-align: left;
+      margin-top: 10px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    ">
+      <p><strong>Ideal para:</strong> Artistas, designers, freelancers e criadores de conteúdo.</p>
+      <p><strong>Inclui:</strong> Seção de portfólio, blog pessoal, botão flutuante de contato e design ousado.</p>
+      <p><strong>Diferencial:</strong> Visual criativo com animações suaves e layout disruptivo.</p>
+    </div>
+  </div>
+
+</div>
             
-                    <div class="template premium-locked" style="
-  background-image: url('URL_DA_IMAGEM_AQUI');
+            <h2 id="gourmet" class="categoria-titulo"><i class="fas fa-utensils"></i> Segmento: Alimentação e Gourmet</h2>
+            <div class="template-list">
+        
+              <div class="template" style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940658/pingyangsp_1681758139_3083133193474159437_56007568342_hyghhf.jpg'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-utensils"></i> Template Restaurante, lanchonete, pizzaria, etc ...
+                  </h3>
+                </div>
+                <button class="btn" onclick="previewTemplate('/template-preview/template8/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+                <button class="btn" onclick="toggleDetalhes('detalhes-template8')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+                <div id="detalhes-template8" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <p><strong>Ideal para:</strong> Restaurantes, lanchonetes, pizzarias e estabelecimentos gastronômicos que desejam vender online de forma simples e direta.</p>
+                  <p><strong>Inclui:</strong> Cardápio com imagens dos pratos, galeria de fotos do ambiente, botão flutuante de modo escuro/claro, pedidos via WhatsApp com carrinho integrado, QR Code automático para acesso rápido ao site.</p>
+                  <p><strong>Diferenciais:</strong> Sistema de carrinho simples que monta o pedido completo no WhatsApp, aviso em tempo real se o restaurante está aberto ou fechado, design moderno, leve, e totalmente responsivo para celular.</p>
+                </div>
+              </div>
+        
+              <div class="template" style="background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1743612769/cs_loja_barra_eduuul.webp'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-heart"></i> Template para loja Gourmet
+                  </h3>
+                </div>
+                <button class="btn" onclick="previewTemplate('/template-preview/template12/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+                <button class="btn" onclick="toggleDetalhes('detalhes-template12')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+                <div id="detalhes-template12" style="display: none; text-align: left; margin-top: 10px; background: rgba(255, 255, 255, 0.85); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <p><strong>Ideal para:</strong> Confeitarias, Docerias, Lojas de Sobremesas e Empreendedoras Gourmet</p>
+                  <p><strong>Recursos:</strong></p>
+                  <ul style="margin-top: 5px; padding-left: 18px; list-style: disc;">
+                    <li>Design delicado, acolhedor e 100% responsivo</li>
+                    <li>Carrinho flutuante com contador de itens e botão de envio para WhatsApp</li>
+                    <li>Seleção de sabores para cada produto antes de adicionar ao carrinho</li>
+                    <li>Campo de observações personalizado para o cliente adicionar pedidos especiais</li>
+                    <li>Notificações animadas ao adicionar produtos no carrinho</li>
+                    <li>Seções organizadas com grid de produtos, promoção e depoimentos</li>
+                    <li>Botões com ícones integrados para ações mais intuitivas</li>
+                  </ul>
+                  <p><strong>Diferencial:</strong> Navegação intuitiva com foco em vendas rápidas via WhatsApp, além de animações e alertas que tornam a experiência mais envolvente.</p>
+                </div>
+              </div>
+        
+            </div> <!-- fechamento correto da primeira template-list -->
+        
+            <h2 class="categoria-titulo"><i class="fas fa-plane-departure"></i> Segmento: Turismo e Lazer</h2>
+            <div class="template-list">
+              <div class="template" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-heart"></i> Template para agência de viagens
+                  </h3>
+                </div>
+                <button class="btn" onclick="previewTemplate('/template-preview/template1/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+                <button class="btn" onclick="toggleDetalhes('detalhes-template1')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+                <div id="detalhes-template1" style="display: none; text-align: left; margin-top: 10px; background: rgba(255, 255, 255, 0.85); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <p><strong>Ideal para:</strong> Agências de Viagem, Turismo e Guias</p>
+                  <p><strong>Recursos:</strong></p>
+                  <ul style="margin-top: 5px; padding-left: 18px; list-style: disc;">
+                    <li>Design visual impactante e 100% responsivo</li>
+                    <li>Seções de pacotes turísticos com ícones personalizados</li>
+                    <li>Formulário de depoimentos com armazenamento local</li>
+                    <li>Quiz interativo para ajudar o cliente a escolher um pacote</li>
+                    <li>Depoimentos exibidos também no rodapé</li>
+                    <li>Barra de progresso de leitura no topo da tela</li>
+                    <li>Notificações em tempo real tipo: “João acabou de reservar para Cancún!”</li>
+                  </ul>
+                  <p><strong>Diferencial:</strong> Ferramentas interativas e efeitos sutis que aumentam o engajamento e mantêm o visitante mais tempo no site.</p>
+                </div>
+              </div>
+            </div>
+
+            <h2 class="categoria-titulo"><i class="fas fa-dumbbell"></i> Segmento: Fitness e Saúde</h2>
+            <div class="template-list">
+            
+              <div class="template" style="background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1743615373/iStock-692173084_fhqr28.webp'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-running"></i> Template para personal trainer/nutricionista
+                  </h3>
+                </div>
+            
+                <!-- Botão de Visualizar -->
+                <button class="btn" onclick="previewTemplate('/template-preview/template4/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+            
+                <!-- Botão de Detalhes -->
+                <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+            
+                <!-- Painel oculto com informações -->
+                <div id="detalhes-template4" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <p><strong>Ideal para:</strong> Personal trainers, coaches fitness, assessorias esportivas e academias individuais.</p>
+                  <p><strong>Inclui:</strong></p>
+                  <ul style="padding-left:18px; margin-top:5px;">
+                    <li>✅ Diagnóstico de plano com base na meta de peso</li>
+                    <li>✅ Download gratuito de PDF de desafio (5 dias de foco)</li>
+                    <li>✅ Quiz interativo: "Qual treino combina com você?"</li>
+                    <li>✅ Galeria animada com resultados reais de alunos</li>
+                    <li>✅ Depoimentos e diferenciais profissionais</li>
+                    <li>✅ Integração direta com WhatsApp</li>
+                    <li>✅ Player de áudio motivacional (com sua voz se quiser!)</li>
+                  </ul>
+                  <p><strong>Diferencial:</strong> Esse template é <u><b>completamente gratuito</b></u> e entrega funções que você <b>não consegue nas redes sociais</b>. Ideal para quem quer profissionalizar o atendimento, gerar mais conversões e mostrar autoridade no seu método.</p>
+                </div>
+              </div>
+            
+              <div class="template" style="background-image: url('https://plus.unsplash.com/premium_photo-1670505062582-fdaa83c23c9e?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-dumbbell"></i> Template para Academia
+                  </h3>
+                </div>
+            
+                <!-- Botão de Visualizar -->
+                <button class="btn" onclick="previewTemplate('/template-preview/template5/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+            
+                <!-- Botão de Detalhes -->
+                <button class="btn" onclick="toggleDetalhes('detalhes-template5')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+            
+                <!-- Painel oculto com informações -->
+                <div id="detalhes-template5" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <p><strong>Ideal para:</strong> Academias de bairro, studios fitness, box de crossfit e redes de musculação que desejam uma presença forte online.</p>
+                  <p><strong>Inclui:</strong> Página com vídeo institucional, quiz para sugestão de treino, calculadora de IMC, galeria de antes & depois, planos mensais, integração com WhatsApp e botão de matrícula.</p>
+                  <p><strong>Diferencial:</strong> Visual moderno, layout imersivo, seções interativas (como o quiz e IMC), totalmente responsivo e pensado para gerar engajamento, agendamentos e conversões com foco nos treinos HIIT, funcional e musculação.</p>
+                </div>
+              </div>     
+                    
+
+
+</div>    
+
+
+<h2 id="moda" class="categoria-titulo"><i class="fas fa-tshirt"></i> Segmento: Beleza e bem-estar</h2>
+<div class="template-list">
+
+  <div class="template" style="
+    background-image: url('https://images.unsplash.com/photo-1567958451986-2de427a4a0be?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+  ">
+    <h3 style="text-shadow: 1px 1px 4px rgba(255,255,255,0.6); color: #080808;">
+      <i class="fas fa-tshirt"></i> Template Loja de Roupas
+    </h3>
+
+    <!-- Botão de Visualizar -->
+    <button class="btn" onclick="previewTemplate('/template-preview/template2/index')">
+      <i class="fas fa-eye"></i> Visualizar
+    </button>
+
+    <!-- Botão de Detalhes -->
+    <button class="btn" onclick="toggleDetalhes('detalhes-template2')">
+      <i class="fas fa-info-circle"></i> Detalhes
+    </button>
+
+    <!-- Painel oculto com informações -->
+    <div id="detalhes-template2" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+      <p><strong>Ideal para:</strong> Lojas de roupas, boutiques, brechós e vitrines de moda.</p>
+      <p><strong>Inclui:</strong> Galeria de fotos por produto, layout responsivo, seção de destaques, vitrine e depoimentos de clientes.</p>
+      <p><strong>Diferencial:</strong> Carrinho de compras que envia diretamente para o WhatsApp com os produtos escolhidos, sistema de quiz interativo para sugestão de looks, e formulário de comentários com salvamento local.</p>
+    </div>
+  </div>
+
+  <div class="template" style="
+    background-image: url('https://images.unsplash.com/photo-1549271568-e87e07c5406b?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+  ">
+    <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+      <h3 style="margin: 0; color: white;">
+        <i class="fas fa-scissors"></i> Template para Barbearia
+      </h3>
+    </div>
+
+    <!-- Botão de Visualizar -->
+    <button class="btn" onclick="previewTemplate('/template-preview/template3/index')">
+      <i class="fas fa-eye"></i> Visualizar
+    </button>
+
+    <!-- Botão de Detalhes -->
+    <button class="btn" onclick="toggleDetalhes('detalhes-template3')">
+      <i class="fas fa-info-circle"></i> Detalhes
+    </button>
+
+    <!-- Painel oculto com informações -->
+    <div id="detalhes-template3" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+      <p><strong>Ideal para:</strong> Barbearias, salões masculinos e estúdios de corte.</p>
+      <p><strong>Inclui:</strong> Sessão com serviços, agendamento por WhatsApp, carrossel de fotos antes/depois, quiz "Monte seu estilo" e botão com áudio de boas-vindas personalizado.</p>
+      <p><strong>Diferencial:</strong> Layout moderno e impactante, interações que geram engajamento, visual 100% responsivo e pronto para conversão de novos clientes.</p>
+    </div>
+  </div>
+
+</div>
+
+<h2 id="construcao" class="categoria-titulo"><i class="fas fa-hard-hat"></i> Segmento: Construção</h2>
+<div class="template-list">
+
+  <div class="template" style="
+    background-image: url('https://plus.unsplash.com/premium_photo-1681992176054-e2f410194b02?auto=format&fit=crop&w=1974&q=80');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+  ">
+    <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+      <h3 style="margin: 0; color: white;">
+        <i class="fas fa-hard-hat"></i> Template para construtora
+      </h3>
+    </div>
+
+    <!-- Botão de Visualizar -->
+    <button class="btn" onclick="previewTemplate('/template-preview/template7/index')">
+      <i class="fas fa-eye"></i> Visualizar
+    </button>
+
+    <!-- Botão de Detalhes -->
+    <button class="btn" onclick="toggleDetalhes('detalhes-template7')">
+      <i class="fas fa-info-circle"></i> Detalhes
+    </button>
+
+    <!-- Painel oculto com informações -->
+    <div id="detalhes-template7" style="
+      display: none;
+      text-align: left;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    ">
+      <section class="section" style="background-color:#fff; padding:2rem; border-radius:10px; max-width:900px; margin:auto;">
+        <h2 style="color:#1f2937;"><i class="fas fa-star"></i> Detalhes do Template</h2>
+        <p><strong>Ideal para:</strong> Construtoras, engenheiros civis, arquitetos, empresas de reformas e empreendimentos que desejam apresentar seus serviços com credibilidade e impacto visual.</p>
+        <p><strong>Inclui:</strong> Página institucional com seções sobre etapas da obra, galeria de projetos realizados, formulário de orçamento, vídeo institucional, diferenciais e integração com WhatsApp.</p>
+        <p><strong>Diferencial:</strong> Design moderno, layout limpo e responsivo, animações suaves, foco em conversão e apresentação profissional da empresa e seus projetos.</p>
+      </section>
+    </div>
+  </div>
+</div>
+               
+<h2 id="sexyshop" class="categoria-titulo"><i class="fas fa-kiss-wink-heart"></i> Segmento: Sensualidade e Bem-Estar Íntimo</h2>
+<div class="template-list">
+  <div class="template" style="
+    background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743545386/depositphotos_641020570-stock-photo-handcuffs-sex-shop-heels-bra_h1ncgm.webp');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 30px;
+  ">
+    <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+      <h3 style="margin: 0; color: white;">
+        <i class="fas fa-kiss-wink-heart"></i> Template para sexyshop
+      </h3>
+    </div>
+  
+    <!-- Botão de Visualizar -->
+    <button class="btn" onclick="previewTemplate('/template-preview/template6/index')">
+      <i class="fas fa-eye"></i> Visualizar
+    </button>
+  
+    <!-- Botão de Detalhes -->
+    <button class="btn" onclick="toggleDetalhes('detalhes-template6')">
+      <i class="fas fa-info-circle"></i> Detalhes
+    </button>
+  
+    <!-- Painel oculto com informações -->
+    <div id="detalhes-template6" style="
+      display: none;
+      text-align: left;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+    ">
+      <p><strong>Ideal para:</strong> Lojas sensuais, boutiques eróticas e empreendimentos focados em prazer, autoconhecimento e bem-estar íntimo.</p>
+      <p><strong>Inclui:</strong> Vitrine de produtos, quiz de estilo sensual, agendamento de atendimento especial, integração com WhatsApp, player de áudio com voz IA personalizada, vídeo embutido do clima e sessão especial de “Rodada da Sorte”.</p>
+      <p><strong>Diferencial:</strong> Visual provocante e moderno, com seções interativas como a Roleta do Prazer com som e animação, linguagem ousada, 100% responsivo e otimizadíssimo para conversão. Ideal para gerar desejo, engajamento e aumentar suas vendas no segmento íntimo.</p>
+    </div>
+  </div>
+</div>
+       
+<h2 id="petshop" class="categoria-titulo"><i class="fas fa-paw"></i> Segmento: Bem-Estar Animal</h2>
+<div class="template" style="
+  background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742943535/download_j452gq.jpg');
   background-size: cover;
   background-position: center;
   color: white;
@@ -1432,42 +1436,39 @@ iframe {
 ">
   <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
     <h3 style="margin: 0; color: white;">
-      <i class="fas fa-lock"></i> Template IA faz tudo
+      <i class="fas fa-paw"></i> Template para Petshop
     </h3>
   </div>
 
-  {% if is_premium %}
-    <button class="btn" onclick="previewTemplate('/template/template4')">
-      <i class="fas fa-eye"></i> Ver Template Premium
-    </button>
-  {% else %}
-    <button class="btn buy-premium" onclick="handlePremiumPurchase()">
-      <i class="fas fa-credit-card"></i> Adquirir Premium
-    </button>
-  {% endif %}
+  <!-- Botão de Visualizar -->
+  <button class="btn" onclick="previewTemplate('/template-preview/template9/index')">
+    <i class="fas fa-eye"></i> Visualizar
+  </button>
 
-  <button class="btn" onclick="toggleDetalhes('detalhes-template4')">
+  <!-- Botão de Detalhes -->
+  <button class="btn" onclick="toggleDetalhes('detalhes-template9')">
     <i class="fas fa-info-circle"></i> Detalhes
   </button>
 
-  <div id="detalhes-template4" style="
+  <div id="detalhes-template9" style="
     display: none;
     text-align: left;
     margin-top: 10px;
-    background: #fff;
+    background: rgba(255,255,255,0.95);
     padding: 10px;
     border-radius: 6px;
     font-size: 14px;
     color: #333;
     box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
   ">
-    <p><strong>Ideal para:</strong> Artistas, designers, freelancers e criadores de conteúdo.</p>
-    <p><strong>Inclui:</strong> Seção de portfólio, blog pessoal, botão flutuante de contato e design ousado.</p>
-    <p><strong>Diferencial:</strong> Visual criativo com animações suaves e layout disruptivo.</p>
+    <p><strong>Ideal para:</strong> Petshops, clínicas veterinárias, banho e tosa, lojas de produtos para pets e serviços de cuidado animal.</p>
+    <p><strong>Inclui:</strong> Página moderna com seções como: serviços (banho, tosa, consultas), produtos em destaque, botão de WhatsApp, formulário de agendamento e galeria de pets felizes.</p>
+    <p><strong>Diferenciais:</strong> Visual atrativo com ícones fofos, totalmente responsivo, integração direta com WhatsApp, formulário funcional e foco total em conversão para negócios do mundo pet.</p>
   </div>
 </div>
-  
-        </section>
+            
+
+
 
         <!-- Modal para pré-visualização -->
 <div id="previewModal" class="modal">
@@ -1761,6 +1762,24 @@ function previewTemplate(templateURL) {
   modal.style.display = "flex";
 }
 
+
+  function filtrarCategoria() {
+    const valorSelecionado = document.getElementById('categoriaSelect').value;
+    const secoes = document.querySelectorAll('.categoria-titulo');
+
+    secoes.forEach((titulo) => {
+      const id = titulo.id;
+      const lista = titulo.nextElementSibling; // pega a .template-list logo após o <h2>
+
+      if (valorSelecionado === "todas" || valorSelecionado === id) {
+        titulo.style.display = "block";
+        if (lista) lista.style.display = "flex";
+      } else {
+        titulo.style.display = "none";
+        if (lista) lista.style.display = "none";
+      }
+    });
+  }
 
 
 function toggleDetalhes(id) {

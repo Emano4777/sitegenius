@@ -1,0 +1,396 @@
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
+  </head>
+  
+<style>
+    .produto {
+      background: #fffbe6;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+  
+    .produto:hover {
+      transform: scale(1.02);
+    }
+
+    #icone-carrinho {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #b36b00;
+  color: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.6rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.carrinho-flutuante {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #fff;
+  border: 2px solid #b36b00;
+  border-radius: 12px;
+  width: 300px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.carrinho-topo {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.carrinho-itens {
+  margin-top: 0.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 160px;
+}
+
+.btn-esvaziar {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #ccc;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+#icone-carrinho {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #b36b00;
+  color: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.6rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.btn-enviar-whats {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #25d366;
+  color: white;
+  text-align: center;
+  border-radius: 0 0 10px 10px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Botão "Adicionar ao Carrinho" */
+.btn-carrinho {
+  margin-top: 1rem;
+  padding: 10px 20px;
+  background: #b36b00;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+
+.btn-carrinho:hover {
+  background: #8a4f00;
+}
+
+/* Botão "➖" para minimizar carrinho */
+.btn-minimizar {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #b36b00;
+  transition: transform 0.2s ease;
+}
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn-minimizar:hover {
+  transform: scale(1.2);
+}
+
+
+footer a:hover {
+  color: #fff;
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
+  </style>
+  
+
+<header style="background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1743609174/doces-finos-delivery-loja-dona-confeiteira-03_msyale.jpg'); background-size:cover; background-position:center; color:white; text-align:center; padding:5rem 2rem;">
+    <div style="background-color: rgba(0,0,0,0.5); display: inline-block; padding: 1rem 2rem; border-radius: 10px;">
+        <h1 style="font-size:3rem; color: #fff; margin: 0;">Delícias da Mari</h1>
+        <p style="font-size:1.2rem; color: #f0f0f0; margin-top: 0.5rem;">Doces artesanais feitos com amor e um toque gourmet.</p>
+      </div>      
+  </header>
+  
+  <section style="padding:3rem 1rem; max-width:1000px; margin:auto; text-align:center;">
+    <h2 style="color:#b36b00;">🍬 Nossos Favoritos</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-top:2rem;">
+        <div class="produto">
+            <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608718/13-receitas-de-brigadeiros-gourmet-faceis_jej9nz.webp" style="width:100%; border-radius:10px;">
+            <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608718/receitas-de-brigadeiro-gourmet-4_fanwu8.webp" style="width:100%; border-radius:10px;">           
+            <h3>Brigadeiro Gourmet</h3>
+            <p>Cremoso, com chocolate belga.</p>
+            <select id="sabor-brigadeiro" style="margin:10px 0; padding:6px; border-radius:5px;">
+                <option value="">Escolha o sabor</option>
+                <option value="Tradicional">Tradicional</option>
+                <option value="Leite Ninho">Leite Ninho</option>
+                <option value="Coco">Coco</option>
+              </select>
+              <button class="btn-carrinho" onclick="adicionarCarrinho('Brigadeiro Gourmet', document.getElementById('sabor-brigadeiro').value)">Adicionar ao Carrinho</button>
+          </div>
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608718/images_3_byr4op.jpg" style="width:100%; border-radius:10px;">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608718/hqdefault_hihoia.jpg" style="width:100%; border-radius:10px;">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608718/bolo-de-pote-com-3-recheios_vvkqa6.avif" style="width:100%; border-radius:10px;">
+       
+        <h3>Bolo de Pote</h3>
+        <p>Vários sabores e camadas irresistíveis.</p>
+        <select id="sabor-bolo" style="margin:10px 0; padding:6px; border-radius:5px;">
+            <option value="">Escolha o sabor</option>
+            <option value="Chocolate com morango">Chocolate com morango</option>
+            <option value="Doce de leite">Doce de leite</option>
+            <option value="Prestígio">Prestígio</option>
+          </select>
+          <button class="btn-carrinho" onclick="adicionarCarrinho('Bolo de Pote', document.getElementById('sabor-bolo').value)">Adicionar ao Carrinho</button>
+    </div>
+      </div>
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608719/ovos-p%C3%A1scoa_pm0vym.jpg" style="width:100%; border-radius:10px;">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608719/saiba-como-armazenar-seus-ovos-de-pascoa-para-lucrar_hguaud.jpg" style="width:100%; border-radius:10px;">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1743608719/58ec0d9a0e69f_ovos-de-pascoa_make_a_cake_yxumkx.jpg" style="width:100%; border-radius:10px;">
+        
+        <h3>Ovo de Páscoa</h3>
+        <p>Confira nossos ovos de páscoa.</p>
+        <select id="sabor-ovo" style="margin:10px 0; padding:6px; border-radius:5px;">
+            <option value="">Escolha o sabor</option>
+            <option value="Brigadeiro">Brigadeiro</option>
+            <option value="Chocolate Branco">Chocolate Branco</option>
+            <option value="Derivado">Derivado</option>
+          </select>
+          <button class="btn-carrinho" onclick="adicionarCarrinho('Ovo de Páscoa', document.getElementById('sabor-ovo').value)">Adicionar ao Carrinho</button>          
+    </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#fff0e6; padding:2rem; text-align:center;">
+    <h2 style="color:#b36b00;">🎉 Promoção da Semana</h2>
+    <p><strong>Combo 3 Brigadeiros + 1 Bolo de Pote</strong> por apenas <span style="color:#e60000;">R$ 24,90</span>!</p>
+    <button class="btn-carrinho" onclick="adicionarCarrinho('Combo Promocional', 'Brigadeiro + Bolo')">Quero Aproveitar</button>
+  </section>
+  
+  <section style="background:#fffbe6; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#b36b00;">❤️ Quem já provou, recomenda!</h2>
+    <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">“Nunca comi um doce tão gostoso, além da entrega ser super rápida!”<br><strong>— Juliana M.</strong></blockquote>
+    <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">“Fiz a encomenda pelo Instagram e recebi tudo certinho, embalado com carinho.”<br><strong>— Paulo C.</strong></blockquote>
+  </section>
+  <div class="carrinho-flutuante" id="carrinho">
+    <div class="carrinho-topo">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>🛒 Seu Carrinho</h4>
+        <button onclick="toggleCarrinho()" class="btn-minimizar">➖</button>
+
+      </div>
+  
+      <div class="carrinho-itens" id="carrinho-itens">
+        <p>Nenhum item ainda.</p>
+      </div>
+      <textarea id="obs" placeholder="Observações (ex: sem açúcar, entrega às 15h)" style="margin-top:10px; width:100%; padding:6px; border-radius:5px;"></textarea>
+
+  
+      <button onclick="esvaziarCarrinho()" class="btn-esvaziar">
+        <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> Esvaziar Carrinho
+      </button>
+    </div>
+  
+    <a id="btn-whats" class="btn-enviar-whats" href="#" target="_blank">
+        <i class="fab fa-whatsapp" style="margin-right: 6px;"></i> Enviar por WhatsApp
+      </a>
+  </div>
+  <div id="icone-carrinho" onclick="toggleCarrinho()">
+    🛒
+    <span id="contador-carrinho" style="
+      position:absolute;
+      top:-8px;
+      right:-8px;
+      background:red;
+      color:white;
+      border-radius:50%;
+      width:20px;
+      height:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:bold;
+      z-index:10002;
+    ">0</span>
+  </div>
+
+  
+  <script>
+    let carrinho = [];
+    let carrinhoVisivel = true;
+  
+    function adicionarCarrinho(produto,sabor) {
+        if (!sabor) {
+    alert('Por favor, selecione um sabor antes de adicionar ao carrinho.');
+    return;
+  }
+      
+     const item = `${produto} - Sabor: ${sabor}`;
+     console.log('Adicionado ao carrinho:', item);
+      carrinho.push(item); 
+      mostrarMensagemCarrinho();
+      atualizarCarrinho();
+    }
+  
+    function atualizarCarrinho() {
+  const container = document.getElementById('carrinho-itens');
+  const btn = document.getElementById('btn-whats');
+  const obs = document.getElementById('obs').value || "";
+  const mensagem = encodeURIComponent("Olá! Gostaria de fazer um pedido com os seguintes itens:\n\n" + carrinho.map(item => `• ${item}`).join('\n') + (obs ? `\n\nObs: ${obs}` : ""));
+
+  if (carrinho.length === 0) {
+    container.innerHTML = "<p>Nenhum item ainda.</p>";
+    btn.href = "#";
+    return;
+  }
+
+  const lista = carrinho.map(item => `• ${item}`).join('<br>');
+  container.innerHTML = lista;
+
+  btn.href = "https://wa.me/5511999999999?text=" + mensagem;
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+}
+
+  
+function esvaziarCarrinho() {
+  carrinho = [];
+  document.getElementById('obs').value = ''; // limpa observações
+  atualizarCarrinho();
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+}
+  
+    function toggleCarrinho() {
+  const carrinhoDiv = document.getElementById('carrinho');
+  const icone = document.getElementById('icone-carrinho');
+
+  if (carrinhoVisivel) {
+    carrinhoDiv.style.display = 'none';
+    icone.style.display = 'flex';  // mostrar o ícone redondo
+  } else {
+    carrinhoDiv.style.display = 'block';
+    icone.style.display = 'none';  // esconder o ícone redondo
+  }
+
+  carrinhoVisivel = !carrinhoVisivel;
+}
+
+function mostrarMensagemCarrinho() {
+  const msg = document.getElementById('mensagem-carrinho');
+  msg.style.display = 'block';
+  msg.style.animation = 'slideUpFade 0.5s ease';
+
+  setTimeout(() => {
+    msg.style.opacity = '0';
+    msg.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      msg.style.display = 'none';
+      msg.style.opacity = '';
+      msg.style.transform = '';
+    }, 300);
+  }, 2000);
+}
+
+
+document.getElementById('carrinho').style.display = 'none';
+document.getElementById('icone-carrinho').style.display = 'flex';
+carrinhoVisivel = false;
+
+carrinhoVisivel = true;
+  </script>
+    <a href="https://wa.me/5511999999999" target="_blank" style="
+    position:fixed; bottom:80px; left:20px;
+    background:#25d366; color:#fff;
+    padding:12px 20px; border-radius:30px;
+    font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    z-index:9999; text-decoration:none;
+    animation: pulse 1.6s infinite;
+  ">
+    💬 Fale com a Mari
+  </a>
+
+  <div id="mensagem-carrinho" style="
+  display:none;
+  position:fixed;
+  bottom:100px;
+  right:20px;
+  background:#4caf50;
+  color:white;
+  padding:10px 20px;
+  border-radius:10px;
+  font-weight:bold;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  z-index:10001;
+  animation: slideUpFade 0.5s ease forwards;
+">
+  ✅ Item adicionado ao carrinho!
+</div>
+  
+  <footer style="background:#222; color:white; text-align:center; padding:2rem;">
+    <p>
+        <a href="https://instagram.com/deliciasdamari" target="_blank" style="color:#f9b233; font-size:1.8rem;">
+          <i class="fab fa-instagram"></i>
+        </a>
+      </p>      
+    <p>© 2025 Delícias da Mari - Todos os direitos reservados</p>
+  </footer>
+  
