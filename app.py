@@ -54,7 +54,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_PATH'] = '/'
 
 
-MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-2694841338174545-032011-c45585f95cff8baeac33dda92abce761-2342791238"
+MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
 # Conexão com o Banco de Dados
 BASE_URL = "https://sitegenius.com.br"
 
@@ -1594,6 +1594,68 @@ def generate_payment():
         print("Detalhes:", response.json())
         return "Erro ao gerar pagamento", 500
 
+@app.route('/generate-payment-transparente')
+def generate_payment_transparente():
+    plano = request.args.get("plano")
+    if not plano:
+        return jsonify({"error": "Plano não informado"}), 400
+
+    planos_info = {
+        "essential": {"price": 32.50, "title": "Premium Essential"},
+        "moderado": {"price": 59.90, "title": "Premium Moderado"},
+        "master": {"price": 120.90, "title": "Premium Master"}
+    }
+
+    if plano not in planos_info:
+        return jsonify({"error": "Plano inválido"}), 400
+
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Usuário não autenticado"}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT nome, email FROM users2 WHERE id = %s", (user_id,))
+    user_info = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not user_info:
+        return jsonify({"error": "Usuário não encontrado"}), 404
+
+    payment_data = {
+        "items": [{
+            "title": f"{planos_info[plano]['title']} - Site Genius",
+            "quantity": 1,
+            "currency_id": "BRL",
+            "unit_price": planos_info[plano]["price"]
+        }],
+        "payer": {
+            "email": user_info[1],
+            "name": user_info[0]
+        },
+        "metadata": {
+            "user_id": user_id,
+            "plano": plano
+        },
+        "back_urls": {
+            "success": f"{BASE_URL}/payment-success?plano={plano}",
+            "failure": f"{BASE_URL}/payment-failure"
+        },
+        "auto_return": "approved"
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"  # USE SANDBOX TOKEN
+    }
+
+    response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)
+
+    if response.status_code == 201:
+        return jsonify({"preference_id": response.json()["id"]})
+    else:
+        return jsonify({"error": "Erro ao criar preferência"}), 500
 
     
 @app.route('/verificar-sessao')
@@ -1661,13 +1723,15 @@ def notificacoes():
     print("📩 Notificação recebida:", data)
 
     if data.get('type') == 'payment':
-        payment_id = data['data']['id']
-        
+        payment_id = data.get('data', {}).get('id')
+        if not payment_id:
+            print("❌ ID do pagamento ausente na notificação")
+            return 'ID ausente', 400
+
+        # Consulta do pagamento via API
         response = requests.get(
             f"https://api.mercadopago.com/v1/payments/{payment_id}",
-            headers={
-                "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"
-            }
+            headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
         )
 
         if response.status_code == 200:
@@ -1684,7 +1748,7 @@ def notificacoes():
                     cur = conn.cursor()
                     try:
                         cur.execute(
-                            "UPDATE users2 SET is_premium = TRUE, premium_level = %s WHERE id = %s",
+                            "UPDATE users2 SET is_premium = TRUE, premium_level = %s WHERE id = %s AND (is_premium = FALSE OR is_premium IS NULL)",
                             (plano, user_id)
                         )
                         conn.commit()
@@ -1695,10 +1759,15 @@ def notificacoes():
                     finally:
                         cur.close()
                         conn.close()
+                else:
+                    print("❌ Metadata incompleta (user_id ou plano ausente)")
+            else:
+                print("ℹ️ Pagamento ainda não aprovado")
         else:
             print("❌ Falha ao consultar pagamento:", response.text)
 
     return 'OK', 200
+
 
 
 

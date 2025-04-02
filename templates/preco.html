@@ -750,19 +750,23 @@ onmouseout="this.style.transform='scale(1)'"
             <h2 style="text-align: center;">💎 Planos Premium</h2>
             <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-top: 30px;">
           
-              <div class="template" style="max-width: 300px; background: #e3f2fd; border-left: 5px solid #2196f3;">
-                <h3><i class="fas fa-star"></i> Premium Essential</h3>
-                <p style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">R$ 32,50</p>
-                <ul style="text-align: left;">
-                  <li>✔ Acesso a todos os templates premium <strong>NÃO É LIBERADO os templates com IA</strong></li>
-                  <li>✔ Criação de <strong> 1 páginas extras</strong></li>
-                  <li>✔ Edição de imagens liberada</li>
-                  <li>✔ Liberação para criação de mais de 1 template</li>
-                  <li>✔ Sem anúmcio no site criado.</li>
-                  <li>✔ Liberação do acesso ao painel administrativo</li>
-                  <li>✔ Suporte via e-mail</li>
-                </ul>
-                <a href="/generate-payment?plano=essential" class="btn buy-premium">Assinar Essential</a>
+                <div class="template" style="max-width: 300px; background: #e3f2fd; border-left: 5px solid #2196f3;">
+                    <h3><i class="fas fa-star"></i> Premium Essential</h3>
+                    <p style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">R$ 32,50</p>
+                    <ul style="text-align: left;">
+                      <li>✔ Acesso a todos os templates premium <strong>NÃO É LIBERADO os templates com IA</strong></li>
+                      <li>✔ Criação de <strong>1 páginas extras</strong></li>
+                      <li>✔ Edição de imagens liberada</li>
+                      <li>✔ Liberação para criação de mais de 1 template</li>
+                      <li>✔ Sem anúncio no site criado</li>
+                      <li>✔ Liberação do acesso ao painel administrativo</li>
+                      <li>✔ Suporte via e-mail</li>
+                    </ul>
+                    <form onsubmit="return pagar('essential')">
+                      <button class="btn buy-premium" type="submit">Assinar Essential</button>
+                    </form>
+                    <div id="wallet_container_essential" style="margin-top: 15px;"></div>
+                  </div>
               </div>
           
               <div class="template" style="max-width: 300px; background: #fff3cd; border-left: 5px solid #ffc107;">
@@ -819,4 +823,32 @@ onmouseout="this.style.transform='scale(1)'"
                    
             </div>
         </section>
+        <script src="https://sdk.mercadopago.com/js/v2"></script>
+        <script>
+            const mp = new MercadoPago("APP_USR-fb62d095-5aa0-4629-95f5-4db0f45140e1");
+
+function pagar(plano) {
+  fetch(`/generate-payment-transparente?plano=${plano}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.preference_id) {
+        mp.bricks().create("wallet", `wallet_container_${plano}`, {
+          initialization: {
+            preferenceId: data.preference_id
+          },
+          customization: {
+            visual: {
+              buttonBackground: "#2196f3",
+              borderRadius: "8px"
+            }
+          }
+        });
+      } else {
+        alert("Erro ao gerar pagamento");
+      }
+    });
+  return false;
+}
+          </script>
+          
     </main>
