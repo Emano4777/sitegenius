@@ -54,7 +54,7 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_PATH'] = '/'
 
 
-MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-1315085087526645-032014-15c678db98cbc5337a726127790ad8d1-2339390291"
+MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-159038661951932-040216-41e126ddffaed400ae1a1f25863dd676-2342791238"
 # Conexão com o Banco de Dados
 BASE_URL = "https://sitegenius.com.br"
 
@@ -1597,17 +1597,21 @@ def generate_payment():
 @app.route('/generate-payment-transparente')
 def generate_payment_transparente():
     plano = request.args.get("plano")
-    if not plano:
-        return jsonify({"error": "Plano não informado"}), 400
+    servico = request.args.get("servico")
+
+    tipo = plano or servico
+    if not tipo:
+        return jsonify({"error": "Plano ou serviço não informado"}), 400
 
     planos_info = {
-        "essential": {"price": 32.50, "title": "Premium Essential"},
+        "essential": {"price": 20.00, "title": "Premium Essential"},
         "moderado": {"price": 59.90, "title": "Premium Moderado"},
-        "master": {"price": 120.90, "title": "Premium Master"}
+        "master": {"price": 120.90, "title": "Premium Master"},
+        "editar-imagens": {"price": 10.00, "title": "Desbloqueio de Edição de Imagens"}
     }
 
-    if plano not in planos_info:
-        return jsonify({"error": "Plano inválido"}), 400
+    if tipo not in planos_info:
+        return jsonify({"error": "Plano ou serviço inválido"}), 400
 
     user_id = session.get("user_id")
     if not user_id:
@@ -1625,10 +1629,10 @@ def generate_payment_transparente():
 
     payment_data = {
         "items": [{
-            "title": f"{planos_info[plano]['title']} - Site Genius",
+            "title": f"{planos_info[tipo]['title']} - Site Genius",
             "quantity": 1,
             "currency_id": "BRL",
-            "unit_price": planos_info[plano]["price"]
+            "unit_price": planos_info[tipo]["price"]
         }],
         "payer": {
             "email": user_info[1],
@@ -1636,10 +1640,11 @@ def generate_payment_transparente():
         },
         "metadata": {
             "user_id": user_id,
-            "plano": plano
+            "plano": plano if plano else None,
+            "servico": servico if servico else None
         },
         "back_urls": {
-            "success": f"{BASE_URL}/payment-success?plano={plano}",
+            "success": f"{BASE_URL}/payment-success?plano={tipo}",
             "failure": f"{BASE_URL}/payment-failure"
         },
         "auto_return": "approved"
@@ -1647,7 +1652,7 @@ def generate_payment_transparente():
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"  # USE SANDBOX TOKEN
+        "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"
     }
 
     response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)

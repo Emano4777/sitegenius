@@ -1,0 +1,362 @@
+
+<head><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"></head>
+
+
+<style>
+
+  @keyframes slideUpFade {
+    from {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #fffdfd;
+  }
+
+  h1, h2, h3 {
+    font-family: 'Poppins', sans-serif;
+  }
+  .btn-esvaziar {
+  background-color: #ccc;
+  color: #333;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-esvaziar:hover {
+  background-color: #999;
+}
+  .btn-carrinho {
+    background-color: #6b006b;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.3s ease;
+  }
+
+  .btn-carrinho:hover {
+    background-color: #9e009e;
+  }
+
+  #carrinho {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  #icone-carrinho i {
+    font-size: 20px;
+  }
+
+  #carrinho button i,
+  #btn-whats i {
+    margin-right: 6px;
+  }
+
+  #carrinho-itens {
+    font-size: 14px;
+    text-align: left;
+    margin-bottom: 10px;
+  }
+
+  textarea#obs {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+  }
+
+  /* Mensagem de item adicionado */
+  #mensagem-carrinho {
+    animation: fadeIn 0.3s ease-in-out;
+    font-size: 14px;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsividade do carrinho */
+  @media (max-width: 500px) {
+    #carrinho {
+      right: 5px;
+      left: 5px;
+      max-width: unset;
+    }
+
+    #icone-carrinho {
+      right: 5px;
+    }
+  }
+
+
+
+    @keyframes slideUpFade {
+      from {
+        opacity: 1;
+        transform: translateY(0px);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
+    </style>
+
+<header style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632061/9cc37a26ebad61af3f42afebe95965d9_q78gbr.jpg'); background-size:cover; background-position:center; color:white; text-align:center; padding:5rem 2rem;">
+    <div style="background-color: rgba(0,0,0,0.4); display: inline-block; padding: 1rem 2rem; border-radius: 10px;">
+        <h1 style="font-size:3rem; color: #fff; margin: 0;">Açaí & Sorvetes do Júa</h1>
+        <p style="font-size:1.2rem; color: #f0f0f0; margin-top: 0.5rem;">Refresque seu dia com nossas delícias geladas e saudáveis!</p>
+      </div>      
+  </header>
+  
+  <section style="padding:3rem 1rem; max-width:1000px; margin:auto; text-align:center;">
+    <h2 style="color:#6b006b;">🍦 Nossas Opções Geladas</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-top:2rem;">
+        <div class="produto">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632238/ab67616d00001e02445f1b5a891035acc43ba04f_ndonhl.jpg" style="width:100%; border-radius:10px;">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632238/images_8_dxpep9.jpg" style="width:100%; border-radius:10px;">
+            <h3>Açaí Tradicional</h3>
+            <p>Feito com fruta pura, sem xaropes!</p>
+            <select id="sabor-acai" style="margin:10px 0; padding:6px; border-radius:5px;">
+                <option value="">Escolha o tamanho</option>
+                <option value="300ml">300ml</option>
+                <option value="500ml">500ml</option>
+                <option value="1L">1L</option>
+              </select>
+              <button class="btn-carrinho" onclick="adicionarCarrinho('Açaí Tradicional', document.getElementById('sabor-acai').value)">Adicionar ao Carrinho</button>
+          </div>
+  
+          <div class="produto">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632238/images_9_hozazy.jpg" style="width:100%; border-radius:10px;">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632237/images_10_ohosqv.jpg" style="width:100%; border-radius:10px;">
+           
+            <h3>Sorvete Artesanal</h3>
+            <p>Cremoso, feito na hora com ingredientes frescos.</p>
+            <select id="sabor-sorvete" style="margin:10px 0; padding:6px; border-radius:5px;">
+                <option value="">Escolha o sabor</option>
+                <option value="Chocolate">Chocolate</option>
+                <option value="Morango">Morango</option>
+                <option value="Baunilha">Baunilha</option>
+              </select>
+              <button class="btn-carrinho" onclick="adicionarCarrinho('Sorvete Artesanal', document.getElementById('sabor-sorvete').value)">Adicionar ao Carrinho</button>
+          </div>
+  
+          <div class="produto">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632238/images_11_siz94x.jpg" style="width:100%; border-radius:10px;">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632238/images_12_t3iypj.jpg" style="width:100%; border-radius:10px;">
+            
+            <h3>Combo Verão</h3>
+            <p>Açaí + 2 bolas de sorvete + topping de granola</p>
+            <select id="sabor-combo" style="margin:10px 0; padding:6px; border-radius:5px;">
+                <option value="">Escolha o tamanho</option>
+                <option value="Pequeno">Pequeno</option>
+                <option value="Médio">Médio</option>
+                <option value="Grande">Grande</option>
+              </select>
+              <button class="btn-carrinho" onclick="adicionarCarrinho('Combo Verão', document.getElementById('sabor-combo').value)">Adicionar ao Carrinho</button>
+          </div>
+    </div>
+  </section>
+
+  <section style="background:#fffbe6; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#6b006b;">🍓 Monte Seu Açaí Perfeito</h2>
+    <p>Escolha os acompanhamentos e monte seu açaí do jeitinho que você ama!</p>
+    <div style="display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:2rem;">
+        <select id="combo-tamanho" style="padding:8px; border-radius:8px;">
+            <option>Escolha o Tamanho</option>
+            <option>300ml</option>
+            <option>500ml</option>
+            <option>1L</option>
+          </select>
+          <select id="combo-topping" style="padding:8px; border-radius:8px;">
+            <option>Escolha o Topping</option>
+            <option>Granola</option>
+            <option>Leite condensado</option>
+            <option>Paçoca</option>
+            <option>Banana</option>
+          </select>
+      <button class="btn-carrinho" onclick="adicionarCombo()">
+        <i class="fas fa-plus-circle"></i> Adicionar Combo
+      </button>
+    </div>
+  </section>
+  
+  
+  <section style="background:#f0f7ff; padding:2rem; text-align:center;">
+    <h2 style="color:#6b006b;">🎉 Promoção Especial</h2>
+    <p><strong>2 Açaís + 2 Sorvetes Artesanais</strong> por apenas <span style="color:#e60000;">R$ 29,90</span>!</p>
+    <button class="btn-carrinho" onclick="adicionarCarrinho('Combo Especial', 'Açaí + Sorvete')">Quero essa oferta!</button>
+  </section>
+
+
+  <section style="background:#fff0e6; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#b36b00;">📸 Bastidores da Produção</h2>
+    <p>Veja como nossos sorvetes/acai são feitos com carinho e qualidade!</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-top:2rem;">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743633356/images_14_xgpn4i.jpg" style="width:100%; border-radius:10px;">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743633356/images_13_y3qbuf.jpg" style="width:100%; border-radius:10px;">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743633356/gettyimages-1066908296-612x612_k7x3iq.jpg" style="width:100%; border-radius:10px;">
+    </div>
+  </section>
+  
+  
+  <section style="background:#fff0f7; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#6b006b;">❤️ Avaliações de Clientes</h2>
+    <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">“Melhor açaí que já provei! E o sorvete? Delícia total!”<br><strong>— Carla S.</strong></blockquote>
+    <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">“Entrega rápida e tudo super fresquinho. Virou meu lugar preferido!”<br><strong>— Bruno R.</strong></blockquote>
+  </section>
+  <script>
+    let carrinho = [];
+    let carrinhoVisivel = true;
+  
+    function adicionarCarrinho(produto,sabor) {
+        if (!sabor) {
+    alert('Por favor, selecione um sabor antes de adicionar ao carrinho.');
+    return;
+  }
+      
+     const item = `${produto} - Sabor: ${sabor}`;
+     console.log('Adicionado ao carrinho:', item);
+      carrinho.push(item); 
+      mostrarMensagemCarrinho();
+      atualizarCarrinho();
+    }
+  
+    function atualizarCarrinho() {
+  const container = document.getElementById('carrinho-itens');
+  const btn = document.getElementById('btn-whats');
+  const obs = document.getElementById('obs').value || "";
+  const mensagem = encodeURIComponent("Olá! Gostaria de fazer um pedido com os seguintes itens:\n\n" + carrinho.map(item => `• ${item}`).join('\n') + (obs ? `\n\nObs: ${obs}` : ""));
+
+  if (carrinho.length === 0) {
+    container.innerHTML = "<p>Nenhum item ainda.</p>";
+    btn.href = "#";
+    return;
+  }
+
+  const lista = carrinho.map(item => `• ${item}`).join('<br>');
+  container.innerHTML = lista;
+
+  btn.href = "https://wa.me/5511999999999?text=" + mensagem;
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+}
+
+  
+function esvaziarCarrinho() {
+  carrinho = [];
+  document.getElementById('obs').value = ''; // limpa observações
+  atualizarCarrinho();
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+}
+  
+    function toggleCarrinho() {
+  const carrinhoDiv = document.getElementById('carrinho');
+  const icone = document.getElementById('icone-carrinho');
+
+  if (carrinhoVisivel) {
+    carrinhoDiv.style.display = 'none';
+    icone.style.display = 'flex';  // mostrar o ícone redondo
+  } else {
+    carrinhoDiv.style.display = 'block';
+    icone.style.display = 'none';  // esconder o ícone redondo
+  }
+
+  carrinhoVisivel = !carrinhoVisivel;
+}
+
+function mostrarMensagemCarrinho() {
+  const msg = document.getElementById('mensagem-carrinho');
+  msg.style.display = 'block';
+  msg.style.animation = 'slideUpFade 0.5s ease';
+
+  setTimeout(() => {
+    msg.style.opacity = '0';
+    msg.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      msg.style.display = 'none';
+      msg.style.opacity = '';
+      msg.style.transform = '';
+    }, 300);
+  }, 2000);
+}
+function adicionarCombo() {
+  const tamanho = document.getElementById('combo-tamanho').value;
+  const topping = document.getElementById('combo-topping').value;
+
+  if (!tamanho || tamanho.includes('Escolha') || !topping || topping.includes('Escolha')) {
+    alert('Por favor, selecione o tamanho e o topping do combo.');
+    return;
+  }
+
+  const combo = `Combo Personalizado - Tamanho: ${tamanho}, Topping: ${topping}`;
+  carrinho.push(combo);
+  mostrarMensagemCarrinho();
+  atualizarCarrinho();
+}
+
+document.getElementById('carrinho').style.display = 'none';
+document.getElementById('icone-carrinho').style.display = 'flex';
+carrinhoVisivel = false;
+
+carrinhoVisivel = true;
+  </script>
+
+
+<!-- Carrinho Flutuante -->
+<div id="carrinho" style="position:fixed; bottom:10px; right:10px; background:#fff; border-radius:10px; padding:1rem; box-shadow:0 0 10px rgba(0,0,0,0.2); max-width:300px; z-index:1000; padding-top:2.5rem;">
+    <!-- Botão Minimizar -->
+    <button onclick="toggleCarrinho()" style="position:absolute; top:5px; right:5px; background:none; border:none; font-size:18px; cursor:pointer;">
+      <i class="fas fa-times"></i>
+    </button>
+    
+    <div id="carrinho-itens">Nenhum item ainda.</div>
+    <textarea id="obs" placeholder="Observações..." style="width:100%; margin-top:10px; border-radius:5px;"></textarea>
+    <a id="btn-whats" target="_blank" style="display:inline-block; background:#25d366; color:#fff; padding:10px 15px; border-radius:5px; margin-top:10px; text-decoration:none;">
+      <i class="fab fa-whatsapp"></i> Finalizar no WhatsApp
+    </a>
+    <button class="btn-esvaziar" onclick="esvaziarCarrinho()">
+        <i class="fas fa-trash-alt"></i> Esvaziar
+      </button>
+    </div>
+  
+  <!-- Ícone flutuante do carrinho -->
+  <div id="icone-carrinho" onclick="toggleCarrinho()" style="position:fixed; bottom:10px; right:10px; background:#6b006b; width:60px; height:60px; border-radius:50%; display:none; align-items:center; justify-content:center; color:#fff; font-size:24px; z-index:1001; cursor:pointer;">
+    <i class="fas fa-shopping-cart"></i>
+    <span id="contador-carrinho" style="margin-left:5px; font-size:14px;">0</span>
+  </div>
+  
+  <!-- Botão de minimizar -->
+<button onclick="toggleCarrinho()" style="position:absolute; top:5px; right:5px; background:none; border:none; font-size:18px; cursor:pointer;">
+    <i class="fas fa-times"></i>
+  </button>
+  
+  <!-- Mensagem de item adicionado -->
+  <div id="mensagem-carrinho" style="position:fixed; bottom:80px; right:10px; background:#6b006b; color:#fff; padding:10px; border-radius:5px; display:none; z-index:1002;">
+    Item adicionado ao carrinho!
+  </div>

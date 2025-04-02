@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Salão Estilo & Beleza</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Open Sans', sans-serif;
+      background-color: #fffafc;
+      color: #333;
+    }
+
+
+    .galeria {
+  overflow: hidden;
+  width: 100%;
+}
+
+.galeria-animada {
+  display: flex;
+  gap: 1rem;
+  animation: deslizar 20s linear infinite;
+}
+
+.galeria-animada img {
+  width: 300px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+@keyframes deslizar {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+    header {
+      background-image: url('https://images.unsplash.com/photo-1588776814546-ec7b13ec4f83');
+      background-size: cover;
+      background-position: center;
+      padding: 5rem 2rem;
+      text-align: center;
+      color: white;
+      position: relative;
+    }
+    header::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+    }
+    header h1, header p {
+      position: relative;
+      z-index: 1;
+    }
+    header h1 {
+      font-size: 3rem;
+      font-family: 'Playfair Display', serif;
+    }
+    header p {
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    .btn-agendar {
+      background: #e91e63;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .secao {
+      padding: 4rem 2rem;
+      max-width: 1000px;
+      margin: auto;
+      text-align: center;
+    }
+    .secao h2 {
+      color: #e91e63;
+      margin-bottom: 2rem;
+    }
+    .servicos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+    }
+    .servico {
+      flex: 1 1 200px;
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .servico i {
+      font-size: 2rem;
+      color: #e91e63;
+      margin-bottom: 0.5rem;
+    }
+    .galeria img {
+      width: 100%;
+      border-radius: 12px;
+      max-width: 300px;
+    }
+    .avaliacoes blockquote {
+      font-style: italic;
+      margin: 1rem auto;
+      max-width: 600px;
+    }
+
+
+    .tabela-precos {
+  margin: auto;
+  border-collapse: collapse;
+  font-size: 16px;
+  animation: fadeIn 1s ease-in-out;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.tabela-precos td {
+    background-color: #ffe3ee;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+.tabela-precos .popular {
+  background-color: #ffe6f0;
+  font-weight: bold;
+}
+
+.badge {
+  background: #e91e63;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+    footer {
+      background: #222;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    .whatsapp {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #25d366;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      text-decoration: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+    <header style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743635399/images_15_vffjsv.jpg'); background-size:cover; background-position:center; color:white; text-align:center; padding:5rem 2rem;">
+    <h1>Salão Estilo & Beleza</h1>
+    <p>Realce sua beleza com nossos cuidados especiais</p>
+    <a class="btn-agendar" href="https://wa.me/5511999999999" target="_blank"><i class="fab fa-whatsapp"></i> Agendar Horário</a>
+  </header>
+
+
+  <div class="galeria">
+    <div class="galeria-animada">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743635401/images_16_mxd0xv.jpg" alt="Antes e Depois">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743635399/images_17_mzru5l.jpg" alt="Antes e Depois">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743635401/images_16_mxd0xv.jpg" alt="Antes e Depois">
+      <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743635399/images_17_mzru5l.jpg" alt="Antes e Depois">
+    </div>
+  </div>
+  
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+    <div style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <h3>Corte Feminino</h3>
+      <p style="color: #e91e63; font-weight: bold;">R$ 40</p>
+      <a href="https://wa.me/5511999999999?text=Quero%20agendar%20um%20Corte%20Feminino" target="_blank" style="background:#25d366; color:white; padding:10px 15px; display:inline-block; border-radius:8px; text-decoration:none;">
+        <i class="fab fa-whatsapp"></i> Agendar
+      </a>
+    </div>
+  
+    <div style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <h3>Escova Modelada</h3>
+      <p style="color: #e91e63; font-weight: bold;">R$ 45</p>
+      <a href="https://wa.me/5511999999999?text=Quero%20agendar%20uma%20Escova%20Modelada" target="_blank" style="background:#25d366; color:white; padding:10px 15px; display:inline-block; border-radius:8px; text-decoration:none;">
+        <i class="fab fa-whatsapp"></i> Agendar
+      </a>
+    </div>
+  
+    <div style="background: #ffe6f0; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <h3>Coloração <span class="badge" style="background:#e91e63; color:white; font-size:12px; padding:2px 6px; border-radius:12px;">Popular</span></h3>
+      <p style="color: #e91e63; font-weight: bold;">R$ 70</p>
+      <a href="https://wa.me/5511999999999?text=Quero%20fazer%20uma%20Coloração%20no%20cabelo" target="_blank" style="background:#25d366; color:white; padding:10px 15px; display:inline-block; border-radius:8px; text-decoration:none;">
+        <i class="fab fa-whatsapp"></i> Agendar
+      </a>
+    </div>
+  
+    <div style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <h3>Hidratação Profunda</h3>
+      <p style="color: #e91e63; font-weight: bold;">R$ 60</p>
+      <a href="https://wa.me/5511999999999?text=Gostaria%20de%20agendar%20uma%20Hidratação%20Profunda" target="_blank" style="background:#25d366; color:white; padding:10px 15px; display:inline-block; border-radius:8px; text-decoration:none;">
+        <i class="fab fa-whatsapp"></i> Agendar
+      </a>
+    </div>
+  
+    <div style="background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+      <h3>Manicure & Pedicure</h3>
+      <p style="color: #e91e63; font-weight: bold;">R$ 35</p>
+      <a href="https://wa.me/5511999999999?text=Quero%20fazer%20Manicure%20e%20Pedicure" target="_blank" style="background:#25d366; color:white; padding:10px 15px; display:inline-block; border-radius:8px; text-decoration:none;">
+        <i class="fab fa-whatsapp"></i> Agendar
+      </a>
+    </div>
+  </div>
+  
+  <section class="secao" style="background:#fff0f7;">
+    <h2>🛍️ Nossos Produtos</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+  
+      <div style="background: #fff; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center; width: 220px;">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743636350/1756_oleo-nutritivo-capilar_l172_638767887273093125_zjommb.webp" style="width: 100%; border-radius: 8px;">
+        <h4 style="margin: 0.8rem 0 0.3rem;">Óleo Capilar Nutritivo</h4>
+        <a href="https://wa.me/5511999999999?text=Olá!%20Gostaria%20de%20comprar%20o%20Óleo%20Capilar%20Nutritivo" target="_blank"
+           style="margin-top: 8px; display: inline-block; background: #25d366; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none;">
+          <i class="fab fa-whatsapp"></i> Comprar
+        </a>
+      </div>
+  
+      <div style="background: #fff; padding: 1rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center; width: 220px;">
+        <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743636350/kit_2_shampoo_hidratante_mais_brilho_250_ml_bio_extratus_10527_1_10c44641071b51429a3d482297a15266_cu7rat.webp" style="width: 100%; border-radius: 8px;">
+        <h4 style="margin: 0.8rem 0 0.3rem;">Shampoo Hidratante</h4>
+        <a href="https://wa.me/5511999999999?text=Olá!%20Gostaria%20de%20comprar%20o%20Shampoo%20Hidratante" target="_blank"
+           style="margin-top: 8px; display: inline-block; background: #25d366; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none;">
+          <i class="fab fa-whatsapp"></i> Comprar
+        </a>
+      </div>
+  
+    </div>
+  </section>
+  
+  
+
+
+  <section class="secao">
+    <h2>🎉 Promoção da Semana</h2>
+    <p><strong>Pacote: Corte + Escova + Manicure</strong> por apenas <span style="color:#e91e63; font-weight:bold;">R$ 79,90</span>!</p>
+    <a class="btn-agendar" href="https://wa.me/5511999999999" target="_blank">Agendar Promoção</a>
+  </section>
+
+  <section class="secao" style="background:#f8f8f8;">
+    <h2>💡 Dica da Semana</h2>
+    <p>Evite lavar o cabelo com água quente — isso resseca os fios e tira o brilho natural.</p>
+  </section>
+  
+
+  <section class="secao avaliacoes" style="background:#f8f8f8;">
+    <h2>❤️ Depoimentos</h2>
+    <blockquote>"A melhor experiência que já tive em um salão. Atendimento maravilhoso!"<br><strong>— Luana R.</strong></blockquote>
+    <blockquote>"Minha cor ficou incrível, exatamente como pedi!"<br><strong>— Carla M.</strong></blockquote>
+  </section>
+
+
+  <section class="secao" style="background:#fff;">
+    <h2>📍 Como Chegar</h2>
+    <div style="max-width: 100%; height: 300px;">
+      <iframe src="https://www.google.com/maps/embed?pb=SEU-IFRAME-AQUI" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+    </div>
+  </section>
+  
+
+  <footer>
+    <p>Siga nas redes sociais:</p>
+    <p>
+      <a href="https://instagram.com" target="_blank" style="color:#e91e63;"><i class="fab fa-instagram"></i></a>
+      <a href="https://facebook.com" target="_blank" style="color:#e91e63; margin-left: 10px;"><i class="fab fa-facebook"></i></a>
+    </p>
+    <p>&copy; 2025 Salão Estilo & Beleza. Todos os direitos reservados.</p>
+  </footer>
+
+  <a href="https://wa.me/5511999999999" class="whatsapp" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+</body>
+</html>

@@ -749,25 +749,20 @@ onmouseout="this.style.transform='scale(1)'"
           <section class="plans" style="margin-top: 60px;">
             <h2 style="text-align: center;">💎 Planos Premium</h2>
             <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-top: 30px;">
-          
                 <div class="template" style="max-width: 300px; background: #e3f2fd; border-left: 5px solid #2196f3;">
-                    <h3><i class="fas fa-star"></i> Premium Essential</h3>
-                    <p style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">R$ 32,50</p>
+                    <h3><i class="fas fa-star"></i> Premium Essential (Assinatura)</h3>
+                    <p style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">R$ 20,00/mês</p>
                     <ul style="text-align: left;">
-                      <li>✔ Acesso a todos os templates premium <strong>NÃO É LIBERADO os templates com IA</strong></li>
-                      <li>✔ Criação de <strong>1 páginas extras</strong></li>
+                      <li>✔ Acesso a todos os templates premium</li>
+                      <li>✔ Criação de 1 páginas extras</li>
                       <li>✔ Edição de imagens liberada</li>
-                      <li>✔ Liberação para criação de mais de 1 template</li>
-                      <li>✔ Sem anúncio no site criado</li>
-                      <li>✔ Liberação do acesso ao painel administrativo</li>
+                      <li>✔ Sem anúncios no site criado</li>
+                      <li>✔ Acesso ao painel administrativo</li>
                       <li>✔ Suporte via e-mail</li>
                     </ul>
-                    <form onsubmit="return pagar('essential')">
-                      <button class="btn buy-premium" type="submit">Assinar Essential</button>
-                    </form>
-                    <div id="wallet_container_essential" style="margin-top: 15px;"></div>
+                    <a href="/generate-payment?plano=essential" class="btn buy-premium">Assinar por R$20,00</a>
                   </div>
-              </div>
+                  
           
               <div class="template" style="max-width: 300px; background: #fff3cd; border-left: 5px solid #ffc107;">
                 <h3><i class="fas fa-gem"></i> Premium Moderado</h3>
@@ -802,12 +797,17 @@ onmouseout="this.style.transform='scale(1)'"
             <h2 style="text-align: center;">🛠 Serviços Avulsos</h2>
             <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; margin-top: 30px;">
           
-              <div class="template" style="max-width: 300px; background: #f8f9fa; border-left: 5px solid #17a2b8;">
-                <h3><i class="fas fa-image"></i> Desbloquear Edição de Imagens</h3>
-                <p style="font-size: 16px;">Quer apenas liberar a edição de imagens no seu site?</p>
-                <p style="font-weight: bold; font-size: 18px;">R$ 10,00 (pagamento mensal)</p>
-                <a href="/generate-payment?servico=editar-imagens" class="btn buy-premium">Liberar Agora</a>
-              </div>
+                <div class="template" style="max-width: 300px; background: #f8f9fa; border-left: 5px solid #17a2b8;">
+                    <h3><i class="fas fa-image"></i> Desbloquear Edição de Imagens</h3>
+                    <p style="font-size: 16px;">Quer apenas liberar a edição de imagens no seu site?</p>
+                    <p style="font-weight: bold; font-size: 18px;">R$ 10,00 (pagamento mensal)</p>
+                    
+                    <form onsubmit="return pagar('editar-imagens')">
+                      <button class="btn buy-premium" type="submit">Liberar Agora</button>
+                    </form>
+                    <div id="wallet_container_editar-imagens" style="margin-top: 15px;"></div>
+                  </div>
+                  
           
               <div class="template" style="max-width: 300px; background: #fff3cd; border-left: 5px solid #ffc107;">
                 <h3><i class="fas fa-bullhorn"></i> Tráfego Pago p/ seu Site</h3>
@@ -825,7 +825,7 @@ onmouseout="this.style.transform='scale(1)'"
         </section>
         <script src="https://sdk.mercadopago.com/js/v2"></script>
         <script>
-            const mp = new MercadoPago("APP_USR-fb62d095-5aa0-4629-95f5-4db0f45140e1");
+            const mp = new MercadoPago("APP_USR-89864dff-9816-40cb-814e-e9175dc2e68c");
 
 function pagar(plano) {
   fetch(`/generate-payment-transparente?plano=${plano}`)

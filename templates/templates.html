@@ -17,9 +17,15 @@
 }
 
 .template {
-  flex: 1 1 calc(50% - 20px);
-  box-sizing: border-box;
+  flex: 1 1 min(300px, 30%);
 }
+
+.template-list:has(.template:nth-child(1):last-child) .template {
+  flex: 1 1 300px;
+  max-width: 300px;
+  margin: auto;
+}
+
 footer {
     background: white;
     color: black;
@@ -1104,7 +1110,7 @@ iframe {
 
 </div>
             
-            <h2 id="gourmet" class="categoria-titulo"><i class="fas fa-utensils"></i> Segmento: Alimentação e Gourmet</h2>
+            <h2 id="gourmet" class="categoria-titulo"><i class="fas fa-utensils"></i> Segmento: Alimentação, Gourmet e Gelados</h2>
             <div class="template-list">
         
               <div class="template" style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940658/pingyangsp_1681758139_3083133193474159437_56007568342_hyghhf.jpg'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
@@ -1151,6 +1157,38 @@ iframe {
                     <li>Botões com ícones integrados para ações mais intuitivas</li>
                   </ul>
                   <p><strong>Diferencial:</strong> Navegação intuitiva com foco em vendas rápidas via WhatsApp, além de animações e alertas que tornam a experiência mais envolvente.</p>
+                </div>
+              </div>
+
+
+              <div class="template" style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632061/9cc37a26ebad61af3f42afebe95965d9_q78gbr.jpg'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-heart"></i> Template para loja de açai/sorveteria
+                  </h3>
+                </div>
+                <button class="btn" onclick="previewTemplate('/template-preview/template13/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+                <button class="btn" onclick="toggleDetalhes('detalhes-template13')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+                <div id="detalhes-template13" style="display: none; text-align: left; margin-top: 10px; background: rgba(255, 255, 255, 0.85); padding: 10px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <  <p><strong>🍧 Ideal para:</strong> Lojas de Açaí, Sorveterias, Gelaterias Artesanais e Empreendedores do setor de sobremesas naturais.</p>
+
+                  <p><strong>💡 Recursos:</strong></p>
+                  <ul style="margin-top: 5px; padding-left: 20px; list-style: disc;">
+                    <li>Design moderno, colorido e adaptado para dispositivos móveis</li>
+                    <li>Carrinho flutuante com contador de itens e botão direto para WhatsApp</li>
+                    <li>Seleção de sabor/tamanho antes de adicionar ao pedido</li>
+                    <li>Campo para observações adicionais do cliente (ex: sem granola, com banana etc)</li>
+                    <li>Notificação animada ao adicionar item no carrinho</li>
+                    <li>Promoções visuais com botão de compra rápida</li>
+                    <li>Galeria com bastidores e carrossel de avaliações reais</li>
+                    <li>Estilo de botão personalizado para facilitar agendamentos e pedidos</li>
+                  </ul>
+                
+                  <p><strong>🌟 Diferencial:</strong> Otimizado para conversões no WhatsApp com navegação intuitiva, foco no toque mobile e experiência divertida que estimula o cliente a concluir o pedido com praticidade.</p>
                 </div>
               </div>
         
@@ -1288,6 +1326,46 @@ iframe {
       <p><strong>Diferencial:</strong> Carrinho de compras que envia diretamente para o WhatsApp com os produtos escolhidos, sistema de quiz interativo para sugestão de looks, e formulário de comentários com salvamento local.</p>
     </div>
   </div>
+
+
+  <div class="template" style="
+  background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743635399/images_15_vffjsv.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin-bottom: 30px;
+">
+  <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+    <h3 style="margin: 0; color: white;">
+      <i class="fas fa-scissors"></i> Template para salão de beleza
+    </h3>
+  </div>
+
+  <!-- Botão de Visualizar -->
+  <button class="btn" onclick="previewTemplate('/template-preview/template14/index')">
+    <i class="fas fa-eye"></i> Visualizar
+  </button>
+
+  <!-- Botão de Detalhes -->
+  <button class="btn" onclick="toggleDetalhes('detalhes-template14')">
+    <i class="fas fa-info-circle"></i> Detalhes
+  </button>
+
+  <!-- Painel oculto com informações -->
+  <div id="detalhes-template14" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 15px; border-radius: 10px; font-size: 15px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1); line-height: 1.6;">
+    <p><strong>✨ Ideal para:</strong> Salões de beleza femininos, estúdios de estética, cabeleireiras e profissionais autônomas da beleza.</p>
+    
+    <p><strong>💡 Inclui:</strong> Sessão com serviços (com botão de agendamento via WhatsApp), tabela de preços com destaque visual, galeria com fotos antes/depois animadas, dicas semanais de beleza, depoimentos de clientes e vitrine de produtos com botão "Comprar pelo WhatsApp".</p>
+    
+    <p><strong>🌟 Diferenciais:</strong> Visual moderno, feminino e elegante, com foco em conversão. Totalmente responsivo, com botões otimizados para celular, animações suaves e elementos que reforçam a confiança e profissionalismo do salão.</p>
+  </div>
+  
+</div>
+
+  
 
   <div class="template" style="
     background-image: url('https://images.unsplash.com/photo-1549271568-e87e07c5406b?auto=format&fit=crop&w=1600&q=80');
