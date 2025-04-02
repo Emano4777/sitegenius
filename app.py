@@ -1533,7 +1533,7 @@ def generate_payment():
         return "Plano não informado", 400
 
     planos_info = {
-        "essential": {"price": 0.50, "title": "Premium Essential"},
+        "essential": {"price": 32.50, "title": "Premium Essential"},
         "moderado": {"price": 59.90, "title": "Premium Moderado"},
         "master": {"price": 120.90, "title": "Premium Master"}
     }
