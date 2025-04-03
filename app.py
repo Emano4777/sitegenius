@@ -1661,7 +1661,7 @@ def generate_payment_pix():
         return jsonify({"error": "Usuário não autenticado"}), 401
 
     planos_info = {
-        "editar-imagens": {"price": 00.50, "title": "Desbloqueio de Edição de Imagens"}
+        "editar-imagens": {"price": 10.00, "title": "Desbloqueio de Edição de Imagens"}
     }
 
     if servico not in planos_info:
