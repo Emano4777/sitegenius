@@ -741,7 +741,7 @@ fetch('/check-login')
             mobileLogoutOption.style.display = 'block';
             mobileMeusTemplatesOption.style.display = 'block';
 
-            if (data.is_premium) {
+            if (data.premium_level && data.premium_level !== 'free') {
     const adminOption = document.getElementById('admin-lojas-option');
     const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
     if (adminOption) adminOption.style.display = 'block';

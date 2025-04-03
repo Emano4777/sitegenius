@@ -1639,10 +1639,11 @@ iframe {
             mobileLogoutOption.style.display = 'block';
             mobileMeusTemplatesOption.style.display = 'block';
 
-            if (data.is_premium) {
+            if (data.premium_level && data.premium_level !== 'free') {
   document.getElementById('admin-lojas-option').style.display = 'block';
   document.getElementById('mobile-admin-lojas-option').style.display = 'block';
 }
+
 
 
             // Avatar Desktop

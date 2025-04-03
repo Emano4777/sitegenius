@@ -854,10 +854,19 @@ def admin_dashboard():
     if 'user_id' not in session:
         return redirect('/login')
 
-    if not session.get('is_premium'):
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not result or result[0] == 'free':
         return redirect('/preco')  # redireciona para página de planos
 
     return render_template('admin_dashboard.html')
+
 
 
 
@@ -1356,11 +1365,14 @@ def admin_produtos():
     if 'user_id' not in session:
         return redirect('/login')
 
-    if not session.get('is_premium'):
-        return redirect('/preco')  # Redireciona para a página de planos
-
     conn = get_db_connection()
     cur = conn.cursor()
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (session['user_id'],))
+    result = cur.fetchone()
+
+    if not result or result[0] == 'free':
+        cur.close(); conn.close()
+        return redirect('/preco')  # Redireciona para a página de planos
 
     # Busca produtos com subdomínio da loja do usuário (único por loja)
     cur.execute("""
@@ -2075,16 +2087,34 @@ def usar_template(template_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT is_premium FROM users2 WHERE id=%s", (user_id,))
-    user_status = cur.fetchone()
-    is_premium = user_status[0] if user_status else False
+  # Verifica status do usuário e o nível do template clicado
+    cur.execute("""
+        SELECT u.is_premium, u.premium_level, t.premium_level 
+        FROM users2 u
+        JOIN templates t ON t.name = %s
+        WHERE u.id = %s
+    """, (template_name, user_id))
+    result = cur.fetchone()
 
+    if not result:
+        cur.close(); conn.close()
+        return jsonify({"success": False, "message": "Template ou usuário inválido."}), 404
+
+    is_premium, user_premium_level, template_level = result
     cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id=%s", (user_id,))
     total_templates = cur.fetchone()[0]
 
-    if not is_premium and total_templates >= 1:
+    if user_premium_level == 'free' and total_templates >= 1:
         cur.close(); conn.close()
-        return jsonify({"success": False, "message": "Usuários não Premium só podem criar 1 modelo."}), 403
+        return jsonify({"success": False, "message": "Usuários gratuitos só podem criar 1 modelo."}), 403
+
+    # Bloqueia se template for premium e o usuário for nível 'free'
+    if template_level != 'free' and user_premium_level == 'free':
+        cur.close(); conn.close()
+        return jsonify({"success": False, "message": "Este template é Premium. Faça upgrade para usá-lo."}), 403
+   
+
+    
 
     cur.execute("""
         SELECT page_name, html, css
@@ -2712,7 +2742,10 @@ def editar_pagina(template_id, page_name):
 
     conn = get_db_connection()
     cur = conn.cursor()
-
+    # Verifica se o usuário é premium logo de cara
+    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
+    premium_result = cur.fetchone()
+    is_premium = "true" if premium_result and premium_result[0] else "false"
     # 🧠 Pega o template_name e subdomain original com base no template_id
     cur.execute("""
         SELECT template_name, subdomain 
@@ -2780,12 +2813,7 @@ def editar_pagina(template_id, page_name):
 
         return jsonify({"message": "Página atualizada com sucesso!"})
 
-   # Descobre se o usuário é premium antes de fechar a conexão
-    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
-    premium_result = cur.fetchone()
-
-    cur.close()
-    conn.close()
+   
 
     if not html_salvo:
         html_salvo = "<h1>Nova Página</h1><p>Comece a editar seu conteúdo aqui.</p>"
@@ -2878,23 +2906,42 @@ def extrair_html_css_do_template(html):
 @app.route('/verificar-premium/<template_name>', methods=['POST'])
 def verificar_premium(template_name):
     user_id = session.get('user_id')
+
     if not user_id:
-        return jsonify({"pode_usar": False})
+        return jsonify({"pode_usar": False}), 401
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
-    status = cur.fetchone()
+
+    # Primeiro, busca o nível do template
+    cur.execute("SELECT premium_level FROM templates WHERE name = %s", (template_name,))
+    template_info = cur.fetchone()
+
+    if not template_info:
+        cur.close(); conn.close()
+        return jsonify({"pode_usar": False}), 404
+
+    template_level = template_info[0]
+
+    # Agora, busca o nível do usuário
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
+    user_info = cur.fetchone()
     cur.close(); conn.close()
 
-    is_premium = status[0] if status else False
+    if not user_info:
+        return jsonify({"pode_usar": False}), 404
 
-    # Aqui você define quais templates são considerados premium
-    templates_premium = ['template10']
-    if template_name in templates_premium and not is_premium:
-        return jsonify({"pode_usar": False})
+    user_level = user_info[0]
 
-    return jsonify({"pode_usar": True})
+    # Lógica de liberação
+    if template_level == 'free':
+        return jsonify({"pode_usar": True})
+
+    if user_level != 'free':
+        return jsonify({"pode_usar": True})
+
+    return jsonify({"pode_usar": False})
+
 
     
 @app.route('/buy-premium', methods=['POST'])
