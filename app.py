@@ -1616,7 +1616,7 @@ def verificar_pagamento():
     config = {
         "client_id": os.getenv("EFI_CLIENT_ID"),
         "client_secret": os.getenv("EFI_CLIENT_SECRET"),
-        "certificate": os.getenv("EFI_CERTIFICATE_PATH"),
+        "certificate": os.path.join(os.path.dirname(__file__), os.getenv("EFI_CERTIFICATE_PATH")),
         "sandbox": os.getenv("EFI_SANDBOX", "false").lower() == "true"
     }
 
@@ -1670,7 +1670,7 @@ def generate_payment_pix():
     config = {
         "client_id": os.getenv("EFI_CLIENT_ID"),
         "client_secret": os.getenv("EFI_CLIENT_SECRET"),
-        "certificate": os.getenv("EFI_CERTIFICATE_PATH"),
+        "certificate": os.path.join(os.path.dirname(__file__), os.getenv("EFI_CERTIFICATE_PATH")),
         "sandbox": os.getenv("EFI_SANDBOX", "false").lower() == "true"
     }
 
