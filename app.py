@@ -1665,7 +1665,7 @@ def generate_payment_pix():
     conn.close()
 
     if not user_info:
-        return jsonify({"error": "Usuário não encontrado"}), 404
+        return jsonify({"error": "Usuário nao encontrado"}), 404
 
     config = {
         "client_id": os.getenv("EFI_CLIENT_ID"),
@@ -1673,7 +1673,6 @@ def generate_payment_pix():
         "certificate": os.path.join(os.path.dirname(__file__), os.getenv("EFI_CERTIFICATE_PATH")),
         "sandbox": os.getenv("EFI_SANDBOX", "false").lower() == "true"
     }
-
     gn = EfiPay(config)
 
     body = {
