@@ -1631,7 +1631,8 @@ def verificar_pagamento():
     gn = EfiPay(config)
 
     try:
-        pagamento = gn.pix_detail_charge(txid=txid)
+        pagamento = gn.pix_detail_charge(params={"txid": txid})
+
         if pagamento.get("status") == "CONCLUIDA":
             cur.execute("UPDATE users2 SET is_premium = TRUE WHERE id = %s", (user_id,))
             cur.execute("UPDATE pagamentos_pix SET confirmado = TRUE WHERE txid = %s", (txid,))
