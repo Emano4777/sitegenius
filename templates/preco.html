@@ -807,11 +807,10 @@ onmouseout="this.style.transform='scale(1)'"
                       <button onclick="abrirPagamentoPix('editar-imagens')" class="btn buy-premium" style="background: #009688; margin-top: 10px;">
                         <i class="fas fa-qrcode"></i> Pagar com PIX
                       </button>
-                      
-                      <div id="pix_container_editar-imagens" style="margin-top: 10px;"></div>
-                      
                     </form>
                     <div id="wallet_container_editar-imagens" style="margin-top: 15px;"></div>
+                    <div id="status_pagamento_editar-imagens" style="margin-top: 15px; font-weight: bold;"></div>
+                    <div id="pix_container_editar-imagens" style="margin-top: 10px;"></div>
                   </div>
                   
           
@@ -857,6 +856,21 @@ function pagar(plano) {
   return false;
 }
 
+function verificarPagamento(servico) {
+  fetch('/verificar-pagamento')
+    .then(res => res.json())
+    .then(data => {
+      const statusEl = document.getElementById(`status_pagamento_${servico}`);
+      statusEl.textContent = data.mensagem;
+      if (data.status === 'ok') {
+        statusEl.style.color = 'green';
+      } else {
+        statusEl.style.color = 'red';
+      }
+    });
+}
+
+
 
 function pagarPIX(tipo) {
   fetch(`/generate-payment-pix?servico=${tipo}`)
@@ -865,7 +879,7 @@ function pagarPIX(tipo) {
       if (data.qr_code_base64) {
         const container = document.getElementById(`pix_container_${tipo}`);
         container.innerHTML = `
-          <img src="data:image/png;base64,${data.qr_code_base64}" alt="QR Code PIX" style="max-width:200px;">
+          <img src="${data.qr_link}" alt="QR Code PIX" style="max-width:200px;">
           <p style="font-size:14px; margin-top:8px;">Ou copie o código abaixo:</p>
           <textarea readonly style="width:100%; font-size:12px;">${data.qr_code}</textarea>
           <a href="${data.copy_code}" target="_blank" style="display:inline-block; margin-top:10px; background:#009688; color:white; padding:6px 12px; border-radius:6px; text-decoration:none;">
@@ -877,17 +891,55 @@ function pagarPIX(tipo) {
       }
     });
 }
+
+function iniciarVerificacaoPagamento(servico) {
+  const statusEl = document.getElementById(`status_pagamento_${servico}`);
+  let tentativas = 0;
+
+  const interval = setInterval(() => {
+    fetch('/verificar-pagamento')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          clearInterval(interval);
+          statusEl.textContent = data.mensagem;
+          statusEl.style.color = 'green';
+        } else if (data.status === 'pendente') {
+          statusEl.textContent = "Aguardando confirmação do pagamento...";
+          statusEl.style.color = 'orange';
+        } else {
+          statusEl.textContent = "Erro ao verificar pagamento.";
+          statusEl.style.color = 'red';
+        }
+      });
+
+    tentativas++;
+    if (tentativas > 20) clearInterval(interval); // para depois de 100s (20x5s)
+  }, 5000); // verifica a cada 5 segundos
+}
+
 function abrirPagamentoPix(servico) {
   fetch(`/generate-payment-pix?servico=${servico}`)
     .then(res => res.json())
     .then(data => {
-      if (data.url) {
-        window.open(data.url, "_blank");
+      if (data.qr_code_base64 || data.qr_link) {
+        const container = document.getElementById(`pix_container_${servico}`);
+        container.innerHTML = `
+          <img src="${data.qr_code_base64}" alt="QR Code PIX" style="max-width:200px;">
+          <p style="font-size:14px; margin-top:8px;">Ou copie o código abaixo:</p>
+          <textarea readonly style="width:100%; font-size:12px;">${data.qr_code}</textarea>
+          <a href="${data.qr_link}" target="_blank" style="display:inline-block; margin-top:10px; background:#009688; color:white; padding:6px 12px; border-radius:6px; text-decoration:none;">
+              Abrir pagamento
+          </a>
+        `;
+
+        iniciarVerificacaoPagamento(servico);
       } else {
-        alert("Erro ao gerar link PIX.");
+        alert("Erro ao gerar PIX");
       }
     });
 }
+
 
           </script>
           

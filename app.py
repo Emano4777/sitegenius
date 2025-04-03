@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify,make_response
 import os
+print("🔐 Caminho do certificado:", os.getenv("EFI_CERTIFICATE_PATH"))
 import psycopg2
 import bcrypt
 import requests
@@ -21,6 +22,8 @@ import hmac
 import hashlib
 from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
+from efipay import EfiPay
+import json
 
 
 # Configuração
@@ -1594,7 +1597,52 @@ def generate_payment():
         print("Detalhes:", response.json())
         return "Erro ao gerar pagamento", 500
 
-@app.route('/generate-payment-pix')
+
+@app.route("/verificar-pagamento")
+def verificar_pagamento():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"status": "erro", "mensagem": "Usuário não autenticado"}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT txid FROM pagamentos_pix WHERE user_id = %s ORDER BY id DESC LIMIT 1", (user_id,))
+    result = cur.fetchone()
+    if not result:
+        return jsonify({"status": "erro", "mensagem": "Nenhuma cobrança encontrada"}), 404
+
+    txid = result[0]
+
+    config = {
+        "client_id": os.getenv("EFI_CLIENT_ID"),
+        "client_secret": os.getenv("EFI_CLIENT_SECRET"),
+        "certificate": os.getenv("EFI_CERTIFICATE_PATH"),
+        "sandbox": os.getenv("EFI_SANDBOX", "false").lower() == "true"
+    }
+
+    gn = EfiPay(config)
+
+    try:
+        pagamento = gn.pix_detail_charge(txid=txid)
+        if pagamento["status"] == "CONCLUIDA":
+            cur.execute("UPDATE users2 SET is_premium = TRUE WHERE id = %s", (user_id,))
+            cur.execute("UPDATE pagamentos_pix SET confirmado = TRUE WHERE txid = %s", (txid,))
+            conn.commit()
+            return jsonify({
+                "status": "ok",
+                "mensagem": "Parabéns! Seu pagamento foi aprovado, agora você está apto a editar imagens."
+            })
+        else:
+            return jsonify({"status": "pendente", "mensagem": "Pagamento ainda não foi confirmado."})
+    except Exception as e:
+        return jsonify({"status": "erro", "mensagem": str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
+
+@app.route("/generate-payment-pix")
 def generate_payment_pix():
     servico = request.args.get("servico")
     user_id = session.get("user_id")
@@ -1603,7 +1651,7 @@ def generate_payment_pix():
         return jsonify({"error": "Usuário não autenticado"}), 401
 
     planos_info = {
-        "editar-imagens": {"price": 10.00, "title": "Desbloqueio de Edição de Imagens"}
+        "editar-imagens": {"price": 00.50, "title": "Desbloqueio de Edição de Imagens"}
     }
 
     if servico not in planos_info:
@@ -1619,40 +1667,101 @@ def generate_payment_pix():
     if not user_info:
         return jsonify({"error": "Usuário não encontrado"}), 404
 
-    payment_data = {
-        "items": [{
-            "title": planos_info[servico]["title"],
-            "quantity": 1,
-            "currency_id": "BRL",
-            "unit_price": planos_info[servico]["price"]
-        }],
-        "payer": {
-            "email": user_info[1],
-            "name": user_info[0]
-        },
-        "back_urls": {
-            "success": f"{BASE_URL}/payment-success?servico={servico}",
-            "failure": f"{BASE_URL}/payment-failure"
-        },
-        "auto_return": "approved",
-        "payment_methods": {
-    "excluded_payment_types": [{"id": "credit_card"}, {"id": "debit_card"}, {"id": "ticket"}, {"id": "atm"}]
-}
-
+    config = {
+        "client_id": os.getenv("EFI_CLIENT_ID"),
+        "client_secret": os.getenv("EFI_CLIENT_SECRET"),
+        "certificate": os.getenv("EFI_CERTIFICATE_PATH"),
+        "sandbox": os.getenv("EFI_SANDBOX", "false").lower() == "true"
     }
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"
+    gn = EfiPay(config)
+
+    body = {
+        "calendario": {"expiracao": 3600},
+        "valor": {"original": f"{planos_info[servico]['price']:.2f}"},
+        "chave": "49995ebf-1875-462b-89c0-edc4af1ac08a",
+        "solicitacaoPagador": f"Pagamento referente ao serviço: {planos_info[servico]['title']}"
     }
 
-    response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)
+    try:
+        charge = gn.pix_create_immediate_charge(body=body)
+        txid = charge["txid"]
 
-    if response.status_code == 201:
-        return jsonify({"url": response.json()["init_point"]})
-    else:
-        print("Erro PIX:", response.text)
-        return jsonify({"error": "Erro ao criar pagamento com PIX"}), 500
+        # Salvar cobrança no banco
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO pagamentos_pix (user_id, txid, servico) VALUES (%s, %s, %s)",
+            (user_id, txid, servico)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        loc_id = charge["loc"]["id"]
+        qrcode = gn.pix_generate_qrcode(params={"id": loc_id})   
+
+        return jsonify({
+              "qr_code": qrcode["qrcode"],
+            "qr_code_base64": qrcode["imagemQrcode"],
+            "copy_code": qrcode["qrcode"],
+            "qr_link": qrcode["linkVisualizacao"]
+        }) # link para abrir a cobrança
+    except Exception as e:
+        print("❌ Erro ao gerar cobrança PIX:", e)
+        return jsonify({"error": "Erro ao gerar cobrança PIX"}), 500
+
+
+@app.route("/webhook-pix", methods=["POST"])
+def webhook_pix():
+    payload = request.get_json()
+
+    if not payload:
+        return jsonify({"status": "erro", "mensagem": "Payload inválido"}), 400
+
+    try:
+        txid = payload["pix"][0]["txid"]
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Confirmar cobrança no banco
+        cur.execute("UPDATE pagamentos_pix SET confirmado = TRUE WHERE txid = %s", (txid,))
+        cur.execute("""
+            UPDATE users2 SET is_premium = TRUE
+            WHERE id = (
+                SELECT user_id FROM pagamentos_pix WHERE txid = %s
+            )
+        """, (txid,))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        print(f"✅ Pagamento confirmado via webhook para txid: {txid}")
+        return jsonify({"status": "ok"}), 200
+    except Exception as e:
+        print("❌ Erro no Webhook:", e)
+        return jsonify({"status": "erro"}), 500
+
+@app.route("/configurar-webhook")
+def configurar_webhook():
+    config = {
+        "client_id": os.getenv("EFI_CLIENT_ID"),
+        "client_secret": os.getenv("EFI_CLIENT_SECRET"),
+        "certificate": os.getenv("EFI_CERTIFICATE_PATH"),
+        "sandbox": os.getenv("EFI_SANDBOX", "false").lower() == "true"
+    }
+
+    gn = EfiPay(config)
+
+    try:
+        body = {
+            "webhookUrl": "https://sitegenius.com.br/webhook-pix"
+        }
+
+        response = gn.pix_config_webhook(chave="49995ebf-1875-462b-89c0-edc4af1ac08a", body=body)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"erro": str(e)})
 
 
     
