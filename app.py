@@ -1594,28 +1594,20 @@ def generate_payment():
         print("Detalhes:", response.json())
         return "Erro ao gerar pagamento", 500
 
-@app.route('/generate-payment-transparente')
-def generate_payment_transparente():
-    plano = request.args.get("plano")
+@app.route('/generate-payment-pix')
+def generate_payment_pix():
     servico = request.args.get("servico")
+    user_id = session.get("user_id")
 
-    tipo = plano or servico
-    if not tipo:
-        return jsonify({"error": "Plano ou serviço não informado"}), 400
+    if not user_id:
+        return jsonify({"error": "Usuário não autenticado"}), 401
 
     planos_info = {
-        "essential": {"price": 20.00, "title": "Premium Essential"},
-        "moderado": {"price": 59.90, "title": "Premium Moderado"},
-        "master": {"price": 120.90, "title": "Premium Master"},
         "editar-imagens": {"price": 10.00, "title": "Desbloqueio de Edição de Imagens"}
     }
 
-    if tipo not in planos_info:
-        return jsonify({"error": "Plano ou serviço inválido"}), 400
-
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Usuário não autenticado"}), 401
+    if servico not in planos_info:
+        return jsonify({"error": "Serviço inválido"}), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1629,25 +1621,24 @@ def generate_payment_transparente():
 
     payment_data = {
         "items": [{
-            "title": f"{planos_info[tipo]['title']} - Site Genius",
+            "title": planos_info[servico]["title"],
             "quantity": 1,
             "currency_id": "BRL",
-            "unit_price": planos_info[tipo]["price"]
+            "unit_price": planos_info[servico]["price"]
         }],
         "payer": {
             "email": user_info[1],
             "name": user_info[0]
         },
-        "metadata": {
-            "user_id": user_id,
-            "plano": plano if plano else None,
-            "servico": servico if servico else None
-        },
         "back_urls": {
-            "success": f"{BASE_URL}/payment-success?plano={tipo}",
+            "success": f"{BASE_URL}/payment-success?servico={servico}",
             "failure": f"{BASE_URL}/payment-failure"
         },
-        "auto_return": "approved"
+        "auto_return": "approved",
+        "payment_methods": {
+    "excluded_payment_types": [{"id": "credit_card"}, {"id": "debit_card"}, {"id": "ticket"}, {"id": "atm"}]
+}
+
     }
 
     headers = {
@@ -1658,9 +1649,11 @@ def generate_payment_transparente():
     response = requests.post("https://api.mercadopago.com/checkout/preferences", json=payment_data, headers=headers)
 
     if response.status_code == 201:
-        return jsonify({"preference_id": response.json()["id"]})
+        return jsonify({"url": response.json()["init_point"]})
     else:
-        return jsonify({"error": "Erro ao criar preferência"}), 500
+        print("Erro PIX:", response.text)
+        return jsonify({"error": "Erro ao criar pagamento com PIX"}), 500
+
 
     
 @app.route('/verificar-sessao')

@@ -804,6 +804,12 @@ onmouseout="this.style.transform='scale(1)'"
                     
                     <form onsubmit="return pagar('editar-imagens')">
                       <button class="btn buy-premium" type="submit">Liberar Agora</button>
+                      <button onclick="abrirPagamentoPix('editar-imagens')" class="btn buy-premium" style="background: #009688; margin-top: 10px;">
+                        <i class="fas fa-qrcode"></i> Pagar com PIX
+                      </button>
+                      
+                      <div id="pix_container_editar-imagens" style="margin-top: 10px;"></div>
+                      
                     </form>
                     <div id="wallet_container_editar-imagens" style="margin-top: 15px;"></div>
                   </div>
@@ -825,6 +831,7 @@ onmouseout="this.style.transform='scale(1)'"
         </section>
         <script src="https://sdk.mercadopago.com/js/v2"></script>
         <script>
+            
             const mp = new MercadoPago("APP_USR-89864dff-9816-40cb-814e-e9175dc2e68c");
 
 function pagar(plano) {
@@ -849,6 +856,39 @@ function pagar(plano) {
     });
   return false;
 }
+
+
+function pagarPIX(tipo) {
+  fetch(`/generate-payment-pix?servico=${tipo}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.qr_code_base64) {
+        const container = document.getElementById(`pix_container_${tipo}`);
+        container.innerHTML = `
+          <img src="data:image/png;base64,${data.qr_code_base64}" alt="QR Code PIX" style="max-width:200px;">
+          <p style="font-size:14px; margin-top:8px;">Ou copie o código abaixo:</p>
+          <textarea readonly style="width:100%; font-size:12px;">${data.qr_code}</textarea>
+          <a href="${data.copy_code}" target="_blank" style="display:inline-block; margin-top:10px; background:#009688; color:white; padding:6px 12px; border-radius:6px; text-decoration:none;">
+            Abrir pagamento
+          </a>
+        `;
+      } else {
+        alert("Erro ao gerar PIX");
+      }
+    });
+}
+function abrirPagamentoPix(servico) {
+  fetch(`/generate-payment-pix?servico=${servico}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        alert("Erro ao gerar link PIX.");
+      }
+    });
+}
+
           </script>
           
     </main>
