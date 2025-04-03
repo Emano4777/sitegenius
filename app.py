@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify,make_response
 import os
-print("🔐 Caminho do certificado:", os.getenv("EFI_CERTIFICATE_PATH"))
 import psycopg2
 import bcrypt
 import requests

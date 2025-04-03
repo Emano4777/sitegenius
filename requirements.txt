@@ -11,3 +11,4 @@ cloudinary
 python-dotenv
 authlib
 email-validator
+efipay
