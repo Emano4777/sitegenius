@@ -1616,6 +1616,11 @@ def verificar_pagamento():
 
     txid = result[0]
 
+    if not txid:
+        cur.close()
+        conn.close()
+        return jsonify({"status": "erro", "mensagem": "Cobrança sem TXID registrado"}), 400
+
     config = {
         "client_id": os.getenv("EFI_CLIENT_ID"),
         "client_secret": os.getenv("EFI_CLIENT_SECRET"),
@@ -1689,6 +1694,8 @@ def generate_payment_pix():
     try:
         charge = gn.pix_create_immediate_charge(body=body)
         txid = charge["txid"]
+        print("🔍 RESPOSTA DA CRIAÇÃO DE COBRANÇA:", charge)
+        print("✅ TXID:", txid)
 
         # Salvar cobrança no banco
         conn = get_db_connection()

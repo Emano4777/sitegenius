@@ -913,33 +913,36 @@ function iniciarVerificacaoPagamento(servico) {
     spinner.style.display = "inline-block"; // mostra o loader
   }
 
-  const interval = setInterval(() => {
-    fetch('/verificar-pagamento')
-      .then(res => res.json())
-      .then(data => {
-        if (statusEl) {
-          statusEl.textContent = data.mensagem;
+  setTimeout(() => {
+    const interval = setInterval(() => {
+      fetch('/verificar-pagamento')
+        .then(res => res.json())
+        .then(data => {
+          if (statusEl) {
+            statusEl.textContent = data.mensagem;
 
-          if (data.status === 'ok') {
-            statusEl.style.color = 'green';
-            clearInterval(interval);
-            if (spinner) spinner.style.display = "none";
-          } else if (data.status === 'pendente') {
-            statusEl.style.color = 'orange';
-          } else {
-            statusEl.style.color = 'red';
-            if (spinner) spinner.style.display = "none";
+            if (data.status === 'ok') {
+              statusEl.style.color = 'green';
+              clearInterval(interval);
+              if (spinner) spinner.style.display = "none";
+            } else if (data.status === 'pendente') {
+              statusEl.style.color = 'orange';
+            } else {
+              statusEl.style.color = 'red';
+              if (spinner) spinner.style.display = "none";
+            }
           }
-        }
-      });
+        });
 
-    tentativas++;
-    if (tentativas > 20) {
-      clearInterval(interval);
-      if (spinner) spinner.style.display = "none";
-    }
-  }, 5000); // verifica a cada 5 segundos
+      tentativas++;
+      if (tentativas > 20) {
+        clearInterval(interval);
+        if (spinner) spinner.style.display = "none";
+      }
+    }, 5000); // verifica a cada 5 segundos
+  }, 3000); // espera 3 segundos antes de começar
 }
+
 
 function abrirPagamentoPix(servico) {
   fetch(`/generate-payment-pix?servico=${servico}`)
