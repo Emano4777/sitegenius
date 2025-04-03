@@ -1735,7 +1735,7 @@ def webhook_pix():
         cur.close()
         conn.close()
 
-        print(f"✅ Pagamento confirmado via webhook para txid: {txid}")
+        print(f"✅ Pagamento confirmado via webhok para txid: {txid}")
         return jsonify({"status": "ok"}), 200
     except Exception as e:
         print("❌ Erro no Webhook:", e)
