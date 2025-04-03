@@ -808,6 +808,10 @@ onmouseout="this.style.transform='scale(1)'"
                         <i class="fas fa-qrcode"></i> Pagar com PIX
                       </button>
                     </form>
+                    <div style="margin-top: 10px;">
+                        <span id="spinner_pagamento_editar-imagens" class="loader" style="display: none;">⏳</span>
+                        <div id="status_pagamento_editar-imagens" style="font-weight: bold;"></div>
+                      </div>
                     <div id="wallet_container_editar-imagens" style="margin-top: 15px;"></div>
                     <div id="status_pagamento_editar-imagens" style="margin-top: 15px; font-weight: bold;"></div>
                     <div id="pix_container_editar-imagens" style="margin-top: 10px;"></div>
@@ -857,18 +861,21 @@ function pagar(plano) {
 }
 
 function verificarPagamento(servico) {
+  const statusEl = document.getElementById(`status_pagamento_${servico}`);
+  const spinner = document.getElementById(`spinner_pagamento_${servico}`);
+
   fetch('/verificar-pagamento')
     .then(res => res.json())
     .then(data => {
-      const statusEl = document.getElementById(`status_pagamento_${servico}`);
-      statusEl.textContent = data.mensagem;
-      if (data.status === 'ok') {
-        statusEl.style.color = 'green';
-      } else {
-        statusEl.style.color = 'red';
+      if (statusEl) {
+        statusEl.textContent = data.mensagem;
+        statusEl.style.color = data.status === 'ok' ? 'green' : 'red';
       }
+
+      if (spinner) spinner.style.display = "none";
     });
 }
+
 
 
 
@@ -894,27 +901,43 @@ function pagarPIX(tipo) {
 
 function iniciarVerificacaoPagamento(servico) {
   const statusEl = document.getElementById(`status_pagamento_${servico}`);
+  const spinner = document.getElementById(`spinner_pagamento_${servico}`);
   let tentativas = 0;
+
+  if (statusEl) {
+    statusEl.textContent = "Esperando confirmação do pagamento...";
+    statusEl.style.color = 'orange';
+  }
+
+  if (spinner) {
+    spinner.style.display = "inline-block"; // mostra o loader
+  }
 
   const interval = setInterval(() => {
     fetch('/verificar-pagamento')
       .then(res => res.json())
       .then(data => {
-        if (data.status === 'ok') {
-          clearInterval(interval);
+        if (statusEl) {
           statusEl.textContent = data.mensagem;
-          statusEl.style.color = 'green';
-        } else if (data.status === 'pendente') {
-          statusEl.textContent = "Aguardando confirmação do pagamento...";
-          statusEl.style.color = 'orange';
-        } else {
-          statusEl.textContent = "Erro ao verificar pagamento.";
-          statusEl.style.color = 'red';
+
+          if (data.status === 'ok') {
+            statusEl.style.color = 'green';
+            clearInterval(interval);
+            if (spinner) spinner.style.display = "none";
+          } else if (data.status === 'pendente') {
+            statusEl.style.color = 'orange';
+          } else {
+            statusEl.style.color = 'red';
+            if (spinner) spinner.style.display = "none";
+          }
         }
       });
 
     tentativas++;
-    if (tentativas > 20) clearInterval(interval); // para depois de 100s (20x5s)
+    if (tentativas > 20) {
+      clearInterval(interval);
+      if (spinner) spinner.style.display = "none";
+    }
   }, 5000); // verifica a cada 5 segundos
 }
 

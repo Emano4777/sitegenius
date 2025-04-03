@@ -1608,7 +1608,10 @@ def verificar_pagamento():
     cur = conn.cursor()
     cur.execute("SELECT txid FROM pagamentos_pix WHERE user_id = %s ORDER BY id DESC LIMIT 1", (user_id,))
     result = cur.fetchone()
+
     if not result:
+        cur.close()
+        conn.close()
         return jsonify({"status": "erro", "mensagem": "Nenhuma cobrança encontrada"}), 404
 
     txid = result[0]
@@ -1624,7 +1627,7 @@ def verificar_pagamento():
 
     try:
         pagamento = gn.pix_detail_charge(txid=txid)
-        if pagamento["status"] == "CONCLUIDA":
+        if pagamento.get("status") == "CONCLUIDA":
             cur.execute("UPDATE users2 SET is_premium = TRUE WHERE id = %s", (user_id,))
             cur.execute("UPDATE pagamentos_pix SET confirmado = TRUE WHERE txid = %s", (txid,))
             conn.commit()
@@ -1639,6 +1642,7 @@ def verificar_pagamento():
     finally:
         cur.close()
         conn.close()
+
 
 
 
