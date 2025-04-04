@@ -185,13 +185,40 @@ def gerar_site():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
-    nivel = cur.fetchone()
+    cur.execute("SELECT premium_level, ia_usos FROM users2 WHERE id = %s", (user_id,))
+    resultado = cur.fetchone()
 
-    if not nivel or nivel[0] != 'master':
+    if not resultado:
         cur.close()
         conn.close()
-        return jsonify({"error": "Apenas usuários master podem usar essa funcionalidade."}), 403
+        return jsonify({"error": "Usuário não encontrado."}), 404
+
+    nivel, usos = resultado
+    nivel = nivel.strip().lower()
+
+    limite_por_nivel = {
+        "essential": 1,
+        "moderado": 8,
+        "master": float("inf")
+    }
+
+    limite = limite_por_nivel.get(nivel, 0)
+
+    if usos >= limite:
+        cur.close()
+        conn.close()
+        if nivel == "essential":
+            return jsonify({"error": "Você atingiu o limite de uso da IA (1 vez)."}), 403
+        elif nivel == "moderado":
+            return jsonify({"error": "Você atingiu o limite de uso da IA (8 vezes)."}), 403
+        else:
+            return jsonify({"error": "Você atingiu o limite de uso da IA."}), 403
+
+    # Incrementa contador se não for master
+    if nivel != "master":
+        cur.execute("UPDATE users2 SET ia_usos = ia_usos + 1 WHERE id = %s", (user_id,))
+        conn.commit()
+
 
     data = request.get_json()
     prompt = data.get("prompt")
@@ -1647,9 +1674,9 @@ def generate_payment():
         return "Plano não informado", 400
 
     planos_info = {
-        "essential": {"price": 32.50, "title": "Premium Essential"},
-        "moderado": {"price": 59.90, "title": "Premium Moderado"},
-        "master": {"price": 120.90, "title": "Premium Master"}
+        "essential": {"price": 20.00, "title": "Premium Essential"},
+        "moderado": {"price": 45.00, "title": "Premium Moderado"},
+        "master": {"price": 100.00, "title": "Premium Master"}
     }
 
     if plano not in planos_info:
@@ -2207,10 +2234,7 @@ def usar_template(template_name):
         cur.close(); conn.close()
         return jsonify({"success": False, "message": "Usuários gratuitos só podem criar 1 modelo."}), 403
 
-    # Exceção para o template11: só libera para usuários master
-    if template_name == 'template11' and user_premium_level != 'master':
-        cur.close(); conn.close()
-        return jsonify({"success": False, "message": "Este template é exclusivo para usuários Master."}), 403
+  
 
     # Regra geral de bloqueio para usuários free tentando usar templates premium
     if template_level != 'free' and user_premium_level == 'free':

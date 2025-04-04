@@ -152,7 +152,7 @@
             <i class="fas fa-arrow-left"></i> Voltar para Meus Templates
         </button>
 
-        {% if premium_level == 'master' %}
+        {% if premium_level in ['master', 'moderado', 'essential'] %}
         <input id="promptInput" placeholder="Descreva seu site..." style="width: 250px;" />
         <button id="gerarIA" class="btn" style="background-color: #4CAF50;">
             <i class="fas fa-robot"></i> Gerar com IA
@@ -203,10 +203,10 @@
             const nivel = "{{ premium_level }}".toLowerCase().trim();
 
     // Se o nível não for master, remove os elementos manualmente
-    if (nivel !== "master") {
-        document.getElementById("promptInput")?.remove();
-        document.getElementById("gerarIA")?.remove();
-    }
+    if (!["master", "moderado", "essential"].includes(nivel)) {
+    document.getElementById("promptInput")?.remove();
+    document.getElementById("gerarIA")?.remove();
+}
 
             fetch('/verificar-sessao', {
     credentials: 'include'
@@ -514,21 +514,37 @@ document.getElementById("gerarIA")?.addEventListener("click", async () => {
     });
 
     const data = await res.json();
-    console.log("Dados recebidos da IA:", data);
+
+    if (res.status === 403) {
+        alert(data.error);
+
+        // Mostra alerta de uso esgotado por tipo
+        if (data.error.includes("1 vez")) {
+            alert("Como seu usuário é Essential, você só pode usar a IA uma vez. O botão será desabilitado.");
+        } else if (data.error.includes("8 vezes")) {
+            alert("Como seu usuário é Moderado, você já usou as 8 vezes disponíveis. O botão será desabilitado.");
+        }
+
+        document.getElementById("gerarIA").disabled = true;
+        document.getElementById("gerarIA").style.display = "none";
+        return;
+    }
 
     if (editor) {
-    const dom = editor.DomComponents;
-    const css = editor.CssComposer;
+        const dom = editor.DomComponents;
+        const css = editor.CssComposer;
 
-    dom.clear();
-    css.clear();
+        dom.clear();
+        css.clear();
 
-    editor.setComponents(data.html || '');
-    editor.setStyle(data.css || '');
-}
+        editor.setComponents(data.html || '');
+        editor.setStyle(data.css || '');
+    }
+
     // 🔥 Salva automaticamente no banco após gerar
-    salvarTemplate(); 
+    salvarTemplate();
 });
+
     </script>
 </body>
 </html>
