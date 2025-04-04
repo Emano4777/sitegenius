@@ -2084,6 +2084,28 @@ def sugerir_template():
     except Exception as e:
         print("Erro ao enviar e-mail:", e)
         return "Erro ao enviar sugestão", 500
+@app.route("/ajuda-suporte", methods=["POST"])
+def ajuda_suporte():
+    mensagem = request.form.get("mensagem")
+    if not mensagem:
+        return redirect("/tutorial")  # redireciona de volta para a Central de Ajuda
+
+    corpo_email = f"Mensagem recebida na Central de Ajuda:\n\n{mensagem}"
+
+    msg = MIMEText(corpo_email)
+    msg["Subject"] = "Ajuda - Problema Técnico no Site Genius"
+    msg["From"] = "emano4775@gmail.com"
+    msg["To"] = "emano4775@gmail.com"
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login("emano4775@gmail.com", "xgyq bidt ftpb fyfy")
+            server.send_message(msg)
+        return redirect("/tutorial")  # volta pra página de ajuda após enviar
+    except Exception as e:
+        print("Erro ao enviar e-mail:", e)
+        return "Erro ao enviar suporte", 500
+
 
 @app.route('/check-login')
 def check_login():

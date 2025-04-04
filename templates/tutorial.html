@@ -357,7 +357,7 @@
 </div>
       
      
-      
+       
 
       <div class="accordion-item">
         <button class="accordion-question"><i class="fas fa-question-circle"></i> Sou Premium ou comprei o serviço avulso. Como edito as imagens no meu site?</button>
@@ -425,10 +425,104 @@ accordions.forEach(btn => {
     }
   });
 });
+
+
+
   </script>
 <script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
+<script>
 
-  
+
+function enviarMensagemSuporte() {
+  alert("Mensagem enviada com sucesso! Em breve entraremos em contato com você.");
+  return true; // permite o envio do formulário
+}
+  window.onload = function () {
+    const abrir = document.getElementById("abrirModalAjuda");
+    const modal = document.getElementById("modalAjuda");
+
+    abrir.addEventListener("click", () => {
+      modal.style.display = "flex";
+    });
+
+    function fecharModalAjuda() {
+      modal.style.display = "none";
+    }
+
+
+
+    window.fecharModalAjuda = fecharModalAjuda; // <-- para funcionar no onclick do botão
+
+    // Fecha modal ao clicar fora
+    window.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.style.display = "none";
+      }
+    });
+  };
+</script>
+
+<!-- Botão Flutuante de Suporte -->
+<button id="abrirModalAjuda" style="
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  background-color: #1e3a8a;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 50px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0px 2px 10px rgba(0,0,0,0.2);
+  z-index: 9999;
+">
+  <i class="fas fa-life-ring" style="margin-right: 6px;"></i> Suporte
+</button>
+
+  <!-- Modal de Suporte -->
+<div id="modalAjuda" style="
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+background-color: rgba(0, 0, 0, 0.6);
+z-index: 99999;
+justify-content: center;
+align-items: center;
+">
+<div style="
+  background-color: white;
+  padding: 25px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  position: relative;
+">
+  <button onclick="fecharModalAjuda()" style="
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  ">&times;</button>
+
+  <h2 style="margin-top: 0;">Está com problemas técnicos?</h2>
+  <p style="font-size: 15px;">Nos envie uma mensagem e retornaremos o mais breve possível.</p>
+  <form action="/ajuda-suporte" method="POST" onsubmit="return enviarMensagemSuporte()">
+    <textarea name="mensagem" required rows="5" style="width: 100%; padding: 10px; font-size: 15px; border-radius: 6px; border: 1px solid #ccc;"></textarea><br><br>
+    <button type="submit" style="background-color: #1e3a8a; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
+      <i class="fas fa-paper-plane"></i> Enviar
+    </button>
+  </form>
+</div>
+</div>
+
 </body>
 </html>
