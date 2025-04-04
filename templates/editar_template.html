@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/grapesjs@0.17.26/dist/grapes.min.js"></script>
+    <script src="https://unpkg.com/grapesjs-preset-webpage@1.0.2"></script>
+
     <title>Editor Visual</title>
 
     
@@ -148,6 +151,14 @@
         <button id="voltar-site-btn">
             <i class="fas fa-arrow-left"></i> Voltar para Meus Templates
         </button>
+
+        {% if premium_level == 'master' %}
+        <input id="promptInput" placeholder="Descreva seu site..." style="width: 250px;" />
+        <button id="gerarIA" class="btn" style="background-color: #4CAF50;">
+            <i class="fas fa-robot"></i> Gerar com IA
+        </button>
+        {% endif %}
+
         
         <input id="input-pagina" list="paginas-disponiveis" placeholder="Digite ou selecione uma página">
         <datalist id="paginas-disponiveis"></datalist>
@@ -161,13 +172,22 @@
         </button>
     </div>
     <script>
+        const PREMIUM_LEVEL = "{{ premium_level }}";
+        console.log("Nivel:", PREMIUM_LEVEL);
+    </script>
+    
+    <script>
         
         const TEMPLATE_ID = "{{ template_id }}";
         const PAGE_NAME = "{{ page_name }}";
         
         console.log("TEMPLATE_ID:", TEMPLATE_ID);
     </script>
+    <script>
+        console.log("🧠 Premium Level recebido:", "{{ premium_level }}");
+    </script>
     
+
     <script>
         const IS_PREMIUM = "{{ is_premium }}" === "true";
         console.log("IS_PREMIUM:", IS_PREMIUM);
@@ -178,7 +198,16 @@
     </script>
     
     <script>
+        let editor;
         document.addEventListener("DOMContentLoaded", function () {
+            const nivel = "{{ premium_level }}".toLowerCase().trim();
+
+    // Se o nível não for master, remove os elementos manualmente
+    if (nivel !== "master") {
+        document.getElementById("promptInput")?.remove();
+        document.getElementById("gerarIA")?.remove();
+    }
+
             fetch('/verificar-sessao', {
     credentials: 'include'
     })
@@ -197,7 +226,7 @@ document.getElementById("voltar-site-btn").addEventListener("click", function ()
         const rawHtml = document.getElementById("template-content").textContent;
         const templateHTML = JSON.parse(rawHtml);
 
-        const editor = grapesjs.init({
+        editor = grapesjs.init({
             container: "#editor",
             height: "100%",
             width: "auto",
@@ -465,6 +494,40 @@ window.salvarTemplate = function () {
     alert("Erro ao salvar:\n" + text);
 });
 };
+});
+
+document.getElementById("gerarIA")?.addEventListener("click", async () => {
+    const prompt = document.getElementById("promptInput").value;
+
+    if (!prompt.trim()) {
+        alert("Digite uma descrição para gerar o site com IA.");
+        return;
+    }
+
+    const confirmar = confirm("⚠️ Isso irá sobrescrever completamente o conteúdo atual com o que a IA gerar. Deseja continuar?");
+    if (!confirmar) return;
+
+    const res = await fetch("/gerar-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+    });
+
+    const data = await res.json();
+    console.log("Dados recebidos da IA:", data);
+
+    if (editor) {
+    const dom = editor.DomComponents;
+    const css = editor.CssComposer;
+
+    dom.clear();
+    css.clear();
+
+    editor.setComponents(data.html || '');
+    editor.setStyle(data.css || '');
+}
+    // 🔥 Salva automaticamente no banco após gerar
+    salvarTemplate(); 
 });
     </script>
 </body>

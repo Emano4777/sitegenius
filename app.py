@@ -62,10 +62,9 @@ app.config['SESSION_COOKIE_PATH'] = '/'
 
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-159038661951932-040216-41e126ddffaed400ae1a1f25863dd676-2342791238"
 # Sua chave da OpenAI aqui (ou use dotenv se preferir)
-client = OpenAI()
-
-# Conexão com o Banco de Dados
 BASE_URL = "https://sitegenius.com.br"
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 def get_db_connection():
     return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
@@ -180,21 +179,33 @@ def listar_produtos():
 
 @app.route("/gerar-site", methods=["POST"])
 def gerar_site():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Não autorizado"}), 401
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
+    nivel = cur.fetchone()
+
+    if not nivel or nivel[0] != 'master':
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Apenas usuários master podem usar essa funcionalidade."}), 403
+
     data = request.get_json()
     prompt = data.get("prompt")
 
     response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "Você é um gerador de sites profissionais. Gere HTML com estrutura completa: cabeçalho com menus, seção de serviços, seção de produtos (com nome, imagem e preço), seção de contato e um botão flutuante do WhatsApp. Inclua o estilo dentro da tag <style> com layout bonito e moderno. Não inclua explicações."},
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ],
-    max_tokens=1500,
-    temperature=0.7
-)
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Você é um gerador de sites profissionais. Gere HTML com estrutura completa: cabeçalho com menus, seção de serviços, seção de produtos (com nome, imagem e preço), seção de contato e um botão flutuante do WhatsApp. Inclua o estilo dentro da tag <style> com layout bonito e moderno. Não inclua explicações."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=1500,
+        temperature=0.7
+    )
+
     html_gerado = response.choices[0].message.content
     soup = BeautifulSoup(html_gerado, 'html.parser')
 
@@ -205,7 +216,55 @@ def gerar_site():
 
     html_sem_style = str(soup)
 
+    template_id = session.get("template_id") or request.cookies.get("template_id")
+    page_name = session.get("page_name") or request.cookies.get("page_name")
+
+    if not template_id or not page_name:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Template ou página não definidos na sessão."}), 400
+
+    cur.execute("""
+        SELECT template_name, subdomain
+        FROM user_templates
+        WHERE user_id = %s AND id = %s
+        LIMIT 1
+    """, (user_id, template_id))
+
+    info = cur.fetchone()
+
+    if not info:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Template não encontrado."}), 404
+
+    template_name, subdomain = info
+
+    # Atualiza o HTML e CSS no banco
+    html_completo = f"""
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>{style}</style>
+    </head>
+    <body>{html_sem_style}</body>
+    </html>
+    """
+
+    cur.execute("""
+        UPDATE user_templates 
+        SET custom_html = %s
+        WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
+    """, (html_completo, user_id, template_name, subdomain, page_name))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
     return jsonify({"html": html_sem_style, "css": style})
+
 
 
 
@@ -2148,11 +2207,16 @@ def usar_template(template_name):
         cur.close(); conn.close()
         return jsonify({"success": False, "message": "Usuários gratuitos só podem criar 1 modelo."}), 403
 
-    # Bloqueia se template for premium e o usuário for nível 'free'
+    # Exceção para o template11: só libera para usuários master
+    if template_name == 'template11' and user_premium_level != 'master':
+        cur.close(); conn.close()
+        return jsonify({"success": False, "message": "Este template é exclusivo para usuários Master."}), 403
+
+    # Regra geral de bloqueio para usuários free tentando usar templates premium
     if template_level != 'free' and user_premium_level == 'free':
         cur.close(); conn.close()
         return jsonify({"success": False, "message": "Este template é Premium. Faça upgrade para usá-lo."}), 403
-   
+    
 
     
 
@@ -2756,6 +2820,8 @@ def inject_user_status():
 
 @app.route('/editar-template/<int:template_id>/<page_name>', methods=['GET', 'POST'])
 def editar_pagina(template_id, page_name):
+    session["template_id"] = template_id
+    session["page_name"] = page_name
     user_id = session.get('user_id')
 
     if not user_id:
@@ -2782,6 +2848,10 @@ def editar_pagina(template_id, page_name):
 
     conn = get_db_connection()
     cur = conn.cursor()
+
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
+    nivel = cur.fetchone()
+    premium_level = (nivel[0] if nivel and nivel[0] else 'free').strip()
     # Verifica se o usuário é premium logo de cara
     cur.execute("SELECT is_premium FROM users2 WHERE id = %s", (user_id,))
     premium_result = cur.fetchone()
@@ -2864,7 +2934,8 @@ def editar_pagina(template_id, page_name):
     html_atual=html_salvo,
     template_id=template_id,
     page_name=page_name,
-    is_premium=is_premium  # 👈 isso aqui é importante
+    is_premium=is_premium,
+    premium_level=premium_level # 👈 isso aqui é importante
 )
 
 
