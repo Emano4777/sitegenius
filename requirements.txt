@@ -13,3 +13,4 @@ authlib
 email-validator
 efipay
 pyOpenSSL
+openai

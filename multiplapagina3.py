@@ -3,11 +3,11 @@ import psycopg2
 from bs4 import BeautifulSoup
 import re
 
-TEMPLATE_NAME = 'template14'
+TEMPLATE_NAME = 'template11'
 SUBDOMAIN_PLACEHOLDER = '{{sub}}'
 
 ARQUIVOS = {
-    'index': 'template14_index.html',
+    'index': 'template11_index.html',
 
 }
 

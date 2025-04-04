@@ -24,6 +24,9 @@ from dotenv import load_dotenv
 from authlib.integrations.flask_client import OAuth
 from efipay import EfiPay
 import json
+from openai import OpenAI
+
+
 
 
 # Configuração
@@ -58,6 +61,9 @@ app.config['SESSION_COOKIE_PATH'] = '/'
 
 
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-159038661951932-040216-41e126ddffaed400ae1a1f25863dd676-2342791238"
+# Sua chave da OpenAI aqui (ou use dotenv se preferir)
+client = OpenAI()
+
 # Conexão com o Banco de Dados
 BASE_URL = "https://sitegenius.com.br"
 
@@ -96,6 +102,9 @@ def login_google():
     print("🔁 Redirect URI enviado para o Google:", redirect_uri)
     return google.authorize_redirect(redirect_uri)
 
+@app.route("/template-ia")
+def template_ia():
+    return render_template("template11_index.html")
 
 
 @app.route('/auth/google/callback')
@@ -166,6 +175,37 @@ def listar_produtos():
         })
     return jsonify(produtos)
 
+
+
+
+@app.route("/gerar-site", methods=["POST"])
+def gerar_site():
+    data = request.get_json()
+    prompt = data.get("prompt")
+
+    response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "Você é um gerador de sites profissionais. Gere HTML com estrutura completa: cabeçalho com menus, seção de serviços, seção de produtos (com nome, imagem e preço), seção de contato e um botão flutuante do WhatsApp. Inclua o estilo dentro da tag <style> com layout bonito e moderno. Não inclua explicações."},
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ],
+    max_tokens=1500,
+    temperature=0.7
+)
+    html_gerado = response.choices[0].message.content
+    soup = BeautifulSoup(html_gerado, 'html.parser')
+
+    style_tag = soup.find('style')
+    style = style_tag.string if style_tag else ""
+    if style_tag:
+        style_tag.extract()
+
+    html_sem_style = str(soup)
+
+    return jsonify({"html": html_sem_style, "css": style})
 
 
 

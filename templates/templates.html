@@ -1061,7 +1061,7 @@ iframe {
   </div>
 
   <div class="template premium-locked" style="
-    background-image: url('URL_DA_IMAGEM_AQUI');
+    background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743728503/jornalista-e-robo-ia-escrevendo-materia_y0dxza.jpg');
     background-size: cover;
     background-position: center;
     color: white;
@@ -1078,7 +1078,7 @@ iframe {
     </div>
 
     {% if is_premium %}
-      <button class="btn" onclick="previewTemplate('/template/template4')">
+    <button class="btn" onclick="previewTemplate('/template-preview/template11/index')">
         <i class="fas fa-eye"></i> Ver Template Premium
       </button>
     {% else %}
@@ -1087,11 +1087,11 @@ iframe {
       </button>
     {% endif %}
 
-    <button class="btn" onclick="toggleDetalhes('')">
+    <button class="btn" onclick="toggleDetalhes('detalhes-template11')">
       <i class="fas fa-info-circle"></i> Detalhes
     </button>
 
-    <div id="" style="
+    <div id="detalhes-template11" style="
       display: none;
       text-align: left;
       margin-top: 10px;
@@ -1102,9 +1102,10 @@ iframe {
       color: #333;
       box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
     ">
-      <p><strong>Ideal para:</strong> Artistas, designers, freelancers e criadores de conteúdo.</p>
-      <p><strong>Inclui:</strong> Seção de portfólio, blog pessoal, botão flutuante de contato e design ousado.</p>
-      <p><strong>Diferencial:</strong> Visual criativo com animações suaves e layout disruptivo.</p>
+<p><strong>Ideal para:</strong> Qualquer pessoa que deseje criar um site completo usando inteligência artificial.</p>
+<p><strong>Inclui:</strong> Geração automática de layout com IA, design responsivo, botão flutuante de WhatsApp, produtos cadastrados, estrutura moderna com GrapesJS.</p>
+<p><strong>Diferencial:</strong> Você descreve o que quer e a IA monta o site sozinho, direto no editor visual.</p>
+
     </div>
   </div>
 
@@ -1560,7 +1561,15 @@ iframe {
               Seu navegador não suporta a tag de vídeo.
             </video>
           </div>
-        </div>        
+        </div>     
+        <div id="carousel-template11" class="carousel-modal" style="display: none;">
+          <div class="carousel-track" style="display: flex; justify-content: center;">
+            <video class="carousel-video" controls autoplay loop muted style="max-width: 100%; border-radius: 10px;">
+              <source src="https://res.cloudinary.com/dyyrgll7h/video/upload/v1743728289/recording-2025-04-03-21-50-33_zjsedv.mp4" type="video/mp4">
+              Seu navegador não suporta a tag de vídeo.
+            </video>
+          </div>
+        </div>   
         <div class="modal-actions">
             <button class="btn" onclick="downloadTemplate()"><i class="fas fa-download"></i> Usar este template</button>
             <button class="btn close-btn" onclick="closePreview()"><i class="fas fa-times"></i> Fechar</button>
@@ -1749,7 +1758,28 @@ function exibirCarrosselTemplate10() {
     }, 4000);
   }
 }
+function exibirCarrosselTemplate11() {
+  const modal = document.getElementById("previewModal");
+  const iframe = document.getElementById("previewFrame");
+  const carrossel = document.getElementById("carousel-template11");
 
+  if (!modal || !iframe || !carrossel) return;
+
+  iframe.style.display = "none";
+  carrossel.style.display = "block";
+  modal.style.display = "flex";
+
+  const track = carrossel.querySelector('.carousel-track');
+  const totalSlides = track.children.length;
+
+  if (!carrosselIniciado) {
+    carrosselIniciado = true;
+    setInterval(() => {
+      index10 = (index10 + 1) % totalSlides;
+      track.style.transform = `translateX(-${index10 * 100}%)`;
+    }, 4000);
+  }
+}
 
 const track = document.querySelector('#carousel-template10 .carousel-track');
 const images = track.querySelectorAll('.carousel-img');
@@ -1776,26 +1806,42 @@ function enviarSugestao() {
 function previewTemplate(templateURL) {
   console.log("🖼️ Abrindo preview:", templateURL);
 
+  // Template 11 com vídeo
+  if (templateURL.includes('template11')) {
+    currentTemplate = 'template11';
+    document.getElementById("carousel-template11").style.display = "block";
+    document.getElementById("carousel-template10").style.display = "none";
+    document.getElementById("previewFrame").style.display = "none";
+    document.getElementById("previewModal").style.display = "flex";
+    exibirCarrosselTemplate11();
+    return;
+  }
+
+  // Template 10 com vídeo
   if (templateURL.includes('template10')) {
-    currentTemplate = 'template10'; // 🛠️ Aqui salva o nome pra usar depois
+    currentTemplate = 'template10';
+    document.getElementById("carousel-template10").style.display = "block";
+    document.getElementById("carousel-template11").style.display = "none";
+    document.getElementById("previewFrame").style.display = "none";
+    document.getElementById("previewModal").style.display = "flex";
     exibirCarrosselTemplate10();
     return;
-}
+  }
 
+  // Outros templates (com iframe)
   let modal = document.getElementById("previewModal");
   let iframe = document.getElementById("previewFrame");
-  let carrossel = document.getElementById("carousel-template10");
+
+  // Oculta os vídeos
+  document.getElementById("carousel-template10").style.display = "none";
+  document.getElementById("carousel-template11").style.display = "none";
+  iframe.style.display = "block";
 
   if (!modal || !iframe) {
     console.error("⚠️ Modal ou iframe não encontrados.");
     return;
   }
 
-  // Oculta o carrossel e mostra o iframe normalmente para os outros templates
-  iframe.style.display = "block";
-  if (carrossel) carrossel.style.display = "none";
-  
-  // Remove listener anterior se já existir
   iframe.removeEventListener("load", iframe.__previewHandler);
 
   iframe.__previewHandler = function () {

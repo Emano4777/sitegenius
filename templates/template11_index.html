@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Sites com IA</title>
+  <script src="https://unpkg.com/grapesjs"></script>
+  <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet"/>
+ <link href="https://unpkg.com/grapesjs-preset-webpage/dist/grapesjs-preset-webpage.min.css" rel="stylesheet"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+  
+    #top-bar {
+      height: 50px;
+      background-color: #1f1f1f;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 10px;
+    }
+  
+    #promptInput {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+  
+    #gerarBtn {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  
+    #editor {
+  position: fixed;
+  top: 50px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+
+  
+    .gjs-frame, .gjs-cv-canvas {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+  </style>
+</head>
+<body>
+  <div id="top-bar">
+    <input id="promptInput" placeholder="Descreva seu site..." />
+    <button id="gerarBtn">Gerar</button>
+  </div>
+
+  <div id="editor"></div>
+
+  <script src="https://unpkg.com/grapesjs"></script>
+<script>
+const editor = grapesjs.init({
+    container: "#editor",
+    height: "100vh",
+    width: "auto",
+    storageManager: false,
+    fromElement: false,
+    plugins: ["gjs-preset-webpage"],
+    pluginsOpts: { "gjs-preset-webpage": {} }
+});
+
+// Quando clicar no botão GERAR
+document.getElementById("gerarBtn").addEventListener("click", async () => {
+    const prompt = document.getElementById("promptInput").value;
+
+    const res = await fetch("/gerar-site", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+    });
+
+    const data = await res.json();
+
+    // Insere HTML e CSS gerados
+    editor.setComponents(data.html);
+    editor.setStyle(data.css);
+});
+
+editor.on("load", () => {
+     // corrige a altura do canvas interno
+  doc.documentElement.style.height = "100%";
+  doc.body.style.height = "100%";
+  doc.body.style.margin = "0";
+  doc.body.style.padding = "0";
+
+  // força ocupar a altura total
+  const main = doc.querySelector("body > div") || doc.body;
+  main.style.minHeight = "100vh";
+});
+</script>
+</body>
+</html>
