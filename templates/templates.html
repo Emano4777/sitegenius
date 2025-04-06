@@ -766,13 +766,12 @@ iframe {
   border-color: #007bff;
 }
 
-/* 🔽 Adapte para telas menores */
 @media (max-width: 600px) {
   .template-search-container {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 10px;
+    max-width: 100% !important; /* 🔧 força o container a ocupar toda a tela */
+    margin: 20px 10px !important; /* 🔧 dá um respiro nas laterais */
   }
+
 
   .template-search-container input {
     margin-bottom: 10px;
