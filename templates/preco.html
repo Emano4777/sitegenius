@@ -879,7 +879,14 @@ function verificarPagamento(servico) {
 }
 
 
+// Funções para abrir e fechar o menu mobile
+function openMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'block';
+    }
 
+    function closeMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'none';
+    }
 
 function pagarPIX(tipo) {
   fetch(`/generate-payment-pix?servico=${tipo}`)
