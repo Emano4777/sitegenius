@@ -35,9 +35,13 @@ footer {
 }
 
 footer .container {
+  display: flex;
     max-width: 1200px;
     margin: auto;
     text-align: center;
+    justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 @media (max-width: 768px) {
   .template-list {
@@ -748,11 +752,12 @@ iframe {
     top: -20px;
 }
 .template-search-container {
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-  margin: 30px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
+
 
 .template-search-container input {
   width: 100%;
