@@ -1957,7 +1957,7 @@ def payment_success():
         conn.commit()
         session['is_premium'] = True
         session['premium_level'] = plano
-        return redirect(url_for('admin_dashboard'))
+        return render_template('mensagem_sucesso.html', plano=plano)
     except psycopg2.Error:
         conn.rollback()
         return "Erro ao ativar premium", 500

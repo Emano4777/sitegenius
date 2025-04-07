@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Sucesso na Compra</title>
+  <style>
+    body {
+      background-color: #f1fff5;
+      font-family: 'Poppins', sans-serif;
+      color: #2d7033;
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .checkmark {
+      font-size: 5rem;
+      color: #28a745;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+  </style>
+  <script>
+    setTimeout(() => {
+      window.location.href = "/admin";
+    }, 5000); // Redireciona após 5 segundos
+  </script>
+</head>
+<body>
+  <div class="checkmark">✅</div>
+  <h1>Pagamento Aprovado com Sucesso!</h1>
+  <p>Bem-vindo à sua nova era! Agora você tem acesso completo ao plano <strong>{{ plano }}</strong> com todos os recursos do Site Genius. ✨</p>
+  <p>Redirecionando para seu painel em instantes...</p>
+</body>
+</html>
