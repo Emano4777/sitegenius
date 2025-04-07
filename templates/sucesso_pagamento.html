@@ -1,13 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
   <meta charset="UTF-8">
   <title>Pagamento Aprovado</title>
+  <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f7fdf9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .checkmark {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1.5rem;
+    }
+
+    .checkmark circle {
+      fill: none;
+      stroke: #28a745;
+      stroke-width: 6;
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: drawCircle 1s ease forwards;
+    }
+
+    .checkmark path {
+      fill: none;
+      stroke: #28a745;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawCheck 0.8s 0.8s ease forwards;
+    }
+
+    @keyframes drawCircle {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes drawCheck {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    h1 {
+      color: #28a745;
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    a {
+      display: inline-block;
+      padding: 0.8rem 1.6rem;
+      background-color: #28a745;
+      color: #fff;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    a:hover {
+      background-color: #218838;
+    }
+  </style>
 </head>
-<body style="text-align: center; padding: 2rem; font-family: Arial, sans-serif;">
-  <h1>✅ Pagamento Aprovado!</h1>
-  <p>Seu pedido foi realizado com sucesso. Obrigado pela compra!</p>
-  <a href="/{{ subdomain }}/loja" style="padding: 1rem 2rem; background: #28a745; color: white; border-radius: 5px; text-decoration: none;">Voltar à loja</a>
+<body>
+  <!-- ✅ Animação SVG -->
+  <svg class="checkmark" viewBox="0 0 52 52">
+    <circle cx="26" cy="26" r="25"/>
+    <path d="M16 27 L23 34 L36 19"/>
+  </svg>
+
+  <h1>Pagamento Aprovado!</h1>
+  <p>Seu pedido foi realizado com sucesso.<br>Obrigado por comprar com a gente! 💚</p>
+  <a href="/{{ subdomain }}/loja">Voltar à loja</a>
+
+  <!-- 🔊 Som suave ao carregar -->
+  <audio id="sucesso-audio" autoplay>
+    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_b3d74a6495.mp3" type="audio/mpeg">
+    Seu navegador não suporta áudio HTML5.
+  </audio>
 </body>
 </html>
