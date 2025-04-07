@@ -1,0 +1,430 @@
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
+  
+<style>
+   body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #fff6f8;
+}
+
+.produto {
+  background: #fff0f5;
+  border-radius: 14px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease;
+}
+
+.produto:hover {
+  transform: scale(1.03);
+}
+
+header {
+  font-family: 'Poppins', sans-serif;
+}
+
+section h2 {
+  color: #d88fb5;
+}
+
+
+#icone-carrinho {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #d88fb5;
+  color: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.6rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.carrinho-flutuante {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #fff;
+  border: 2px solid #d88fb5;
+  border-radius: 14px;
+  width: 300px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.carrinho-topo {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.carrinho-itens {
+  margin-top: 0.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 160px;
+}
+
+.btn-esvaziar {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #ddd;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-enviar-whats {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #25d366;
+  color: white;
+  text-align: center;
+  border-radius: 0 0 12px 12px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Botão "Adicionar ao Carrinho" */
+.btn-carrinho {
+  margin-top: 1rem;
+  padding: 10px 20px;
+  background: #d88fb5;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-carrinho:hover {
+  background: #bb6f97;
+}
+
+/* Botão "➖" para minimizar carrinho */
+.btn-minimizar {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #d88fb5;
+  transition: transform 0.2s ease;
+}
+
+.btn-minimizar:hover {
+  transform: scale(1.2);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+footer {
+  background: #3a2c3f;
+  color: white;
+}
+
+footer a:hover {
+  color: #ffd1e6;
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
+  </style>
+  
+
+  <header style="background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1744047982/8bc8287e545111f60ebef020e491cd86_r2nbep.jpg'); background-size:cover; background-position:center; color:white; text-align:center; padding:5rem 2rem;">
+    <div style="background-color: rgba(0,0,0,0.5); display: inline-block; padding: 1rem 2rem; border-radius: 10px;">
+        <h1>Studio Estética Elegance</h1>
+        <p>Beleza, cuidado e bem-estar para você se sentir incrível ✨💆‍♀️</p>
+
+    </div>      
+</header>
+  
+<section style="padding:3rem 1rem; max-width:1000px; margin:auto; text-align:center;">
+    <h2 style="color:#b36b00;">💆‍♀️ Procedimentos Estéticos</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-top:2rem;">
+  
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744047981/images_7_m3gvvm.jpg" style="width:100%; border-radius:10px;">
+        <h3>Limpeza de Pele Profunda</h3>
+        <p>Remoção de cravos, hidratação com argila branca ou preta e máscara calmante.</p>
+        <select id="opcao-hidratacao" style="margin:10px 0; padding:6px; border-radius:5px;">
+          <option value="">Escolha o tipo</option>
+          <option value="Argila Branca">Argila Branca</option>
+          <option value="Argila Preta">Argila Preta</option>
+          <option value="Vitamina C">Vitamina C</option>
+        </select>
+        <button class="btn-carrinho" onclick="adicionarCarrinho('Limpeza de Pele Profunda', document.getElementById('opcao-hidratacao').value)">Agendar Serviço</button>
+      </div>
+  
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744047982/images_8_btiqrj.jpg" style="width:100%; border-radius:10px;">
+        <h3>Drenagem Linfática</h3>
+        <p>Massagem suave para eliminação de toxinas e redução de inchaço corporal.</p>
+        <select id="opcao-escova" style="margin:10px 0; padding:6px; border-radius:5px;">
+          <option value="">Escolha a região</option>
+          <option value="Corpo inteiro">Corpo inteiro</option>
+          <option value="Rosto">Rosto</option>
+          <option value="Pernas e glúteos">Pernas e glúteos</option>
+        </select>
+        <button class="btn-carrinho" onclick="adicionarCarrinho('Drenagem Linfática', document.getElementById('opcao-escova').value)">Agendar Serviço</button>
+      </div>
+  
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744047982/microagulhamento-tudo-que-voce-precisa-saber-sobre-esse-procedimento_vttpgb.jpg" style="width:100%; border-radius:10px;">
+        <h3>Microagulhamento Facial</h3>
+        <p>Estimulação de colágeno, rejuvenescimento e redução de manchas e linhas finas.</p>
+        <select id="opcao-manicure" style="margin:10px 0; padding:6px; border-radius:5px;">
+          <option value="">Escolha o protocolo</option>
+          <option value="Com Ácido Hialurônico">Com Ácido Hialurônico</option>
+          <option value="Com Vitamina C">Com Vitamina C</option>
+          <option value="Com Retinol">Com Retinol</option>
+        </select>
+        <button class="btn-carrinho" onclick="adicionarCarrinho('Microagulhamento Facial', document.getElementById('opcao-manicure').value)">Agendar Serviço</button>
+      </div>
+  
+    </div>
+  </section>
+  
+
+  <section style="background:#fff0e6; padding:2rem; text-align:center;">
+    <h2 style="color:#b36b00;">🌟 Promoção da Semana</h2>
+    <p><strong><strong>Limpeza de Pele + Hidratação Facial</strong> por apenas <span style="color:#e60000;">R$ 79,90</span>!</p>
+    <button class="btn-carrinho" onclick="adicionarCarrinho('Combo Limpeza de Pele + Hidratação Facial', 'Promoção da semana')">Quero Agendar</button>
+  </section>
+  
+  <section style="background:#fffbe6; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#b36b00;">💬 O que nossas clientes dizem</h2>
+    <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">“Minha pele ficou incrível! Atendimento atencioso e ambiente relaxante.”<br><strong>— Larissa M.</strong></blockquote>
+    <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">“A melhor limpeza de pele que já fiz, super recomendo!”<br><strong>— Vanessa C.</strong></blockquote>
+  </section>
+  
+  <section style="background: #fffbe6; padding: 3rem 1rem; text-align: center;">
+    <h2 style="color: #b36b00;">🧴 Produtos que usamos</h2>
+    <p style="max-width: 700px; margin: auto; font-size: 1rem;">
+      Usamos dermocosméticos de alta qualidade como <strong>Adcos</strong>, <strong>La Roche-Posay</strong>, <strong>Bioage</strong> e <strong>Vita Derm</strong> para garantir resultados visíveis e seguros.
+    </p>
+  </section>
+  
+
+  <section style="padding: 3rem 1rem; text-align: center;">
+    <h2 style="color: #d48cb3;">📸 Nosso trabalho</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; max-width: 900px; margin: auto;">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744048388/9a9997_8e8f3e63182c48918503ac1bf40bf581_mv2_fqgdrv.png" style="width:100%; border-radius: 10px;">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744048396/images_9_itx6ua.jpg" style="width:100%; border-radius: 10px;">
+    </div>
+  </section>
+  
+
+  <section style="background: #fff0f5; padding: 3rem 1rem; text-align: center;">
+    <h2 style="color: #d48cb3;">📍 Onde estamos</h2>
+    <p>Rua das Rosas, 123 – Centro, São José do Rio Preto – SP</p>
+    <iframe src="https://www.google.com/maps/embed?pb=!1m18..." width="100%" height="300" style="border:0; border-radius: 10px; max-width: 700px; margin-top: 1rem;" allowfullscreen="" loading="lazy"></iframe>
+  </section>
+  
+
+  <div class="carrinho-flutuante" id="carrinho">
+    <div class="carrinho-topo">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>🛒 Seu Carrinho</h4>
+        <button onclick="toggleCarrinho()" class="btn-minimizar">➖</button>
+
+      </div>
+  
+      <div class="carrinho-itens" id="carrinho-itens">
+        <p>Nenhum item ainda.</p>
+      </div>
+      <textarea id="obs" placeholder="Observações (ex: sem açúcar, entrega às 15h)" style="margin-top:10px; width:100%; padding:6px; border-radius:5px;"></textarea>
+
+  
+      <button onclick="esvaziarCarrinho()" class="btn-esvaziar">
+        <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> Esvaziar Carrinho
+      </button>
+    </div>
+  
+    <a id="btn-whats" class="btn-enviar-whats" href="#" target="_blank">
+        <i class="fab fa-whatsapp" style="margin-right: 6px;"></i> Agendar pelo WhatsApp
+      </a>
+      
+  </div>
+  <div id="icone-carrinho" onclick="toggleCarrinho()">
+    🛒
+    <span id="contador-carrinho" style="
+      position:absolute;
+      top:-8px;
+      right:-8px;
+      background:red;
+      color:white;
+      border-radius:50%;
+      width:20px;
+      height:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:bold;
+      z-index:10002;
+    ">0</span>
+  </div>
+
+  
+  <script>
+    let carrinho = [];
+    let carrinhoVisivel = true;
+  
+    function adicionarCarrinho(servico, tipo) {
+  if (!tipo) {
+    alert('✨ Por favor, selecione o tipo de procedimento antes de continuar com o agendamento.');
+    return;
+  }
+
+  const item = `💆‍♀️ ${servico} — Opção: ${tipo}`;
+  console.log('💖 Procedimento adicionado para agendamento:', item);
+  carrinho.push(item);
+  mostrarMensagemCarrinho();
+  atualizarCarrinho();
+}
+
+
+function atualizarCarrinho() {
+  const container = document.getElementById('carrinho-itens');
+  const btn = document.getElementById('btn-whats');
+  const obs = document.getElementById('obs').value || "";
+
+  const mensagem = encodeURIComponent(
+    "Olá! Gostaria de agendar os seguintes procedimentos estéticos:\n\n" +
+    carrinho.map(item => `• ${item}`).join('\n') +
+    (obs ? `\n\n💬 Observações: ${obs}` : "")
+  );
+
+  if (carrinho.length === 0) {
+    container.innerHTML = "<p>Nenhum procedimento selecionado ainda 💖</p>";
+    btn.href = "#";
+    return;
+  }
+
+  const lista = carrinho.map(item => `• ${item}`).join('<br>');
+  container.innerHTML = lista;
+
+  btn.href = "https://wa.me/5511999999999?text=" + mensagem;
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+}
+
+
+function esvaziarCarrinho() {
+  carrinho = [];
+  document.getElementById('obs').value = '';
+  atualizarCarrinho();
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+  alert("🧼 Carrinho de agendamento de procedimentos foi limpo com sucesso!");
+}
+
+  
+    function toggleCarrinho() {
+  const carrinhoDiv = document.getElementById('carrinho');
+  const icone = document.getElementById('icone-carrinho');
+
+  if (carrinhoVisivel) {
+    carrinhoDiv.style.display = 'none';
+    icone.style.display = 'flex';  // mostrar o ícone redondo
+  } else {
+    carrinhoDiv.style.display = 'block';
+    icone.style.display = 'none';  // esconder o ícone redondo
+  }
+
+  carrinhoVisivel = !carrinhoVisivel;
+}
+
+function mostrarMensagemCarrinho() {
+  const msg = document.getElementById('mensagem-carrinho');
+  msg.style.display = 'block';
+  msg.style.animation = 'slideUpFade 0.5s ease';
+
+  setTimeout(() => {
+    msg.style.opacity = '0';
+    msg.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      msg.style.display = 'none';
+      msg.style.opacity = '';
+      msg.style.transform = '';
+    }, 300);
+  }, 2000);
+}
+
+
+document.getElementById('carrinho').style.display = 'none';
+document.getElementById('icone-carrinho').style.display = 'flex';
+carrinhoVisivel = false;
+
+carrinhoVisivel = true;
+  </script>
+    <a href="https://wa.me/5511999999999" target="_blank" style="
+    position:fixed; bottom:80px; left:20px;
+    background:#25d366; color:#fff;
+    padding:12px 20px; border-radius:30px;
+    font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    z-index:9999; text-decoration:none;
+    animation: pulse 1.6s infinite;
+  ">
+    💬 Fale conosco
+  </a>
+
+  <div id="mensagem-carrinho" style="
+  display:none;
+  position:fixed;
+  bottom:100px;
+  right:20px;
+  background:#4caf50;
+  color:white;
+  padding:10px 20px;
+  border-radius:10px;
+  font-weight:bold;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  z-index:10001;
+  animation: slideUpFade 0.5s ease forwards;
+">
+  ✅ Item adicionado ao carrinho!
+</div>
+  
+  <footer style="background:#222; color:white; text-align:center; padding:2rem;">
+    <p>
+        <a href="https://instagram.com/studioestetica" target="_blank" style="color:#3a2c3f; font-size:1.8rem;">
+          <i class="fab fa-instagram"></i>
+        </a>
+      </p>      
+      <p>© 2025 Studio Estética - Unhas e Bem-Estar</p>
+  </footer>
+  
