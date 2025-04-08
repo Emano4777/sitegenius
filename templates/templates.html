@@ -841,6 +841,113 @@ iframe {
 }
 
 
+
+#alerta-template-info.modal {
+  display: none;
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: #fff8e1;
+  border-left: 5px solid #ffc107;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+  z-index: 9999;
+  max-width: 340px;
+  font-weight: 500;
+  animation: slideUpFade 0.6s ease;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #ff9800;
+}
+
+.modal-content p {
+  margin: 10px 0;
+}
+
+.modal-content .btn {
+  background-color: #ffca28;
+  color: black;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  display: inline-block;
+  font-weight: bold;
+}
+
+.modal-content .btn:hover {
+  background-color: #ffc107;
+}
+
+.close {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+  color: #888;
+}
+
+@keyframes slideUpFade {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  #alerta-template-info.modal {
+    left: 10px;
+    right: 10px;
+    bottom: 15px;
+    padding: 16px;
+    max-width: none;
+  }
+}
+
+#alerta-template-info {
+  display: none;
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background-color: #fffae6;
+  border-left: 5px solid #ffc107;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: slideUpFade 0.5s ease-in-out;
+  max-width: 300px;
+  font-weight: bold;
+}
+
+@keyframes slideUpFade {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  #alerta-template-info {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    max-width: none;
+    font-size: 14px;
+    padding: 15px;
+  }
+}
+
+
 .template-search-container .search-icon {
   top: 50%;
   transform: translateY(-50%);
@@ -1019,6 +1126,19 @@ iframe {
             </div>
     </header>
     <main>
+      <div id="alerta-template-info" class="modal">
+        <div class="modal-content">
+          <span class="close" onclick="document.getElementById('alerta-template-info').style.display = 'none'">
+            <i class="fas fa-times-circle"></i>
+          </span>
+          <h3>Antes de escolher seu template 👀</h3>
+          <p><strong>Atenção:</strong> Contas gratuitas só podem escolher <u>um template</u>, então escolha com cuidado!</p>
+          <p>Mas fique tranquilo: você poderá <strong>editar completamente</strong> o visual e conteúdo pelo nosso editor fácil e intuitivo.</p>
+          <p style="margin-top: 10px;"><i class="fas fa-info-circle"></i> Todos os templates que <strong>não têm o aviso de "Premium"</strong> são totalmente gratuitos!</p>
+
+          <a href="/tutorial" class="btn" style="margin-top: 10px;"><i class="fas fa-graduation-cap"></i> Ver tutorial do editor</a>
+        </div>
+      </div>
         <div class="banner-rotativo" id="premium-banner">
             💎 Torne-se Premium e desbloqueie todos os templates exclusivos! 
             <a href="/preco" style="color: #000; text-decoration: underline;">Veja os benefícios</a>
@@ -1682,6 +1802,13 @@ iframe {
     </main>
 
     <script>
+      const userId = "{{ session.get('user_id') }}";  // do Flask
+const alertaKey = `templateAlertaVisto_${userId}`;
+
+if (userId && !sessionStorage.getItem(alertaKey)) {
+  document.getElementById('alerta-template-info').style.display = 'flex';
+  sessionStorage.setItem(alertaKey, 'true');
+}
         let currentTemplate = '';
             document.addEventListener("DOMContentLoaded", function () {
 
