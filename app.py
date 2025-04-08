@@ -444,8 +444,91 @@ def editar_dados(subdomain):
 
     if not dados:
         return "Cliente não encontrado", 404
-
     return render_template('template10_editar_dados.html', nome=dados[0], email=dados[1], subdomain=subdomain)
+
+
+def registrar_acesso(user_id, ip, subdomain):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT MIN(id) FROM user_templates
+        WHERE user_id = %s AND subdomain = %s
+    """, (user_id, subdomain))
+    template = cur.fetchone()
+    if not template or not template[0]:
+        cur.close(); conn.close()
+        return
+
+    template_id = template[0]
+
+    cidade = estado = pais = None
+    try:
+        if ip.startswith('127.') or ip.startswith('192.168'):
+            ip = '8.8.8.8'
+        r = requests.get(f'https://ipinfo.io/{ip}/json')
+        if r.status_code == 200:
+            data = r.json()
+            cidade = data.get('city')
+            estado = data.get('region')
+            pais = data.get('country')
+    except:
+        pass
+
+    cur.execute("""
+        INSERT INTO acessos2 (user_id, template_id, ip, cidade, estado, pais)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (user_id, template_id, ip, cidade, estado, pais))
+    conn.commit()
+    cur.close(); conn.close()
+
+
+
+@app.route('/site/<int:template_id>/<page>')
+def exibir_site_por_id(template_id, page):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Busca HTML e subdomínio
+    cur.execute("SELECT custom_html, subdomain, user_id FROM user_templates WHERE id = %s AND page_name = %s", (template_id, page))
+
+    resultado = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not resultado:
+        return "Página não encontrada", 404
+
+    html, subdomain, user_id = resultado
+
+    registrar_acesso(user_id, request.remote_addr, subdomain)
+
+    return html
+
+
+@app.route('/<subdomain>/<page>')
+def exibir_site_por_subdominio(subdomain, page):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Busca HTML e user_id
+    cur.execute("SELECT custom_html, user_id FROM user_templates WHERE subdomain = %s AND page_name = %s ORDER BY id ASC LIMIT 1", (subdomain, page))
+    resultado = cur.fetchone()
+    cur.close(); conn.close()
+
+    if not resultado:
+        return "Página não encontrada", 404
+
+    html, user_id = resultado
+
+    registrar_acesso(user_id, request.remote_addr, subdomain)
+
+    return html
+
+
+
+
+
+
 @app.route('/<subdomain>/acompanhar-pedido/<int:pedido_id>')
 def acompanhar_pedido(subdomain, pedido_id):
     cliente_id = session.get('cliente_id')
@@ -1379,6 +1462,122 @@ def produtos(subdomain):
     cur.close(); conn.close()
 
     return render_template('produtos.html', produtos_por_categoria=produtos_por_categoria, subdomain=subdomain)
+
+@app.route('/relatorio-free')
+def relatorio_free():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    nivel = result[0] if result else 'free'
+
+    cur.execute("""
+        SELECT MIN(ut.id), ut.subdomain
+        FROM user_templates ut
+        WHERE ut.user_id = %s
+        GROUP BY ut.subdomain
+    """, (user_id,))
+    lojas = cur.fetchall()
+
+    if not lojas:
+        return "Você ainda não escolheu um template.", 400
+
+    acessos_gerais = {}
+    tem_acessos = False
+
+    for template_id, sub in lojas:
+        # Gráfico de acessos dos últimos 7 dias
+        cur.execute("""
+            SELECT DATE(timestamp), COUNT(*)
+            FROM acessos2
+            WHERE template_id = %s
+            GROUP BY DATE(timestamp)
+            ORDER BY DATE(timestamp) DESC
+            LIMIT 7
+        """, (template_id,))
+        acessos = cur.fetchall()
+
+        # Visitantes que retornaram
+        cur.execute("""
+            SELECT ip, COUNT(*)
+            FROM acessos2
+            WHERE template_id = %s
+            GROUP BY ip
+            HAVING COUNT(*) > 1
+        """, (template_id,))
+        retorno_ips = cur.fetchall()
+
+        # Dia com mais acessos
+        cur.execute("""
+            SELECT DATE(timestamp), COUNT(*)
+            FROM acessos2
+            WHERE template_id = %s
+            GROUP BY DATE(timestamp)
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+        """, (template_id,))
+        dia_mais_ativo = cur.fetchone()
+
+        # Localização
+        localizacoes = []
+        if nivel in ('essential', 'moderado', 'master'):
+            cur.execute("""
+                SELECT cidade, estado, pais, COUNT(*)
+                FROM acessos2
+                WHERE template_id = %s
+                GROUP BY cidade, estado, pais
+                ORDER BY COUNT(*) DESC
+                LIMIT 5
+            """, (template_id,))
+            localizacoes = cur.fetchall()
+
+        if acessos:
+            tem_acessos = True
+
+        acessos_gerais[sub] = {
+            'labels': [str(a[0]) for a in acessos],
+            'data': [a[1] for a in acessos],
+            'retornos': retorno_ips,
+            'mais_ativo': dia_mais_ativo,
+            'localizacoes': localizacoes
+        }
+
+    cur.close()
+    conn.close()
+
+    mensagem = None
+    if not tem_acessos:
+        mensagem = """<strong>Que pena!</strong> 😢 Seu site ainda não teve acessos recentes.
+        Mas não se preocupe: temos um <a href='/preco'><strong>plano de tráfego pago</strong></a>
+        que pode impulsionar seus acessos!"""
+
+    acessos_gerais_json = [
+        {
+            'labels': dados['labels'],
+            'data': dados['data'],
+            'retornos': dados['retornos'],
+            'mais_ativo': dados['mais_ativo'],
+            'localizacoes': dados['localizacoes']
+        }
+        for sub, dados in acessos_gerais.items()
+    ]
+
+    is_premium = nivel in ('essential', 'moderado', 'master')
+
+
+    return render_template(
+        'relatorios_free.html',
+        acessos_gerais=acessos_gerais,
+        acessos_gerais_json=acessos_gerais_json,
+        mensagem=mensagem,
+        nivel=nivel,
+        is_premium=is_premium
+    )
 
 
 

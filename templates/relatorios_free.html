@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Relatório de Acessos</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
+    .mensagem {
+      background: #ffeaa7;
+      color: #2d3436;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-left: 5px solid #fdcb6e;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .select-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+
+    .select-container label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .select-container select {
+      padding: 8px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+
+    .tabela-dados {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.tabela-dados th, .tabela-dados td {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.tabela-dados th {
+  background-color: #dfe6e9;
+  color: #2d3436;
+}
+
+    .grafico-loja {
+      margin-bottom: 40px;
+    }
+
+    .dados-extra {
+      margin-top: 20px;
+      background: #f1f2f6;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin: 5px 0;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        margin: 20px 10px;
+        padding: 15px;
+      }
+
+      .select-container {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .select-container label {
+        margin-bottom: 5px;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📈 Relatório de Acessos dos Últimos 7 Dias</h2>
+      
+        {% if mensagem %}
+          <div class="mensagem">{{ mensagem | safe }}</div>
+        {% endif %}
+      
+        <div class="select-container">
+          <label for="select-loja">Selecionar Loja:</label>
+          <select id="select-loja" onchange="mostrarGraficoSelecionado()">
+            {% for subdomain in acessos_gerais.keys() %}
+              <option value="chart_{{ loop.index }}">Loja: {{ subdomain }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      
+        {% for subdomain, dados in acessos_gerais.items() %}
+          <div class="grafico-loja" id="box_chart_{{ loop.index }}" style="display: none;">
+            <h3>🛒 Loja: {{ subdomain }}</h3>
+            <canvas id="chart_{{ loop.index }}"></canvas>
+      
+            <div class="dados-extra">
+                <h4><i class="fas fa-users"></i> Visitantes que retornaram</h4>
+                <table class="tabela-dados">
+                  <thead>
+                    <tr><th>Visitante</th><th>Qtd. de Visitas</th></tr>
+                  </thead>
+                  <tbody id="retornos_{{ loop.index }}"></tbody>
+                </table>
+              
+                <h4 style="margin-top: 20px;"><i class="fas fa-calendar-day"></i> Dia com mais acessos</h4>
+                <p><span id="mais_ativo_{{ loop.index }}">-</span></p>
+              
+                <h4 style="margin-top: 20px;"><i class="fas fa-map-marker-alt"></i> Top Localizações</h4>
+
+                {% if nivel == 'essential' or nivel == 'moderado' or nivel == 'master' %}
+                <table class="tabela-dados">
+                    <thead>
+                    <tr><th>Cidade</th><th>Estado</th><th>País</th><th>Acessos</th></tr>
+                    </thead>
+                    <tbody id="localizacoes_{{ loop.index }}"></tbody>
+                </table>
+                {% else %}
+                <div style="text-align:center; padding: 15px; margin-top: 10px;">
+                    <p style="margin-bottom: 10px;"><i class="fas fa-lock"></i> Para visualizar os dados das localizações com detalhes das cidades, estados e paises mais acessados adquira o  <strong>Premium( A paritr do essential já está disponível)</strong>.</p>
+                    <a href="/preco" style="display: inline-block; padding: 10px 20px; background-color: #0984e3; color: white; border-radius: 8px; font-weight: bold; text-decoration: none;">
+                    Adquirir Premium Agora
+                    </a>
+                </div>
+                {% endif %}
+              </div>
+          </div>
+        {% endfor %}
+      </div>
+      
+      <script id="charts-data" type="application/json">
+        {{ acessos_gerais_json | tojson | safe }}
+      </script>
+      
+      <script>
+        const chartsData = JSON.parse(document.getElementById("charts-data").textContent);
+      
+        chartsData.forEach((chart, index) => {
+          // Gráfico
+          const ctx = document.getElementById(`chart_${index + 1}`).getContext("2d");
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: chart.labels,
+              datasets: [{
+                label: 'Acessos',
+                data: chart.data,
+                borderColor: '#0984e3',
+                backgroundColor: 'rgba(9, 132, 227, 0.2)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 7
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: 'Acessos' }
+                },
+                x: {
+                  title: { display: true, text: 'Data' }
+                }
+              }
+            }
+          });
+      
+          // Dados adicionais
+          const tbodyRetornos = document.getElementById(`retornos_${index + 1}`);
+            if (chart.retornos && chart.retornos.length > 0) {
+                chart.retornos.forEach(([ip, count], idx) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>Visitante #${idx + 1}</td><td>${count}</td>`;
+                tbodyRetornos.appendChild(row);
+                });
+            } else {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td colspan="2">Nenhum retorno identificado</td>`;
+            tbodyRetornos.appendChild(row);
+            }
+      
+          if (chart.mais_ativo && chart.mais_ativo.length > 0) {
+            document.getElementById(`mais_ativo_${index + 1}`).textContent = chart.mais_ativo[0];
+          }
+      
+          const tbodyLoc = document.getElementById(`localizacoes_${index + 1}`);
+if (tbodyLoc) {
+  if (chart.localizacoes && chart.localizacoes.length > 0) {
+      chart.localizacoes.forEach(([cidade, estado, pais, count]) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${cidade}</td><td>${estado}</td><td>${pais}</td><td>${count}</td>`;
+          tbodyLoc.appendChild(row);
+      });
+  } else {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td colspan="4">Nenhum dado de localização</td>`;
+      tbodyLoc.appendChild(row);
+  }}
+        });
+      
+        function mostrarGraficoSelecionado() {
+          const select = document.getElementById("select-loja");
+          const selecionado = select.value;
+          document.querySelectorAll(".grafico-loja").forEach(div => {
+            div.style.display = div.id === `box_${selecionado}` ? "block" : "none";
+          });
+        }
+      
+        document.addEventListener("DOMContentLoaded", mostrarGraficoSelecionado);
+      </script>
+      
+</body>
+</html>
