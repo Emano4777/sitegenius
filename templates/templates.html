@@ -867,6 +867,25 @@ iframe {
   margin: 10px 0;
 }
 
+
+.destaque-relatorio {
+  background: #e3f2fd;
+  border-left: 5px solid #0984e3;
+  padding: 15px;
+  border-radius: 8px;
+  animation: pulseHighlight 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulseHighlight {
+  from {
+    background-color: #e3f2fd;
+  }
+  to {
+    background-color: #d0ebff;
+  }
+}
+
+
 .modal-content .btn {
   background-color: #ffca28;
   color: black;
@@ -1134,13 +1153,30 @@ iframe {
           <span class="close" onclick="document.getElementById('alerta-template-info').style.display = 'none'">
             <i class="fas fa-times-circle"></i>
           </span>
+        
           <h3>Antes de escolher seu template 👀</h3>
+        
           <p><strong>Atenção:</strong> Contas gratuitas só podem escolher <u>um template</u>, então escolha com cuidado!</p>
           <p>Mas fique tranquilo: você poderá <strong>editar completamente</strong> o visual e conteúdo pelo nosso editor fácil e intuitivo.</p>
           <p style="margin-top: 10px;"><i class="fas fa-info-circle"></i> Todos os templates que <strong>não têm o aviso de "Premium"</strong> são totalmente gratuitos!</p>
-
-          <a href="/tutorial" class="btn" style="margin-top: 10px;"><i class="fas fa-graduation-cap"></i> Ver tutorial do editor</a>
+        
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+        
+          <div class="destaque-relatorio">
+            <p><i class="fas fa-chart-line"></i> <strong>Novidade: agora você tem acesso a relatórios do seu site!</strong></p>
+            <p>Ao escolher qualquer template, você poderá acompanhar <strong>dados detalhados de acessos</strong> em tempo real.</p>
+            <p>Na versão <strong>gratuita</strong>, você terá acesso a:</p>
+            <ul style="margin-left: 20px;">
+              <li>📅 Gráfico de acessos dos últimos 7 dias</li>
+              <li>🔁 Visitantes que retornaram</li>
+              <li>📈 Dia com maior atividade</li>
+            </ul>
+            <p style="margin-top: 10px;">E estamos preparando ainda mais <strong>ferramentas gratuitas</strong> para você!</p>
+          </div>
+        
+          <a href="/tutorial" class="btn" style="margin-top: 15px;"><i class="fas fa-graduation-cap"></i> Ver tutorial do editor</a>
         </div>
+        
       </div>
         <div class="banner-rotativo" id="premium-banner">
             💎 Torne-se Premium e desbloqueie todos os templates exclusivos! 
@@ -1805,13 +1841,21 @@ iframe {
     </main>
 
     <script>
-      const userId = "{{ session.get('user_id') }}";  // do Flask
+    const userId = "{{ session.get('user_id') }}";
 const alertaKey = `templateAlertaVisto_${userId}`;
 
-if (userId && !sessionStorage.getItem(alertaKey)) {
-  document.getElementById('alerta-template-info').style.display = 'flex';
-  sessionStorage.setItem(alertaKey, 'true');
+// Formata a data de hoje como "YYYY-MM-DD"
+const hoje = new Date().toISOString().split('T')[0];
+
+if (userId) {
+  const ultimaVisualizacao = sessionStorage.getItem(alertaKey);
+
+  if (ultimaVisualizacao !== hoje) {
+    document.getElementById('alerta-template-info').style.display = 'flex';
+    sessionStorage.setItem(alertaKey, hoje);
+  }
 }
+
         let currentTemplate = '';
             document.addEventListener("DOMContentLoaded", function () {
 
