@@ -173,12 +173,46 @@
 }
 
 @media (max-width: 768px) {
-  /* Editor ocupa altura total sem transbordar */
   #editor {
-    height: calc(100vh - 70px); /* respeita a barra superior */
-    overflow: auto;
+    width: 100vw !important;
+    overflow-x: hidden;
   }
 
+  .gjs-editor-cont,
+  .gjs-cv-canvas,
+  .gjs-frame,
+  .gjs-canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .gjs-frame-wrapper {
+    overflow-x: hidden !important;
+  }
+
+  iframe {
+    width: 100% !important;
+  }
+
+
+  @media (max-width: 768px) {
+  .gjs-pn-panels {
+    display: none !important;
+  }
+
+  body,
+  html {
+    overflow-x: hidden !important;
+  }
+}
+@media (max-width: 768px) {
+  .carrinho-flutuante {
+    bottom: 100px !important; /* sobe o botão pro editor não ficar embaixo */
+    right: 10px;
+    z-index: 10;
+  }
+}
   /* Barra superior adaptada */
   #top-bar {
     flex-wrap: wrap;
@@ -227,9 +261,6 @@
     font-size: 15px;
   }
 }
-
-
-
     </style>
 </head>
     

@@ -162,6 +162,88 @@ footer a:hover {
   transform: scale(1.2);
   transition: all 0.3s ease;
 }
+
+@media (max-width: 768px) {
+  /* Geral: ajuste de tamanhos de fonte e espaçamentos */
+  body {
+    padding: 10px;
+    font-size: 14px;
+  }
+  
+  /* Produtos: reduzir padding e ajuste de fonte */
+  .produto {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  .produto:hover {
+    transform: scale(1.02);
+  }
+
+  /* Header e seções: reduzir tamanhos dos títulos e parágrafos */
+  header h1 {
+    font-size: 2rem;
+  }
+  header h2, header h3, section h2 {
+    font-size: 1.5rem;
+  }
+  
+  /* Ícone do carrinho: redimensionar e ajustar posicionamento */
+  #icone-carrinho {
+    right: 10px;
+    bottom: 10px;
+    width: 45px;
+    height: 45px;
+    font-size: 1.4rem;
+  }
+  
+  /* Carrinho flutuante: ocupar mais largura e ajustar alturas */
+  .carrinho-flutuante {
+    width: 90%;
+    right: 5%;
+    bottom: 80px;
+    max-height: 350px;
+    border-radius: 10px;
+  }
+  
+  .carrinho-topo {
+    padding: 0.8rem;
+  }
+  
+  .carrinho-itens {
+    font-size: 0.85rem;
+    max-height: 140px;
+  }
+  
+  /* Botões: ajustar padding e tamanhos de fonte */
+  .btn-carrinho {
+    padding: 8px 16px;
+    font-size: 0.95rem;
+  }
+  
+  .btn-esvaziar {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .btn-enviar-whats {
+    padding: 10px;
+    font-size: 0.95rem;
+  }
+  
+  .btn-minimizar {
+    font-size: 1rem;
+  }
+  
+  /* Footer: diminuir tamanho da fonte e padding */
+  footer {
+    font-size: 0.9rem;
+    padding: 1rem 10px;
+  }
+}
+
+
   </style>
   
 

@@ -107,31 +107,51 @@
     }
   }
 
-  /* Responsividade do carrinho */
-  @media (max-width: 500px) {
-    #carrinho {
-      right: 5px;
-      left: 5px;
-      max-width: unset;
-    }
-
-    #icone-carrinho {
-      right: 5px;
-    }
+  @media (max-width: 768px) {
+  body {
+    padding: 10px;
   }
 
+  .btn-carrinho {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px;
+  }
 
+  .btn-esvaziar {
+    font-size: 13px;
+    padding: 8px;
+  }
 
-    @keyframes slideUpFade {
-      from {
-        opacity: 1;
-        transform: translateY(0px);
-      }
-      to {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-    }
+  #carrinho {
+    width: 95%;
+    max-width: none;
+    bottom: 80px;
+    left: 2.5%;
+    right: 2.5%;
+  }
+
+  #icone-carrinho {
+    width: 45px;
+    height: 45px;
+    font-size: 1.4rem;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  #carrinho-itens {
+    font-size: 13px;
+  }
+
+  textarea#obs {
+    font-size: 13px;
+  }
+
+  #mensagem-carrinho {
+    font-size: 13px;
+  }
+}
+
     </style>
 
 <header style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1743632061/9cc37a26ebad61af3f42afebe95965d9_q78gbr.jpg'); background-size:cover; background-position:center; color:white; text-align:center; padding:5rem 2rem;">

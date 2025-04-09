@@ -1,6 +1,7 @@
 <head>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   </head>
   
 <style>
@@ -159,6 +160,60 @@ footer a:hover {
   transform: scale(1.2);
   transition: all 0.3s ease;
 }
+
+@media (max-width: 768px) {
+  .produto {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  .btn-carrinho {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .btn-enviar-whats {
+    padding: 10px;
+    font-size: 0.95rem;
+  }
+
+  .carrinho-flutuante {
+    width: 90%;
+    right: 5%;
+    bottom: 80px;
+    max-height: 350px;
+    font-size: 0.9rem;
+  }
+
+  #icone-carrinho {
+    right: 15px;
+    bottom: 20px;
+    width: 45px;
+    height: 45px;
+    font-size: 1.4rem;
+  }
+
+  .carrinho-itens {
+    font-size: 0.85rem;
+    max-height: 140px;
+  }
+
+  .btn-esvaziar {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .btn-minimizar {
+    font-size: 1rem;
+  }
+
+  /* Evita corte em alguns celulares com borda curva */
+  body, html {
+    padding-bottom: 80px;
+  }
+}
+
   </style>
   
 

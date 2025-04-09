@@ -109,6 +109,59 @@
       cursor: pointer;
       font-weight: bold;
     }
+
+    @media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .navbar a {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+  }
+
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1.1rem;
+  }
+
+  .section {
+    padding: 1.5rem 1rem;
+  }
+
+  .galeria {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .galeria img {
+    height: 180px;
+  }
+
+  .orcamento-form {
+    padding: 1.5rem;
+    margin: 1rem;
+    border-radius: 8px;
+  }
+
+  .orcamento-form input,
+  .orcamento-form textarea,
+  .orcamento-form button {
+    font-size: 0.95rem;
+    padding: 0.7rem;
+  }
+}
+
+
   </style>
 </head>
 <body>
