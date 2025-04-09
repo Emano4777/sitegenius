@@ -1472,12 +1472,14 @@ def relatorio_free():
     conn = get_db_connection()
     cur = conn.cursor()
 
+    # Busca o nível do plano
     cur.execute("SELECT premium_level FROM users2 WHERE id = %s", (user_id,))
     result = cur.fetchone()
     nivel = result[0] if result else 'free'
 
+    # Pega os templates do usuário
     cur.execute("""
-        SELECT MIN(ut.id), ut.subdomain
+        SELECT MIN(ut.id) as id, ut.subdomain
         FROM user_templates ut
         WHERE ut.user_id = %s
         GROUP BY ut.subdomain
@@ -1487,54 +1489,55 @@ def relatorio_free():
     if not lojas:
         return "Você ainda não escolheu um template.", 400
 
+    template_ids = [t[0] for t in lojas]
+
+    # Acessos dos últimos 7 dias
+    cur.execute("""
+        SELECT template_id, DATE(timestamp), COUNT(*)
+        FROM acessos2
+        WHERE template_id = ANY(%s)
+        GROUP BY template_id, DATE(timestamp)
+    """, (template_ids,))
+    todos_acessos = cur.fetchall()
+
+    # Visitantes que retornaram
+    cur.execute("""
+        SELECT template_id, ip, COUNT(*)
+        FROM acessos2
+        WHERE template_id = ANY(%s)
+        GROUP BY template_id, ip
+        HAVING COUNT(*) > 1
+    """, (template_ids,))
+    retornos = cur.fetchall()
+
+    # Dias com mais acessos
+    cur.execute("""
+        SELECT template_id, DATE(timestamp), COUNT(*) as total
+        FROM acessos2
+        WHERE template_id = ANY(%s)
+        GROUP BY template_id, DATE(timestamp)
+    """, (template_ids,))
+    mais_ativos_todos = cur.fetchall()
+
+    # Localizações (se for premium)
+    localizacoes_todos = []
+    if nivel in ('essential', 'moderado', 'master'):
+        cur.execute("""
+            SELECT template_id, cidade, estado, pais, COUNT(*)
+            FROM acessos2
+            WHERE template_id = ANY(%s)
+            GROUP BY template_id, cidade, estado, pais
+        """, (template_ids,))
+        localizacoes_todos = cur.fetchall()
+
+    # Organiza os dados
     acessos_gerais = {}
     tem_acessos = False
-
     for template_id, sub in lojas:
-        # Gráfico de acessos dos últimos 7 dias
-        cur.execute("""
-            SELECT DATE(timestamp), COUNT(*)
-            FROM acessos2
-            WHERE template_id = %s
-            GROUP BY DATE(timestamp)
-            ORDER BY DATE(timestamp) DESC
-            LIMIT 7
-        """, (template_id,))
-        acessos = cur.fetchall()
-
-        # Visitantes que retornaram
-        cur.execute("""
-            SELECT ip, COUNT(*)
-            FROM acessos2
-            WHERE template_id = %s
-            GROUP BY ip
-            HAVING COUNT(*) > 1
-        """, (template_id,))
-        retorno_ips = cur.fetchall()
-
-        # Dia com mais acessos
-        cur.execute("""
-            SELECT DATE(timestamp), COUNT(*)
-            FROM acessos2
-            WHERE template_id = %s
-            GROUP BY DATE(timestamp)
-            ORDER BY COUNT(*) DESC
-            LIMIT 1
-        """, (template_id,))
-        dia_mais_ativo = cur.fetchone()
-
-        # Localização
-        localizacoes = []
-        if nivel in ('essential', 'moderado', 'master'):
-            cur.execute("""
-                SELECT cidade, estado, pais, COUNT(*)
-                FROM acessos2
-                WHERE template_id = %s
-                GROUP BY cidade, estado, pais
-                ORDER BY COUNT(*) DESC
-                LIMIT 5
-            """, (template_id,))
-            localizacoes = cur.fetchall()
+        acessos = [(d, c) for tid, d, c in todos_acessos if tid == template_id]
+        retornos_sub = [(ip, c) for tid, ip, c in retornos if tid == template_id]
+        mais_ativo_sub = sorted([(d, c) for tid, d, c in mais_ativos_todos if tid == template_id], key=lambda x: x[1], reverse=True)
+        locais_sub = [(cid, est, pais, c) for tid, cid, est, pais, c in localizacoes_todos if tid == template_id]
 
         if acessos:
             tem_acessos = True
@@ -1542,9 +1545,9 @@ def relatorio_free():
         acessos_gerais[sub] = {
             'labels': [str(a[0]) for a in acessos],
             'data': [a[1] for a in acessos],
-            'retornos': retorno_ips,
-            'mais_ativo': dia_mais_ativo,
-            'localizacoes': localizacoes
+            'retornos': retornos_sub,
+            'mais_ativo': mais_ativo_sub[0] if mais_ativo_sub else None,
+            'localizacoes': locais_sub
         }
 
     cur.close()
@@ -1568,7 +1571,6 @@ def relatorio_free():
     ]
 
     is_premium = nivel in ('essential', 'moderado', 'master')
-
 
     return render_template(
         'relatorios_free.html',
