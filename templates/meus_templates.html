@@ -670,7 +670,7 @@ main {
   ">
     ⚠️ Esta página está passando por manutenção e pode apresentar instabilidades temporárias. Estamos trabalhando para melhorar sua experiência. Obrigado pela compreensão!
   </div>
-<main>
+  <main>
     <table>
         <thead>
             <tr>
@@ -684,45 +684,40 @@ main {
             <tr>
                 <td>{{ data.template_name }}</td>
                 <td>
-                  <div class="subdomain-container">
-                    <div class="subdomain-title">{{ data.subdomain }}</div>
-                    <p class="subpages-hint">
-                      <i class="fa-solid fa-eye"></i> Essas abaixo são as páginas do seu site. Clique para ver como estão ficando!
-                    </p>                          
-                    <ul class="subpages-list">
-                      {% for page in data.pages %}
-                      <li>
-                        {% if data.template_name == 'template10' %}
-                          <!-- Abrir página com a rota /<subdomain>/<page_name> -->
-                            <a href="{{ url_for('site_usuario', subdomain=subdomain, page_name=page) }}"
-                            class="btn btn-primary" target="_blank">
-                           <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }} (Public)
-                         </a>
-                        {% else %}
-                          <!-- Abrir com /site/<template_id>/<page_name> -->
-                          <a href="{{ url_for('site_usuario_completo', template_id=data.template_id, page_name=page) }}" 
-                             class="btn btn-secondary" target="_blank">
-                            <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }} (Editor)
-                          </a>
-                        {% endif %}
-                      </li>
-                      {% endfor %}
-                    </ul>
-                  </div>
-                </td>        
+                    <div class="subdomain-container">
+                        <div class="subdomain-title">{{ data.subdomain }}</div>
+                        <p class="subpages-hint">
+                            <i class="fa-solid fa-eye"></i> Essas abaixo são as páginas do seu site. Clique para ver como estão ficando!
+                        </p>
+                        <ul class="subpages-list">
+                            {% for page in data.pages %}
+                            <li>
+                                <a href="{{ url_for('site_usuario', subdomain=subdomain, page_name=page) }}"
+                                   class="btn btn-secondary" target="_blank">
+                                    <i class="fa-solid fa-file-lines"></i> {{ page | capitalize }} (Visualizar)
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </td>
                 <td>
+                    {% if data.pages|length > 0 %}
                     <a class="btn" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">Editar</a>
+                    {% else %}
+                    <span class="btn disabled">Sem páginas</span>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
             <tr>
-                <td colspan="3">Nenhum template encontrado.</td> <!-- Era colspan="4" -->
+                <td colspan="3">Nenhum template encontrado.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-   
 </main>
+
 <script>
     // Funções para abrir e fechar o menu mobile
     function openMobileMenu() {

@@ -25,7 +25,7 @@ from authlib.integrations.flask_client import OAuth
 from efipay import EfiPay
 import json
 from openai import OpenAI
-
+from flask import Response
 
 
 
@@ -489,9 +489,7 @@ def exibir_site_por_id(template_id, page):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Busca HTML e subdomínio
     cur.execute("SELECT custom_html, subdomain, user_id FROM user_templates WHERE id = %s AND page_name = %s", (template_id, page))
-
     resultado = cur.fetchone()
     cur.close(); conn.close()
 
@@ -502,7 +500,14 @@ def exibir_site_por_id(template_id, page):
 
     registrar_acesso(user_id, request.remote_addr, subdomain)
 
-    return html
+    html = adaptar_links(html, subdomain)
+
+    # 🔍 Log no terminal
+    print(f"\n🔍 Renderizando /site/{template_id}/{page} para subdomínio {subdomain}")
+    print(html[:1000])  # imprime os primeiros 1000 caracteres do HTML
+
+    return Response(html, mimetype='text/html')
+
 
 
 @app.route('/<subdomain>/<page>')
@@ -510,19 +515,41 @@ def exibir_site_por_subdominio(subdomain, page):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Busca HTML e user_id
-    cur.execute("SELECT custom_html, user_id FROM user_templates WHERE subdomain = %s AND page_name = %s ORDER BY id ASC LIMIT 1", (subdomain, page))
+    cur.execute("""
+        SELECT custom_html, user_id, template_name, template_id
+        FROM user_templates
+        WHERE subdomain = %s AND page_name = %s
+        ORDER BY id ASC
+        LIMIT 1
+    """, (subdomain, page))
     resultado = cur.fetchone()
     cur.close(); conn.close()
 
     if not resultado:
         return "Página não encontrada", 404
 
-    html, user_id = resultado
+    html, user_id, template_name, template_id = resultado
+    if template_name == "template10":
+        try:
+            return render_template(f"{page}.html", subdomain=subdomain)
+        except:
+            if html:
+                soup = BeautifulSoup(html, 'html.parser')
+                registrar_acesso(user_id, request.remote_addr, subdomain)
+                html_renderizado = str(soup).replace("{{sub}}", subdomain)
+                return Response(html_renderizado, mimetype='text/html')
+            else:
+                return f"Página '{page}' não encontrada para subdomínio '{subdomain}'.", 404
+
+    soup = BeautifulSoup(html, 'html.parser')
 
     registrar_acesso(user_id, request.remote_addr, subdomain)
 
-    return html
+    html_renderizado = str(soup).replace("{{sub}}", subdomain)
+    return Response(html_renderizado, mimetype='text/html')
+
+
+
 
 
 
@@ -716,8 +743,7 @@ def meus_pedidos(subdomain):
     pedidos = cur.fetchall()
     cur.close(); conn.close()
 
-    return render_template('template10_meuspedidos.html', pedidos=pedidos, subdomain=subdomain)
-
+    return render_template("template10_meuspedidos.html", pedidos=pedidos, subdomain=subdomain)
 
 
 
@@ -811,25 +837,28 @@ def logout_cliente(subdomain):
 @app.route('/<subdomain>')
 @app.route('/<subdomain>/index')
 def index_loja(subdomain):
-    print("Sessão atual:", dict(session))
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Buscar id do dono da loja pelo subdomínio
-    cur.execute("SELECT user_id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    cur.execute("SELECT user_id, template_name FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
     dono = cur.fetchone()
 
     if not dono:
         return "Loja não encontrada", 404
 
-    dono_id = dono[0]
+    dono_id, template_name = dono
 
-    # Buscar produtos cadastrados por esse dono
-    cur.execute("SELECT id, nome, descricao, preco, imagem FROM produtos WHERE user_id = %s", (dono_id,))
-    produtos = cur.fetchall()
+    if template_name == "template10":
+        cur.execute("SELECT id, nome, descricao, preco, imagem FROM produtos WHERE user_id = %s", (dono_id,))
+        produtos = cur.fetchall()
+        cur.close(); conn.close()
+
+        return render_template("template10_index.html", produtos=produtos, subdomain=subdomain)
+
+
+    # Outros templates → usar exibir_site_por_subdominio
     cur.close(); conn.close()
-
-    return render_template("template10_index.html", produtos=produtos, subdomain=subdomain)
+    return exibir_site_por_subdominio(subdomain=subdomain, page='index')
 
 
 
@@ -1458,7 +1487,7 @@ def produtos(subdomain):
             'imagem': p[4]
         })
 
-
+ 
     cur.close(); conn.close()
 
     return render_template('produtos.html', produtos_por_categoria=produtos_por_categoria, subdomain=subdomain)
@@ -2405,9 +2434,10 @@ def templates():
     is_premium = session.get('is_premium', False)
     return render_template('templates.html', is_premium=is_premium)
 
-@app.route('/template/<template_name>')
+@app.route('/debug/template/<template_name>')
 def visualizar_template(template_name):
     return render_template(f"{template_name}.html")
+
 
 
 
@@ -2489,6 +2519,13 @@ def usar_template(template_name):
             if "{{" in href or "{%" in href:
                 continue
 
+            # Corrigir /template/... → /<subdomain>/...
+            if href.startswith('/template/'):
+                nova_rota = href.replace('/template/', f'/{subdomain}/')
+                a['href'] = nova_rota
+                continue
+
+            # Corrigir demais padrões conforme template
             if template_name == 'template10':
                 match = re.match(r"^/(template|site|[\w-]+)/(\w+)", href)
                 if match:
@@ -2498,15 +2535,20 @@ def usar_template(template_name):
                 match = re.match(r"^/(template|site|[\w-]+)/(\w+)", href)
                 if match:
                     page = match.group(2)
-                    a['href'] = f"/site/{template_id}/{page}"
+                    a['href'] = f"/{subdomain}/{page}"
 
         for form in soup.find_all('form', action=True):
             action = form['action'].strip()
             if "{{" in action or "{%" in action:
                 continue
+
+            # Corrige rotas específicas do sistema
             if re.match(r"^/(login-cliente|cadastrar|meus-pedidos|acompanhar-pedido.*)", action):
                 rota = action.lstrip("/")
                 form['action'] = f"/{subdomain}/{rota}"
+            elif action.startswith('/template/'):
+                nova_action = action.replace('/template/', f'/{subdomain}/')
+                form['action'] = nova_action
 
         for script in soup.find_all('script', src=True):
             src = script['src'].strip()
@@ -2524,20 +2566,23 @@ def usar_template(template_name):
 
         return str(soup)
 
+
     for idx, (page_name, html_content, css_content) in enumerate(paginas):
         html_content = html_content.replace("{{sub}}", subdomain)
-
         html_completo = f"""<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>{css_content}</style>
-</head>
-<body>
-{html_content}
-</body>
-</html>"""
+        <html lang="pt-BR">
+        <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>{css_content}</style>
+        </head>
+        <body>
+        {html_content}
+        </body>
+        </html>"""
+
+        html_corrigido = adaptar_links(html_completo, template_name, subdomain, template_id)
+
 
         if idx == 0:
             cur.execute("""
@@ -2564,7 +2609,212 @@ def usar_template(template_name):
         "template_id": template_id,
         "page_name": 'index'
     })
-@app.route('/<subdomain>/<page_name>')
+
+def adaptar_links(html, template_name, subdomain, template_id):
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Corrige todos os <a href="">
+    for a in soup.find_all('a', href=True):
+        href = a['href'].strip()
+        if "{{" in href or "{%" in href:
+            continue
+
+        # Corrige diretamente links do tipo /template/alguma-coisa
+        if href.startswith('/template/'):
+            page = href.split('/template/')[-1]
+            a['href'] = f"/{subdomain}/{page}"
+            continue
+
+        # Corrige links do tipo /site/123/123 ou /site/123/index
+        match = re.match(r'^/site/\d+/\d+/?(\w+)?', href)
+        if match:
+            page = match.group(1) or "index"
+            a['href'] = f"/{subdomain}/{page}"
+            continue
+
+        # Corrige links tipo /template/abc ou /qualquercoisa/page
+        match = re.match(r"^/(template|site|[\w-]+)/(\w+)", href)
+        if match:
+            page = match.group(2)
+            a['href'] = f"/{subdomain}/{page}"
+
+    # Corrige todos os <form action="">
+    for form in soup.find_all('form', action=True):
+        action = form['action'].strip()
+        if "{{" in action or "{%" in action:
+            continue
+
+        if re.match(r"^/(login-cliente|cadastrar|meus-pedidos|acompanhar-pedido.*)", action):
+            rota = action.lstrip("/")
+            form['action'] = f"/{subdomain}/{rota}"
+        elif action.startswith('/template/'):
+            rota = action.split('/template/')[-1]
+            form['action'] = f"/{subdomain}/{rota}"
+
+    # Corrige todos os <script src="">
+    for script in soup.find_all('script', src=True):
+        src = script['src'].strip()
+        if "{{" in src or not src.startswith("/template/"):
+            continue
+        caminho = src.split("/template/")[-1].strip()
+        script['src'] = f"/site/{template_id}/{caminho}"
+
+    # Corrige todos os <link href="">
+    for link in soup.find_all('link', href=True):
+        href = link['href'].strip()
+        if "{{" in href or not href.startswith("/template/"):
+            continue
+        caminho = href.split("/template/")[-1].strip()
+        link['href'] = f"/site/{template_id}/{caminho}"
+
+        html_renderizado = str(soup).replace("{{sub}}", subdomain)
+        return html_renderizado
+
+
+
+
+
+def corrigir_links_antigos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, custom_html, template_name, subdomain, user_id
+        FROM user_templates
+    """)
+    resultados = cur.fetchall()
+
+    for row in resultados:
+        id, html, template_name, subdomain, user_id = row
+        template_id = id
+
+        try:
+            if html is None:
+                print(f"❌ HTML nulo no template ID {id}, ignorando...")
+                continue
+
+            html_corrigido = adaptar_links(html, template_name, subdomain, template_id)
+
+            cur.execute("UPDATE user_templates SET custom_html = %s WHERE id = %s", (html_corrigido, id))
+            print(f"✅ Corrigido template {template_name} ID {id} para subdomínio {subdomain}")
+        except Exception as e:
+            print(f"❌ Erro ao corrigir template ID {id}: {e}")
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+@app.route('/atualizar-links-antigos')
+def atualizar_links_antigos():
+    corrigir_links_antigos()
+    return "Links atualizados com sucesso!"
+
+
+@app.route('/reparar-templates-nulos', methods=['GET'])
+def reparar_templates_nulos():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, user_id, template_name, subdomain, page_name
+        FROM user_templates
+        WHERE custom_html IS NULL
+    """)
+    templates = cur.fetchall()
+
+    print(f"🔎 Encontrados {len(templates)} templates com custom_html NULL")
+
+    def adaptar_links(html, template_name, subdomain, template_id):
+        soup = BeautifulSoup(html, 'html.parser')
+
+        for a in soup.find_all('a', href=True):
+            href = a['href'].strip()
+            if "{{" in href or "{%" in href:
+                continue
+            if href.startswith('/template/'):
+                a['href'] = href.replace('/template/', f'/{subdomain}/')
+                continue
+            match = re.match(r"^/(template|site|[\w-]+)/(\w+)", href)
+            if match:
+                page = match.group(2)
+                a['href'] = f"/{subdomain}/{page}"
+
+        for form in soup.find_all('form', action=True):
+            action = form['action'].strip()
+            if "{{" in action or "{%" in action:
+                continue
+            if re.match(r"^/(login-cliente|cadastrar|meus-pedidos|acompanhar-pedido.*)", action):
+                form['action'] = f"/{subdomain}/{action.lstrip('/')}"
+            elif action.startswith('/template/'):
+                form['action'] = action.replace('/template/', f'/{subdomain}/')
+
+        for script in soup.find_all('script', src=True):
+            src = script['src'].strip()
+            if "{{" in src or not src.startswith("/template/"):
+                continue
+            caminho = src.split("/template/")[-1].strip()
+            script['src'] = f"/site/{template_id}/{caminho}"
+
+        for link in soup.find_all('link', href=True):
+            href = link['href'].strip()
+            if "{{" in href or not href.startswith("/template/"):
+                continue
+            caminho = href.split("/template/")[-1].strip()
+            link['href'] = f"/site/{template_id}/{caminho}"
+
+        return str(soup)
+
+    atualizados = 0
+
+    for id, user_id, template_name, subdomain, page_name in templates:
+        # busca conteúdo da base
+        page_base_name = page_name
+        if template_name == 'template10':
+            page_base_name = page_base_name.replace("meuspedidos", "meus-pedidos")
+            page_base_name = page_base_name.replace("acompanharpedido", "acompanhar-pedido")
+            page_base_name = page_base_name.replace("editardados", "editar-dados")
+
+        cur.execute("""
+            SELECT html, css FROM template_pages
+            WHERE template_name = %s AND page_name = %s
+        """, (template_name, page_base_name))
+        base = cur.fetchone()
+
+        if not base:
+            print(f"❌ Template base não encontrado: {template_name}/{page_name}")
+            continue
+
+        html, css = base
+        if not html:
+            print(f"❌ HTML vazio no base: {template_name}/{page_name}")
+            continue
+
+        html_modificado = html.replace("{{sub}}", subdomain)
+        html_completo = f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>{css or ''}</style>
+</head>
+<body>
+{html_modificado}
+</body>
+</html>"""
+
+        html_final = adaptar_links(html_completo, template_name, subdomain, id)
+
+        cur.execute("UPDATE user_templates SET custom_html = %s WHERE id = %s", (html_final, id))
+        print(f"✅ Corrigido template {template_name} ID {id} para subdomínio {subdomain}")
+        atualizados += 1
+
+    conn.commit()
+    cur.close(); conn.close()
+    return f"🔥 Reparação concluída: {atualizados} templates atualizados."
+
+
+
+@app.route('/debug/<subdomain>/<page_name>')
 def render_template_dinamico(subdomain, page_name):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -2849,7 +3099,7 @@ def adicionar_pagina(template_id):
 
 
 
-@app.route('/<subdomain>/<page_name>')
+@app.route('/debug/<subdomain>/<page_name>')
 def exibir_pagina(subdomain, page_name):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -2867,6 +3117,7 @@ def exibir_pagina(subdomain, page_name):
 
     return result[0]
 
+# ✅ Nova rota unificada (usará o subdomínio para tudo)
 @app.route('/<subdomain>/<page_name>')
 def site_usuario(subdomain, page_name):
     from bs4 import BeautifulSoup
@@ -2875,9 +3126,8 @@ def site_usuario(subdomain, page_name):
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Pega o template_name vinculado ao subdomínio
     cur.execute("""
-        SELECT template_name, user_id
+        SELECT template_name, user_id, template_id
         FROM user_templates
         WHERE subdomain = %s
         LIMIT 1
@@ -2888,9 +3138,9 @@ def site_usuario(subdomain, page_name):
         cur.close(); conn.close()
         return "Loja não encontrada", 404
 
-    template_name, user_id = resultado
+    template_name, user_id, template_id = resultado
 
-    # 🛡️ Protege páginas privadas
+    # Protege páginas privadas
     paginas_privadas = ['meus-pedidos', 'acompanhar-pedido', 'editar-dados']
     if page_name in paginas_privadas:
         if 'cliente_id' not in session:
@@ -2898,20 +3148,20 @@ def site_usuario(subdomain, page_name):
         if 'user_id' in session:
             return "Acesso restrito a clientes.", 403
 
-    # 🔁 Se for template10, renderiza diretamente
+    # Template10 renderiza direto
     if template_name == 'template10':
         try:
             return render_template(f"{template_name}_{page_name}.html", subdomain=subdomain)
         except:
             return "Página não encontrada (template10)", 404
 
-    # 🔍 Para outros templates, busca o conteúdo dinâmico
+    # Outros templates => buscar HTML personalizado
     cur.execute("""
-        SELECT custom_html
-        FROM user_templates
-        WHERE subdomain = %s AND page_name = %s AND template_name = %s
-        LIMIT 1
-    """, (subdomain, page_name, template_name))
+    SELECT custom_html
+    FROM user_templates
+    WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
+    LIMIT 1
+    """, (user_id, template_name, subdomain, page_name))
     site = cur.fetchone()
     cur.close(); conn.close()
 
@@ -2932,7 +3182,22 @@ def site_usuario(subdomain, page_name):
         if re.match(r"^/(login-cliente|cadastrar|meus-pedidos|acompanhar-pedido.*)", action):
             form['action'] = f"/{subdomain}/{action.lstrip('/')}"
 
-    return str(soup)
+    html_renderizado = str(soup).replace("{{sub}}", subdomain)
+    return html_renderizado
+
+
+# ✅ Função opcional para redirecionar antigos /site/<template_id>/<page_name>
+@app.route('/site/<int:template_id>/<page_name>')
+def redirecionar_site_antigo(template_id, page_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT subdomain FROM user_templates WHERE id = %s", (template_id,))
+    sub = cur.fetchone()
+    cur.close(); conn.close()
+    if sub:
+        return redirect(url_for('site_usuario', subdomain=sub[0], page_name=page_name))
+    return "Página não encontrada", 404
+
 
 
 
@@ -3187,56 +3452,7 @@ def editar_pagina(template_id, page_name):
 
 
 
-@app.route('/site/<int:template_id>/<page_name>')
-def site_usuario_completo(template_id, page_name):
-    from bs4 import BeautifulSoup
-    import re
 
-    conn = get_db_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT template_name, subdomain, user_id 
-        FROM user_templates 
-        WHERE id = %s
-        LIMIT 1
-    """, (template_id,))
-    template_info = cur.fetchone()
-
-    if not template_info:
-        cur.close(); conn.close()
-        return "Template não encontrado", 404
-
-    template_name, subdomain, user_id = template_info
-
-    cur.execute("""
-        SELECT custom_html
-        FROM user_templates
-        WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
-        LIMIT 1
-    """, (user_id, template_name, subdomain, page_name))
-
-    result = cur.fetchone()
-    cur.close(); conn.close()
-
-    if not result:
-        return "Página não encontrada", 404
-
-    html = result[0]
-
-    # 🧠 Corrigir todos os <a>, <form>, <script> e <link>
-    soup = BeautifulSoup(html, 'html.parser')
-
-    # Corrige <a href="...">
-    for a in soup.find_all('a', href=True):
-        href = a['href'].strip()
-
-        if "/template/" in href:
-            page = href.split("/template/")[-1].strip()
-            a['href'] = f"/site/{template_id}/{page}"
-
-
-    return str(soup)
 
 
 
