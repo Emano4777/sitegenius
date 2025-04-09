@@ -569,9 +569,9 @@ footer .container {
                                   <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
                                 </a>
                               </li>                             
-                              <li>
-                                <li><a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a></li>
-
+                              <li id="relatorio-option">
+                                <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                              </li>
                                 <a href="#" id="logout-option" style="display: none;" onclick="logout()" class="logout-link">
                                   <i class="fas fa-sign-out-alt"></i> Sair
                                 </a>
@@ -627,7 +627,9 @@ footer .container {
                               <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
                             </a>
                           </li>
-                          <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                          <li id="mobile-relatorio-option">
+                            <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                          </li>
 
                           <li>
                             <a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()" class="mobile-menu-link logout">
@@ -719,6 +721,8 @@ fetch('/check-login')
     .then(data => {
         
         let userNameElement = document.getElementById('user-name');
+        let relatorioOption = document.getElementById('relatorio-option');
+        let mobileRelatorioOption = document.getElementById('mobile-relatorio-option');
         let userNameText = document.getElementById('user-name-text');
         let loginOption = document.getElementById('login-option');
         let logoutOption = document.getElementById('logout-option');
@@ -735,6 +739,10 @@ fetch('/check-login')
         let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
 
         if (data.logged_in) {
+
+            if (relatorioOption) relatorioOption.style.display = 'block';
+            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'block';
+
             if (data.premium_level) {
                 document.getElementById('user-premium-info').textContent = 
                     data.premium_level === 'free' 
@@ -778,6 +786,8 @@ fetch('/check-login')
                     img.style.objectFit = 'cover';
                     avatarContainer.appendChild(img);
                 } else {
+
+
                     const icon = document.createElement('i');
                     icon.className = 'fas fa-user user-icon';
                     avatarContainer.appendChild(icon);
@@ -814,6 +824,9 @@ fetch('/check-login')
                 mobileUserText.textContent = data.user_name;
             }
         } else {
+            if (relatorioOption) relatorioOption.style.display = 'none';
+            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'none';
+
             loginOption.style.display = 'block';
             logoutOption.style.display = 'none';
             meusTemplatesOption.style.display = 'none';
