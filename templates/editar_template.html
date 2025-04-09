@@ -221,31 +221,42 @@
     padding: 8px 10px;
   }
 
-  #top-bar input,
-  #top-bar button {
-    width: 100%;
-    font-size: 16px;
-    margin-bottom: 6px;
-  }
+  #top-bar input {
+  width: 100%;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+#top-bar button {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 3px;
+  flex: 1;
+  min-width: 120px;
+}
 
   /* Botões fixos no rodapé, mais largos no mobile */
   #salvar-btn,
-  #nova-pagina-btn {
-    left: 10px;
-    right: 10px;
-    width: calc(100% - 20px);
-    justify-content: center;
-    padding: 14px;
-    font-size: 16px;
-  }
+#nova-pagina-btn {
+  width: 130px;
+  padding: 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  justify-content: center;
+}
 
-  #nova-pagina-btn {
-    bottom: 80px;
-  }
+#salvar-btn {
+  right: 10px;
+  left: auto;
+  bottom: 20px;
+}
 
-  #salvar-btn {
-    bottom: 20px;
-  }
+#nova-pagina-btn {
+  left: 10px;
+  right: auto;
+  bottom: 20px;
+}
 
   /* Balão tutorial responsivo */
   #tutorial-balao {
