@@ -26,7 +26,7 @@ from efipay import EfiPay
 import json
 from openai import OpenAI
 from flask import Response
-
+from collections import defaultdict
 
 
 # Configuração
@@ -1563,6 +1563,7 @@ def relatorio_free():
     acessos_gerais = {}
     tem_acessos = False
     for template_id, sub in lojas:
+        sub = sub.strip().lower()
         acessos = [(d, c) for tid, d, c in todos_acessos if tid == template_id]
         retornos_sub = [(ip, c) for tid, ip, c in retornos if tid == template_id]
         mais_ativo_sub = sorted([(d, c) for tid, d, c in mais_ativos_todos if tid == template_id], key=lambda x: x[1], reverse=True)
@@ -1578,6 +1579,19 @@ def relatorio_free():
             'mais_ativo': mais_ativo_sub[0] if mais_ativo_sub else None,
             'localizacoes': locais_sub
         }
+    cliques_totais = defaultdict(lambda: defaultdict(int))
+
+    if os.path.exists('cliques.json'):
+        with open('cliques.json', 'r') as f:
+            for linha in f:
+                try:
+                    clique = json.loads(linha.strip())
+                    template = clique.get('template')
+                    acao = clique.get('acao')
+                    if template and acao:
+                        cliques_totais[template][acao] += 1
+                except Exception:
+                    continue
 
     cur.close()
     conn.close()
@@ -1607,7 +1621,8 @@ def relatorio_free():
         acessos_gerais_json=acessos_gerais_json,
         mensagem=mensagem,
         nivel=nivel,
-        is_premium=is_premium
+        is_premium=is_premium,
+        cliques_totais=cliques_totais
     )
 
 
@@ -3046,7 +3061,19 @@ def meu_site():
         multiple_sites=(len(templates) > 1)
     )
 
+@app.route('/registrar-clique', methods=['POST'])
+def registrar_clique():
+    data = request.get_json()
+    template = data.get('template')
+    acao = data.get('acao')
 
+    if template and acao:
+        template = template.strip().lower()
+        acao = acao.strip().lower()
+        with open('cliques.json', 'a') as f:
+            f.write(json.dumps({'template': template, 'acao': acao, 'hora': datetime.now().isoformat()}) + '\n')
+        return jsonify({'status': 'ok'})
+    return jsonify({'status': 'erro'}), 400
     
 @app.route('/adicionar-pagina/<int:template_id>', methods=['POST'])
 def adicionar_pagina(template_id):

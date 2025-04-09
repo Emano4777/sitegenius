@@ -162,7 +162,7 @@
       text-align: center;
       padding: 2rem;
     }
-    .whatsapp {
+    .btn-whatsapp {
       position: fixed;
       bottom: 20px;
       right: 20px;
@@ -216,7 +216,7 @@
     font-size: 14px;
   }
 
-  .whatsapp {
+  .btn-whatsapp {
     bottom: 15px;
     right: 15px;
     padding: 10px 14px;
@@ -356,8 +356,23 @@
     <p>&copy; 2025 Salão Estilo & Beleza. Todos os direitos reservados.</p>
   </footer>
 
-  <a href="https://wa.me/5511999999999" class="whatsapp" target="_blank">
+  <a href="https://wa.me/5511999999999" class="btn-whatsapp" target="_blank">
     <i class="fab fa-whatsapp"></i>
   </a>
+  <script>
+    document.querySelectorAll('.btn-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function () {
+        fetch('/registrar-clique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: this.dataset.template,
+            acao: 'whatsapp'
+          })
+        });
+      });
+    });
+    </script>
+    
 </body>
 </html>

@@ -317,10 +317,23 @@
   </div>
 
   <!-- Botão flutuante WhatsApp -->
-  <a href="https://wa.me/SEUNUMEROAQUI" target="_blank" class="whatsapp-float" title="Agende via WhatsApp">
-    <i class="fab fa-whatsapp"></i>
+  <a href="https://wa.me/55xxxxxx" class="btn-whatsapp" data-template="{{ subdomain }}">
+    Fale conosco
   </a>
-
+  <script>
+    document.querySelectorAll('.btn-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function () {
+        fetch('/registrar-clique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: this.dataset.template,
+            acao: 'whatsapp'
+          })
+        });
+      });
+    });
+    </script>
   <script>
     function mostrarEstilo() {
       const estilo = document.getElementById("pergunta1").value;

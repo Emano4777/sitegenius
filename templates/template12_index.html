@@ -94,7 +94,7 @@
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-.btn-enviar-whats {
+.btn-whatsapp {
   display: block;
   width: 100%;
   padding: 12px;
@@ -173,7 +173,7 @@ footer a:hover {
     font-size: 0.9rem;
   }
 
-  .btn-enviar-whats {
+  .btn-whatsapp {
     padding: 10px;
     font-size: 0.95rem;
   }
@@ -305,7 +305,7 @@ footer a:hover {
       </button>
     </div>
   
-    <a id="btn-whats" class="btn-enviar-whats" href="#" target="_blank">
+    <a id="btn-whats" class="btn-whatsapp" data-template="{{ subdomain }}" href="#" target="_blank">
         <i class="fab fa-whatsapp" style="margin-right: 6px;"></i> Enviar por WhatsApp
       </a>
   </div>
@@ -329,7 +329,21 @@ footer a:hover {
     ">0</span>
   </div>
 
-  
+  <script>
+    document.querySelectorAll('.btn-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function () {
+        fetch('/registrar-clique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: this.dataset.template,
+            acao: 'whatsapp'
+          })
+        });
+      });
+    });
+    </script>
+    
   <script>
     let carrinho = [];
     let carrinhoVisivel = true;

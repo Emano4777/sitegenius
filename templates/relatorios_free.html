@@ -9,19 +9,112 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0; padding: 0;
-      background: #f5f5f5;
-    }
 
-    .container {
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: #f9f9f9;
+    color: #333;
+    text-align: center;
+}
+
+/* Ajuste no botão "Entrar" */
+#login-option {
+    color: #333 !important; /* Cor escura para melhor contraste */
+    font-size: 16px;
+    font-weight: bold; /* Deixa o texto mais visível */
+    padding: 10px 15px;
+    text-align: center;
+    display: block;
+}
+
+#login-option:hover {
+    background: #f0f0f0; /* Destaque ao passar o mouse */
+    border-radius: 5px;
+}
+
+#login-text {
+    margin-right: 8px;
+}
+
+/* Cabeçalho */
+header {
+    background: white;
+    color: black;
+    padding: 20px 0;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+header .container {
+    max-width: 1200px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+nav ul {
+    list-style: none;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: black;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+nav ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Hero Section */
+.hero {
+    margin-top: 100px;
+    padding: 80px 20px;
+    background: url('https://source.unsplash.com/1600x900/?technology,website') center/cover no-repeat;
+    color: #1E2A38;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.hero h2 {
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.hero p {
+    font-size: 20px;
+    margin: 20px 0;
+}
+    .main-container {
       max-width: 800px;
       margin: 40px auto;
       background: #fff;
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-top: 140px;
     }
 
     h2, h3 {
@@ -94,6 +187,283 @@
       margin: 5px 0;
     }
 
+
+    * ✅ Garantindo que todos os itens do menu fiquem na mesma linha */
+.desktop-nav ul {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+    color: black;
+}
+
+.desktop-nav ul li {
+    margin: 0 15px;
+}
+.user-icon {
+    font-size: 22px;
+    color: black;
+    margin-left: 15px;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    list-style: none;
+    padding: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    text-align: center;
+    opacity: 0; /* garanta que começa invisível */
+    transition: opacity 0.3s ease;
+}
+
+/* ✅ Melhor visibilidade do texto */
+.dropdown-menu li {
+    padding: 10px 15px;
+    display: block;
+    font-size: 16px;
+    font-weight: bold; /* Torna a fonte mais visível */
+    color: #333; /* Escurece o texto */
+}
+
+/* ✅ Ajuste no botão "Entrar" e "Sair" */
+.dropdown-menu li a {
+    color: #333 !important;
+    text-decoration: none;
+    display: block;
+    padding: 8px 10px;
+    border-radius: 5px;
+    transition: 0.3s;
+    font-weight: bold; /* Garante visibilidade */
+}
+
+.dropdown-menu li a:hover {
+    background: #f0f0f0; /* Adiciona um fundo no hover */
+}
+
+/* ✅ Exibir menu ao abrir */
+.user-menu.open .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ✅ Efeito de exibição do dropdown */
+.user-menu:hover .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-menu li:hover {
+    background: #f0f0f0;
+}
+/* ✅ Menu Mobile */
+.mobile-menu-btn {
+    display: none;
+    font-size: 24px;
+    color: black;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-menu-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: 100vh;
+    background: #1E2A38;
+    box-shadow: -3px 0px 10px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    z-index: 1000;
+}
+
+.mobile-menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.mobile-menu-content a {
+    color: white;
+    font-size: 18px;
+    text-decoration: none;
+    padding: 12px 0;
+}
+.mobile-menu-content .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+.logout-link,
+#meus-templates-option,
+#editar-dados-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.logout-link:hover,
+#meus-templates-option:hover,
+#editar-dados-option:hover {
+  transform: translateX(4px);
+  color: #ff4d4d; /* cor suave para destaque */
+}
+/* ✅ Ajuste no menu do usuário no mobile */
+.mobile-user-menu {
+    position: relative;
+    width: 100%;
+    text-align: left;
+    padding: 10px 0;
+}
+
+.mobile-user-link {
+    color: white;
+    font-size: 18px;
+    text-decoration: none;
+    padding: 12px 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.mobile-user-link i {
+    margin-right: 8px;
+}
+
+.mobile-dropdown-menu {
+    display: none;
+    background: white;
+    list-style: none;
+    padding: 10px 0;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    min-width: 180px;
+    text-align: center;
+}
+
+.mobile-dropdown-menu li {
+    padding: 10px 15px;
+}
+
+.mobile-dropdown-menu li a {
+    color: #333;
+    text-decoration: none;
+    font-size: 16px;
+    display: block;
+}
+
+.mobile-dropdown-menu li:hover {
+    background: #f0f0f0;
+}
+
+/* ✅ Exibir dropdown ao abrir */
+.mobile-user-menu.open .mobile-dropdown-menu {
+    display: block;
+}
+
+.user-info-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #333;
+  padding: 10px 10px 0;
+  border-bottom: 1px dashed #ccc;
+}
+
+.container {
+  margin-top: 140px; /* ou ajuste conforme a altura real do seu header */
+}
+.header-container {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+
+.floating-premium-btn:hover {
+    background: #e0b800;
+    transform: scale(1.05);
+}
+
+
+/* ✅ Responsividade */
+@media (max-width: 768px) {
+    .desktop-nav {
+        display: none;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header .container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    nav ul {
+        margin-top: 10px;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 5px 0;
+    }
+
+    .hero {
+        padding: 60px 20px;
+    }
+
+    .hero h2 {
+        font-size: 28px;
+    }
+
+    .hero p {
+        font-size: 18px;
+    }
+
+    .feature-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .feature-item {
+        width: 90%;
+    }
+
+
+
+}
+
     @media (max-width: 600px) {
       .container {
         margin: 20px 10px;
@@ -113,21 +483,139 @@
   </style>
 </head>
 
-<div id="alerta-manutencao" style="
-background: #ffeaa7;
-color: #2d3436;
-padding: 15px 20px;
-text-align: center;
-font-size: 16px;
-font-weight: 500;
-box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-margin-top: 80px;
-z-index: 999;
-">
-⚠️ Esta página está passando por manutenção e pode apresentar instabilidades temporárias. Estamos trabalhando para melhorar sua experiência. Obrigado pela compreensão!
-</div>
 <body>
-    <div class="container">
+
+  <header>  
+          
+    <div class="header-container">
+        <h1>
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo" style="height: 35px; vertical-align: middle; margin-right: 10px;">
+            Site Genius
+          </h1>
+    
+        <!-- ✅ Navbar Desktop Corrigida -->
+        <nav class="desktop-nav">
+            <ul>
+                <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+                <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+               
+    
+                <!-- ✅ Avatar e Dropdown -->
+                <li class="user-menu">
+                    <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
+                        <span id="user-avatar-container">
+                            <i class="fas fa-user user-icon"></i>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu" id="user-dropdown">
+                        <li id="user-name" style="display: none; font-weight: bold; padding: 10px;" class="user-info-line">
+                            <i class="fas fa-user-circle" style="margin-right: 6px; color: #555;"></i>
+                            Bem-vindo, <span id="user-name-text"></span><br>
+                            <small id="user-premium-info" style="color: #666; margin-left: 22px;"></small>
+                          </li>
+                          <li>
+                            <a href="/login" id="login-option" class="menu-link">
+                              <i class="fas fa-sign-in-alt"></i> Entrar
+                            </a>
+                          </li>
+                          
+                        <li>
+                            <a href="/meu-site" id="meus-templates-option" style="display:none;">
+                              <i class="fas fa-layer-group"></i> Meus Templates
+                            </a>
+                          </li>                              
+                          <li>
+                            <a href="/editar-dados" id="editar-dados-option" style="display: none;">
+                              <i class="fas fa-user-cog"></i> Editar Dados
+                            </a>
+                          </li> 
+                          <li id="admin-lojas-option" style="display: none;">
+                            <a href="/admin" class="menu-link">
+                              <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                            </a>
+                          </li>                             
+                          <li id="relatorio-option">
+                            <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                          </li>
+                            <a href="#" id="logout-option" style="display: none;" onclick="logout()" class="logout-link">
+                              <i class="fas fa-sign-out-alt"></i> Sair
+                            </a>
+                          </li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    
+        <!-- ✅ Botão de menu mobile -->
+        <button class="mobile-menu-btn" onclick="openMobileMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    
+    <!-- ✅ Menu Mobile -->
+    <div class="mobile-menu-modal" id="mobileMenuModal">
+        <div class="mobile-menu-content">
+            <a href="/"><i class="fas fa-home"></i> Início</a>
+            <a href="/templates"><i class="fas fa-th"></i> Templates</a>
+            <a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a>
+            
+    
+            <!-- ✅ Avatar Mobile -->
+            <div class="mobile-user-menu">
+                <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+                    <span id="mobile-user-avatar-container">
+                        <i class="fas fa-user"></i>
+                    </span>
+                </a>
+                <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+                    <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+                        Bem-vindo, <span id="mobile-username-text"></span><br>
+                        <small id="mobile-user-premium-info" style="color: #ddd;"></small>
+                    </li>
+                    <li>
+                        <a href="/login" id="mobile-login-option" class="mobile-menu-link">
+                          <i class="fas fa-sign-in-alt"></i> Entrar
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/meu-site" id="mobile-meus-templates-option" style="display:none;" class="mobile-menu-link">
+                          <i class="fas fa-folder-open"></i> Meus Templates
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/editar-dados" id="mobile-editar-dados-option" style="display: none;" class="mobile-menu-link">
+                          <i class="fas fa-user-cog"></i> Editar Dados
+                        </a>
+                      </li>
+                      <li id="mobile-admin-lojas-option" style="display: none;">
+                        <a href="/admin" class="mobile-menu-link">
+                          <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                        </a>
+                      </li>
+                      <li id="mobile-relatorio-option">
+                        <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                      </li>
+
+                      <li>
+                        <a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()" class="mobile-menu-link logout">
+                          <i class="fas fa-sign-out-alt"></i> Sair
+                        </a>
+                      </li>
+                </ul>
+            </div>
+    
+            <button class="close-btn" onclick="closeMobileMenu()">
+                <i class="fas fa-times-circle"></i>
+            </button>
+        </div>
+    </div>
+
+</header>
+
+
+
+    <div class="main-container">
         <h2>📈 Relatório de Acessos dos Últimos 7 Dias</h2>
       
         {% if mensagem %}
@@ -177,6 +665,25 @@ z-index: 999;
                     </a>
                 </div>
                 {% endif %}
+                <h4 style="margin-top: 30px;"><i class="fas fa-mouse-pointer"></i> Relatório que mostra a quantidade de  Cliques no botão do WhatsApp do seu site</h4>
+
+                {% set cliques = cliques_totais.get(subdomain.strip().lower()) %}
+                {% if cliques %}
+                  <ul style="list-style: none; padding-left: 0; margin-top: 10px;">
+                    {% for acao, total in cliques.items() %}
+                      <li style="margin-bottom: 6px;">
+                        <strong>{{ acao | capitalize }}</strong>: {{ total }} clique{{ 's' if total > 1 else '' }}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <div style="margin-top: 15px; background: #ffeaa7; padding: 15px; border-radius: 8px;">
+                    <strong>😕 Nenhum clique ainda!</strong><br>
+                    Seus visitantes ainda não interagiram com o botão do WhatsApp.<br>
+                    <span style="font-size: 14px;">Considere contratar nosso 
+                      <a href="/preco" style="font-weight: bold; color: #0984e3;">serviço de tráfego pago</a> para atrair mais visitantes e gerar conversões.</span>
+                  </div>
+                {% endif %}
               </div>
           </div>
         {% endfor %}
@@ -185,7 +692,196 @@ z-index: 999;
       <script id="charts-data" type="application/json">
         {{ acessos_gerais_json | tojson | safe }}
       </script>
-      
+
+      <script>
+      // Função para exibir/esconder o menu ao clicar no ícone do usuário
+      function toggleUserMenu(event) {
+event.preventDefault();
+let userMenu = document.querySelector('.user-menu');
+userMenu.classList.toggle('open');
+}
+
+
+// ✅ Função para exibir/esconder o menu no mobile
+function toggleMobileUserMenu(event) {
+event.preventDefault();
+let menu = document.getElementById('mobile-user-dropdown');
+menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+fetch('/check-login')
+.then(response => response.json())
+.then(data => {
+  
+  let userNameElement = document.getElementById('user-name');
+  let relatorioOption = document.getElementById('relatorio-option');
+  let mobileRelatorioOption = document.getElementById('mobile-relatorio-option');
+  let userNameText = document.getElementById('user-name-text');
+  let loginOption = document.getElementById('login-option');
+  let logoutOption = document.getElementById('logout-option');
+  let meusTemplatesOption = document.getElementById('meus-templates-option');
+
+  let mobileUserNameElement = document.getElementById('mobile-user-name');
+  let mobileUserNameText = document.getElementById('mobile-username-text');
+  let mobileLoginOption = document.getElementById('mobile-login-option');
+  let mobileLogoutOption = document.getElementById('mobile-logout-option');
+  let mobileUserText = document.getElementById('mobile-user-name-text');
+  let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+
+  let editarDadosOption = document.getElementById('editar-dados-option');
+  let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
+
+  if (data.logged_in) {
+
+      if (relatorioOption) relatorioOption.style.display = 'block';
+      if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'block';
+
+      if (data.premium_level) {
+          document.getElementById('user-premium-info').textContent = 
+              data.premium_level === 'free' 
+                  ? 'Plano Gratuito'
+                  : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+
+          document.getElementById('mobile-user-premium-info').textContent = 
+              data.premium_level === 'free' 
+                  ? 'Plano Gratuito'
+                  : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+      }
+
+      loginOption.style.display = 'none';
+      logoutOption.style.display = 'block';
+      meusTemplatesOption.style.display = 'block';
+
+      mobileLoginOption.style.display = 'none';
+      mobileLogoutOption.style.display = 'block';
+      mobileMeusTemplatesOption.style.display = 'block';
+
+      if (data.premium_level && data.premium_level !== 'free') {
+const adminOption = document.getElementById('admin-lojas-option');
+const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
+if (adminOption) adminOption.style.display = 'block';
+if (mobileAdminOption) mobileAdminOption.style.display = 'block';
+}
+
+      if (data.user_name) {
+          userNameText.textContent = data.user_name;
+
+          // ✅ Desktop Avatar
+          const avatarContainer = document.getElementById('user-avatar-container');
+          avatarContainer.innerHTML = '';
+          if (data.avatar_url) {
+              const img = document.createElement('img');
+              img.src = data.avatar_url;
+              img.alt = 'Avatar';
+              img.style.width = '28px';
+              img.style.height = '28px';
+              img.style.borderRadius = '50%';
+              img.style.objectFit = 'cover';
+              avatarContainer.appendChild(img);
+          } else {
+
+
+              const icon = document.createElement('i');
+              icon.className = 'fas fa-user user-icon';
+              avatarContainer.appendChild(icon);
+          }
+
+          // ✅ Mobile Avatar
+          const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
+          mobileAvatarContainer.innerHTML = '';
+          if (data.avatar_url) {
+              const img = document.createElement('img');
+              img.src = data.avatar_url;
+              img.alt = 'Avatar';
+              img.style.width = '28px';
+              img.style.height = '28px';
+              img.style.borderRadius = '50%';
+              img.style.objectFit = 'cover';
+              mobileAvatarContainer.appendChild(img);
+          } else {
+              const icon = document.createElement('i');
+              icon.className = 'fas fa-user';
+              mobileAvatarContainer.appendChild(icon);
+          }
+
+          const mobileSpan = document.createElement('span');
+          mobileSpan.id = 'mobile-user-name-text';
+          mobileSpan.textContent = data.user_name;
+          mobileAvatarContainer.appendChild(mobileSpan);
+
+          userNameElement.style.display = 'block';
+          editarDadosOption.style.display = 'block';
+          mobileEditarDadosOption.style.display = 'block';
+          mobileUserNameText.textContent = data.user_name;
+          mobileUserNameElement.style.display = 'block';
+          mobileUserText.textContent = data.user_name;
+      }
+  } else {
+      if (relatorioOption) relatorioOption.style.display = 'none';
+      if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'none';
+
+      loginOption.style.display = 'block';
+      logoutOption.style.display = 'none';
+      meusTemplatesOption.style.display = 'none';
+      userNameElement.style.display = 'none';
+
+      mobileLoginOption.style.display = 'block';
+      mobileLogoutOption.style.display = 'none';
+      mobileMeusTemplatesOption.style.display = 'none';
+      editarDadosOption.style.display = 'none';
+      mobileEditarDadosOption.style.display = 'none';
+      mobileUserNameElement.style.display = 'none';
+      mobileUserText.textContent = "Entrar";
+  }
+})
+.catch(error => console.error('Erro ao verificar login:', error));
+
+
+
+// ✅ Função para logout e redirecionamento
+function logout() {
+fetch('/logout', { method: 'POST' })
+  .then(() => {
+      window.location.href = '/login'; // Redireciona para a página de login
+  });
+}
+
+// ✅ Fecha o dropdown se clicar fora dele (Desktop e Mobile)
+document.addEventListener('click', function(event) {
+let userMenu = document.querySelector('.user-menu');
+let userIcon = document.getElementById('user-profile');
+
+let mobileUserMenu = document.querySelector('.mobile-user-menu');
+let mobileUserIcon = document.getElementById('mobile-user-profile');
+
+// Fecha menu desktop
+if (!userIcon.contains(event.target) && !userMenu.contains(event.target)) {
+  userMenu.classList.remove('open');
+}
+
+// Fecha menu mobile
+if (!mobileUserIcon.contains(event.target) && !mobileUserMenu.contains(event.target)) {
+  mobileUserMenu.classList.remove('open');
+}
+});
+
+
+
+
+
+document.getElementById('mobile-logout-option').addEventListener('click', function() {
+  fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
+});
+
+// Funções para abrir e fechar o menu mobile
+function openMobileMenu() {
+  document.getElementById('mobileMenuModal').style.display = 'block';
+}
+
+function closeMobileMenu() {
+  document.getElementById('mobileMenuModal').style.display = 'none';
+}
+</script>
+
       <script>
         const chartsData = JSON.parse(document.getElementById("charts-data").textContent);
       

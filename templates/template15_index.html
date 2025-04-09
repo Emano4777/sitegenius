@@ -105,7 +105,7 @@ section h2 {
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-.btn-enviar-whats {
+.btn-whatsapp{
   display: block;
   width: 100%;
   padding: 12px;
@@ -197,7 +197,7 @@ footer a:hover {
     padding: 10px;
   }
 
-  .btn-enviar-whats {
+  .btn-whatsapp {
     font-size: 1rem;
     padding: 10px;
   }
@@ -331,7 +331,7 @@ footer a:hover {
       </button>
     </div>
   
-    <a id="btn-whats" class="btn-enviar-whats" href="#" target="_blank">
+    <a id="btn-whats" class="btn-whatsapp" href="#" target="_blank">
         <i class="fab fa-whatsapp" style="margin-right: 6px;"></i> Agendar pelo WhatsApp
       </a>
       
@@ -355,7 +355,21 @@ footer a:hover {
       z-index:10002;
     ">0</span>
   </div>
-
+  <script>
+    document.querySelectorAll('.btn-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function () {
+        fetch('/registrar-clique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: this.dataset.template,
+            acao: 'whatsapp'
+          })
+        });
+      });
+    });
+    </script>
+    
   
   <script>
     let carrinho = [];

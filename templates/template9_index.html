@@ -94,7 +94,7 @@
       cursor: pointer;
     }
 
-    .whatsapp {
+    .btn-whatsapp {
       display: block;
       width: fit-content;
       margin: 2rem auto 0;
@@ -148,7 +148,7 @@
     width: 100%;
   }
 
-  .whatsapp {
+  .btn-whatsapp {
     font-size: 1rem;
     width: 100%;
     padding: 0.8rem 1rem;
@@ -249,7 +249,7 @@
         </div>
       </section>
     <!-- WhatsApp Direto -->
-    <a class="whatsapp" href="https://wa.me/5511999999999" target="_blank">
+    <a class="btn-whatsapp" href="https://wa.me/5511999999999" data-template="{{ subdomain }}" target="_blank">
       <i class="fab fa-whatsapp"></i> Fale conosco pelo WhatsApp
     </a>
   </div>
@@ -277,7 +277,21 @@
     </div>
   </section>
  
-
+  <script>
+    document.querySelectorAll('.btn-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function () {
+        fetch('/registrar-clique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: this.dataset.template,
+            acao: 'whatsapp'
+          })
+        });
+      });
+    });
+    </script>
+    
   <script>
     function verPet() {
       const comida = document.getElementById("comidaFav").value;

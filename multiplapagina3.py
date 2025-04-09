@@ -3,12 +3,12 @@ import psycopg2
 from bs4 import BeautifulSoup
 import re
 
-TEMPLATE_NAME = 'template16'
+TEMPLATE_NAME = 'template3'
 SUBDOMAIN_PLACEHOLDER = '{{sub}}'
 
 ARQUIVOS = {
-    'index': 'template16_index.html',
-
+    'index': 'template3_index.html',
+    'sobre': 'template3_sobre.html',
 }
 
 def extrair_css_apenas(html):
