@@ -172,6 +172,64 @@
     background-color: #555;
 }
 
+@media (max-width: 768px) {
+  /* Editor ocupa altura total sem transbordar */
+  #editor {
+    height: calc(100vh - 70px); /* respeita a barra superior */
+    overflow: auto;
+  }
+
+  /* Barra superior adaptada */
+  #top-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  #top-bar input,
+  #top-bar button {
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  /* Botões fixos no rodapé, mais largos no mobile */
+  #salvar-btn,
+  #nova-pagina-btn {
+    left: 10px;
+    right: 10px;
+    width: calc(100% - 20px);
+    justify-content: center;
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  #nova-pagina-btn {
+    bottom: 80px;
+  }
+
+  #salvar-btn {
+    bottom: 20px;
+  }
+
+  /* Balão tutorial responsivo */
+  #tutorial-balao {
+    max-width: 90%;
+    left: 5%;
+    right: 5%;
+    font-size: 15px;
+    padding: 12px;
+  }
+
+  #tutorial-balao button {
+    width: 100%;
+    font-size: 15px;
+  }
+}
+
+
+
     </style>
 </head>
     
