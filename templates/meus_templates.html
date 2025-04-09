@@ -544,6 +544,188 @@ main {
     margin-right: 8px;
 }
 
+
+.copiar-btn {
+    background-color: #1E2A38;
+    color: white;
+    font-weight: 500;
+    padding: 8px 14px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.copiar-btn:hover {
+    background-color: #e68900;
+    transform: scale(1.03);
+}
+
+.custom-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1E2A38;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.4s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.custom-toast.show {
+  opacity: 1;
+  bottom: 50px;
+}
+
+.acoes-template {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ultima-edicao {
+  font-size: 12px;
+  color: #888;
+}
+
+.url-dominio-hint {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.url-dominio-hint i {
+  color: #1E2A38;
+}
+
+.dominio-btn {
+  background-color: #1E2A38;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+  transition: background-color 0.3s;
+}
+
+.dominio-btn:hover {
+  background-color: #e68900;
+}
+
+.status-site {
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.publicado {
+  color: #27ae60;
+}
+
+.subdomain-container {
+  text-align: left;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.url-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+td:last-child {
+  vertical-align: middle;
+  text-align: center;
+}
+.construcao {
+  color: #f39c12;
+}
+@media (max-width: 768px) {
+  .custom-toast {
+    width: 90%;
+    font-size: 13px;
+    padding: 10px 14px;
+    bottom: 20px;
+  }
+
+  .url-dominio-hint {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .dominio-btn {
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody tr {
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: none;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+    color: #1E2A38;
+  }
+}
+/* Responsivo */
+@media (max-width: 768px) {
+    .copiar-btn {
+        font-size: 13px;
+        padding: 10px 12px;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 /* Responsivo */
 @media (max-width: 768px) {
     th, td {
@@ -675,14 +857,19 @@ main {
         <thead>
             <tr>
                 <th>Seu modelo do site - Template</th>
+                
                 <th>Subdomínio</th>
                 <th>Ações</th>
             </tr>
         </thead>
         <tbody>
             {% for subdomain, data in templates.items() %}
+            
             <tr>
-                <td>{{ data.template_name }}</td>
+                <td>{{ data.template_name }}                              <span class="status-site publicado">
+                    <i class="fas fa-circle-check"></i> Publicado
+                  </span></td>
+                
                 <td>
                     <div class="subdomain-container">
                         <div class="subdomain-title">{{ data.subdomain }}</div>
@@ -699,15 +886,42 @@ main {
                             </li>
                             {% endfor %}
                         </ul>
+                        <div class="url-compartilhar">
+                            <p style="margin-top: 10px; font-weight: bold;">
+                                Compartilhe seu site com essa URL principal:
+                            </p>
+                            <div class="url-tools">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="text" readonly value="{{ request.host_url }}{{ subdomain }}/index" style="flex: 1; padding: 6px; border-radius: 5px; border: 1px solid #ccc;" id="url-{{ loop.index }}">
+                                    <button onclick="copiarURL('{{ loop.index }}')" class="btn copiar-btn">
+                                      <i class="fas fa-copy"></i> Copiar
+                                    </button>
+                                    
+                                </div>
+                                <div class="url-dominio-hint">
+                                  <i class="fa-solid fa-globe"></i> Quer um link mais profissional?
+                                  <a href="/preco" class="dominio-btn">Conheça os planos →</a>
+                                </div>
+                              </div>
+                              
+                                  
+
+                            </div>
+
+                        </div>
                     </div>
                 </td>
-                <td>
+                <td class="acoes-template">
                     {% if data.pages|length > 0 %}
-                    <a class="btn" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">Editar</a>
+                      <a class="btn" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">Editar</a>
+                      <br>
+                      <small class="ultima-edicao">
+                        <i class="fas fa-clock"></i> Última edição em {{ data.ultima_edicao.strftime('%d/%m/%Y %H:%M') if data.ultima_edicao else 'Nunca salvo' }}
+                      </small>
                     {% else %}
-                    <span class="btn disabled">Sem páginas</span>
+                      <span class="btn disabled">Sem páginas</span>
                     {% endif %}
-                </td>
+                  </td>
             </tr>
             {% else %}
             <tr>
@@ -715,10 +929,35 @@ main {
             </tr>
             {% endfor %}
         </tbody>
+
     </table>
 </main>
 
 <script>
+
+function copiarURL(id) {
+  const input = document.getElementById('url-' + id);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+  mostrarToast("Link copiado com sucesso!");
+}
+
+function mostrarToast(mensagem) {
+  const toast = document.createElement("div");
+  toast.className = "custom-toast";
+  toast.textContent = mensagem;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 100);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
     // Funções para abrir e fechar o menu mobile
     function openMobileMenu() {
         document.getElementById('mobileMenuModal').style.display = 'block';

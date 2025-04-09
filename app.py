@@ -3017,27 +3017,34 @@ def meu_site():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT id, template_name, subdomain, page_name
-        FROM user_templates 
+        SELECT 
+            template_name, subdomain, page_name,
+            MAX(created_at) OVER (PARTITION BY subdomain) AS ultima_edicao,
+            MIN(id) OVER (PARTITION BY subdomain) AS template_id
+        FROM user_templates
         WHERE user_id = %s
     """, (user_id,))
-    
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
 
-    # Agrupando corretamente por subdomínio
     templates = {}
-    for template_id, template_name, subdomain, page_name in rows:
+    for template_name, subdomain, page_name, ultima_edicao, template_id in cur.fetchall():
         if subdomain not in templates:
             templates[subdomain] = {
                 'template_id': template_id,
                 'template_name': template_name,
-                'pages': []
+                'pages': [],
+                'ultima_edicao': ultima_edicao
             }
         templates[subdomain]['pages'].append(page_name)
 
-    return render_template('meus_templates.html', templates=templates, multiple_sites=(len(templates) > 1))
+    cur.close()
+    conn.close()
+
+    return render_template(
+        'meus_templates.html',
+        templates=templates,
+        request=request,
+        multiple_sites=(len(templates) > 1)
+    )
 
 
     
@@ -3460,7 +3467,8 @@ def editar_pagina(template_id, page_name):
 
         cur.execute("""
             UPDATE user_templates 
-            SET custom_html = %s
+            SET custom_html = %s,
+                ultima_edicao = NOW()
             WHERE user_id = %s AND template_name = %s AND subdomain = %s AND page_name = %s
         """, (html_completo, user_id, template_name, subdomain, page_name))
 
