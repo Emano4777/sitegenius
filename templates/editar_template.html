@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
+    <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+<script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
     <link rel="icon" href="https://res.cloudinary.com/dzpvczzab/image/upload/v1743096113/ChatGPT_Image_27_de_mar._de_2025_14_18_50_vh4wix.png" type="image/png">
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -26,6 +29,41 @@
     margin-top: 70px; /* espaço para a barra fixa */
 }
 
+#tutorial-balao {
+    position: absolute;
+    z-index: 999999;
+    background-color: #1e1e1e;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    max-width: 300px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    border: 2px solid #f0c040;
+    font-family: 'Poppins', sans-serif;
+}
+#tutorial-balao button {
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: #f0c040;
+    color: black;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.meu-tutorial {
+    background-color: #1e1e1e;
+    color: #fff;
+    border: 2px solid #f0c040;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.introjs-helperLayer {
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 0 0 3px #f0c040 !important;
+    border-radius: 10px !important;
+}
 /* Barra superior */
 #top-bar {
     position: fixed;
@@ -141,16 +179,27 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/grapesjs/0.21.8/grapes.min.js"></script>
 <body>
 
-    <div id="editor"></div>
+    <div id="editor" data-intro="🎯 Aqui é onde você monta o seu site! Arraste blocos da esquerda e solte aqui. Depois, é só clicar nos textos ou imagens para editar."></div>
 
     <div id="top-bar">
-        <button id="nova-pagina-btn">
+        <button id="nova-pagina-btn" data-intro="📄 Clique aqui para criar uma nova página para o seu site. Você pode alternar entre elas depois.">
             <i class="fas fa-file-circle-plus"></i> Nova Página
         </button>
 
-        <button id="voltar-site-btn">
+        <button id="voltar-site-btn" data-intro="🔙 Volta para a área onde estão todos os seus templates salvos.">
             <i class="fas fa-arrow-left"></i> Voltar para Meus Templates
         </button>
+
+        <button onclick="forcarTutorial()" id="btn-tutorial" data-intro="❓ Clique aqui para iniciar este tutorial interativo novamente.">
+            <i class="fas fa-circle-question"></i> Tutorial de como utilizar o editor
+        </button>
+
+
+        <button id="reset-dicas" title="Reexibir as dicas de imagem e texto">
+            <i class="fas fa-sync-alt"></i> Reexibir Dicas
+          </button>
+          
+        
 
         {% if premium_level in ['master', 'moderado', 'essential'] %}
         <input id="promptInput" placeholder="Descreva seu site..." style="width: 250px;" />
@@ -160,16 +209,19 @@
         {% endif %}
 
         
-        <input id="input-pagina" list="paginas-disponiveis" placeholder="Digite ou selecione uma página">
+        <input id="input-pagina" list="paginas-disponiveis" placeholder="Digite ou selecione uma página"
+        data-intro="📁 Aqui você escolhe ou digita o nome da página que quer editar.">
         <datalist id="paginas-disponiveis"></datalist>
     
-        <button id="confirmar-troca">
+        <button id="confirmar-troca" data-intro="🚀 Depois de escolher uma página, clique aqui para acessá-la.">
             <i class="fas fa-right-to-bracket"></i> Ir para página
         </button>
+        
     
-        <button id="salvar-btn" onclick="salvarTemplate()">
+        <button id="salvar-btn" onclick="salvarTemplate()" data-intro="💾 Clique aqui para salvar todas as alterações feitas na página atual.">
             <i class="fas fa-save"></i> Salvar
         </button>
+        
     </div>
     <script>
         const PREMIUM_LEVEL = "{{ premium_level }}";
@@ -196,10 +248,116 @@
     <script id="template-content" type="application/json">
         {{ html_atual | tojson | safe }}
     </script>
-    
+    <script>
+function iniciarTutorial() {
+    localStorage.removeItem('tutorial_feito');
+
+    const mostrarMensagemFinal = () => {
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                mostrarModalAviso(`
+                    <div style="text-align:left">
+                        🧠 <strong>Quer aprender mais?</strong><br><br>
+                        👉 Acesse <a href="/tutorial" target="_blank" style="color:#f0c040; font-weight:bold;">/tutorial</a> para ver vídeos explicativos e exemplos prontos.<br><br>
+                        💬 Em caso de dúvidas, acione o <strong>suporte</strong> pelo botão no rodapé do site.<br><br>
+                        ✅ Bom uso do editor!
+                    </div>
+                `);
+            }, 300);
+        });
+    };
+
+    introJs().setOptions({
+        nextLabel: 'Próximo',
+        prevLabel: 'Voltar',
+        doneLabel: 'Finalizar',
+        skipLabel: 'Pular',
+        tooltipClass: 'meu-tutorial',
+        highlightClass: 'destacado'
+    })
+    .oncomplete(() => {
+        localStorage.setItem('tutorial_feito', 'true');
+        mostrarMensagemFinal(); // agora garante que o modal aparece
+    })
+    .onexit(() => {
+        localStorage.setItem('tutorial_feito', 'true');
+        mostrarMensagemFinal();
+    })
+    .start();
+}
+
+
+function mostrarModalAviso(texto) {
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '50%';
+    modal.style.left = '50%';
+    modal.style.transform = 'translate(-50%, -50%)';
+    modal.style.background = '#fff';
+    modal.style.color = '#333';
+    modal.style.borderRadius = '10px';
+    modal.style.boxShadow = '0 0 20px rgba(0,0,0,0.3)';
+    modal.style.padding = '20px 30px';
+    modal.style.zIndex = '10001';
+    modal.style.textAlign = 'center';
+    modal.style.fontSize = '16px';
+    modal.innerHTML = `
+        <div style="margin-bottom: 20px;"><i class="fas fa-info-circle" style="color:#f0c040;"></i> ${texto}</div>
+        <button onclick="this.parentElement.remove()" style="background-color:#1e2a38; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">Fechar</button>
+    `;
+    document.body.appendChild(modal);
+}
+
+
+function forcarTutorial() {
+    introJs().setOptions({
+        nextLabel: 'Próximo',
+        prevLabel: 'Voltar',
+        doneLabel: 'Finalizar',
+        skipLabel: 'Pular',
+        tooltipClass: 'meu-tutorial',
+        highlightClass: 'destacado'
+    })
+    .oncomplete(() => {
+        setTimeout(() => {
+            mostrarModalAviso(`
+    <div style="text-align:left">
+        🧠 <strong>Quer aprender mais?</strong><br><br>
+        📺 Veja vídeos explicativos e exemplos prontos clicando no botão abaixo:<br><br>
+        <button onclick="window.open('/tutorial', '_blank')" style="background:#f0c040; border:none; color:#000; font-weight:bold; padding:10px 16px; border-radius:6px; cursor:pointer;">
+            Acessar Tutorial em Vídeo
+        </button><br><br>
+        💬 Em caso de dúvidas, acione o <strong>suporte</strong> pelo botão no canto inferior esquerdo.<br><br>
+        ✅ Bom uso do editor!
+    </div>
+`);
+
+        }, 1000);
+    })
+    .onexit(() => {
+        setTimeout(() => {
+            mostrarModalAviso(`
+    <div style="text-align:left">
+        🧠 <strong>Quer aprender mais?</strong><br><br>
+        📺 Veja vídeos explicativos e exemplos prontos clicando no botão abaixo:<br><br>
+        <button onclick="window.open('/tutorial', '_blank')" style="background:#f0c040; border:none; color:#000; font-weight:bold; padding:10px 16px; border-radius:6px; cursor:pointer;">
+            Acessar Tutorial em Vídeo
+        </button><br><br>
+        💬 Em caso de dúvidas, acione o <strong>suporte</strong> pelo botão no canto inferior esquerdo.<br><br>
+        ✅ Bom uso do editor!
+    </div>
+`);
+        }, 1000);
+    })
+    .start();
+}
+
+        </script>
     <script>
         let editor;
         document.addEventListener("DOMContentLoaded", function () {
+
+
             const nivel = "{{ premium_level }}".toLowerCase().trim();
 
     // Se o nível não for master, remove os elementos manualmente
@@ -221,6 +379,10 @@ document.getElementById("voltar-site-btn").addEventListener("click", function ()
     window.location.href = "/meu-site";
 });
 
+
+
+
+
         document.getElementById("input-pagina").value = "{{ page_name }}";
 
         const rawHtml = document.getElementById("template-content").textContent;
@@ -236,10 +398,8 @@ document.getElementById("voltar-site-btn").addEventListener("click", function ()
             pluginsOpts: { "gjs-preset-webpage": {} }
         });
         
-         
-  
        
-
+         
 
         // ✅ Carrega o template salvo no banco
         const parser = new DOMParser();
@@ -263,6 +423,120 @@ document.getElementById("voltar-site-btn").addEventListener("click", function ()
         editor.select(null); // deseleciona o componente
     }
 });
+
+
+function aguardarTraitsEIniciarTutorial(tag) {
+    const observer = new MutationObserver((mutations, obs) => {
+        const traitsEl = document.querySelector('.gjs-trt-traits');
+        if (!traitsEl) return;
+
+        if (traitsEl.offsetHeight > 0 && traitsEl.innerText.trim().length > 0) {
+            obs.disconnect();
+
+            introJs().setOptions({
+                steps: [
+                    {
+                        element: traitsEl,
+                        intro: tag === 'img'
+                            ? '🖼 Aqui você edita a <strong>URL da imagem</strong>, <strong>largura</strong>, <strong>altura</strong> etc.'
+                            : '✍️ Aqui você edita <strong>texto, cor, tamanho de fonte</strong> e mais.',
+                        position: 'right'
+                    }
+                ],
+                tooltipClass: 'meu-tutorial',
+                highlightClass: 'destacado',
+                showButtons: true
+            }).start();
+        }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+editor.on('component:selected', (model) => {
+    const tag = model.get('tagName');
+    if (!['img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span'].includes(tag)) return;
+
+    const isImage = tag === 'img';
+    const storageKey = isImage ? 'dica_img_vista' : 'dica_txt_vista';
+
+    // Só mostra se ainda não foi vista
+    if (localStorage.getItem(storageKey)) return;
+
+    // Remove o balão anterior se já existir
+    document.getElementById('tutorial-balao')?.remove();
+
+    const iframe = editor.Canvas.getFrameEl(); // iframe do canvas
+    const el = model.view?.el;
+    if (!iframe || !el) return;
+
+    // Calcula posição do elemento clicado
+    const rect = el.getBoundingClientRect();
+    const iframeRect = iframe.getBoundingClientRect();
+    const top = iframeRect.top + rect.top + window.scrollY;
+    const left = iframeRect.left + rect.left + window.scrollX;
+
+    const explicacao = isImage ? `
+        <strong><i class="fas fa-image"></i> Imagem selecionada</strong><br><br>
+        🧭 No menu da direita, você pode mudar o estilo da imagem:<br><br>
+        <i class="fas fa-cogs"></i> <b>General:</b> posição, visibilidade<br>
+        <i class="fas fa-expand-arrows-alt"></i> <b>Flex:</b> alinhamento se o container usar esse layout<br>
+        <i class="fas fa-ruler-combined"></i> <b>Dimension:</b> largura, altura, margens<br>
+        <i class="fas fa-paint-brush"></i> <b>Decorations:</b> bordas, fundo, sombra<br>
+        <i class="fas fa-tools"></i> <b>Extra:</b> código, ID, classes<br><br>
+        ✅ Clique nos menus para experimentar!
+    ` : `
+        <strong><i class="fas fa-font"></i> Texto selecionado</strong><br><br>
+        🧭 No menu da direita, você pode mudar o estilo do texto:<br><br>
+        <i class="fas fa-font"></i> <b>Typography:</b> fonte, cor, tamanho, estilo<br>
+        <i class="fas fa-ruler-combined"></i> <b>Dimension:</b> largura, espaçamentos<br>
+        <i class="fas fa-cogs"></i> <b>General:</b> visibilidade, posicionamento<br>
+        <i class="fas fa-paint-brush"></i> <b>Decorations:</b> borda, sombra, fundo<br>
+        <i class="fas fa-tools"></i> <b>Extra:</b> ID, classes e atributos<br><br>
+        ✅ Explore os estilos pra ver o efeito na hora!
+    `;
+
+    const balao = document.createElement('div');
+    balao.id = 'tutorial-balao';
+    balao.style.position = 'absolute';
+    balao.style.top = `${top}px`;
+    balao.style.left = `${left}px`;
+    balao.style.background = '#1e1e1e';
+    balao.style.color = '#fff';
+    balao.style.border = '2px solid #f0c040';
+    balao.style.borderRadius = '10px';
+    balao.style.padding = '15px';
+    balao.style.zIndex = '10000';
+    balao.style.maxWidth = '300px';
+    balao.style.fontSize = '14px';
+    balao.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    balao.innerHTML = `
+        <div style="margin-bottom: 10px;">${explicacao}</div>
+        <button id="tutorial-ok" style="background:#f0c040; border:none; padding:8px 12px; border-radius:5px; font-weight:bold; cursor:pointer;">Entendi</button>
+    `;
+    document.body.appendChild(balao);
+
+    document.getElementById('tutorial-ok').addEventListener('click', () => {
+        balao.remove();
+        localStorage.setItem(storageKey, 'true');
+
+        mostrarModalAviso("Essa dica não será exibida novamente, a não ser que você clique no botão reexibir dicas no menu superior.");
+
+        // Destaca o painel de traits
+        const traitsPanel = document.querySelector('.gjs-pn-views-container .gjs-pn-panel');
+        if (traitsPanel) {
+            traitsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            traitsPanel.style.boxShadow = '0 0 10px 2px #f0c040';
+            setTimeout(() => {
+                traitsPanel.style.boxShadow = 'none';
+            }, 3000);
+        }
+    });
+});
+
+
+
+
             editor.on("component:selected", (model) => {
     if (model.is("link")) {
         editor.Panels.addButton("options", {
@@ -352,8 +626,30 @@ editor.DomComponents.addType('botao-navegacao', {
         }
     }
 });
+
+
 editor.on('load', () => {
 
+
+    setTimeout(() => {
+        const blocosEl = document.querySelector('.gjs-blocks-categories');
+        if (blocosEl) {
+            blocosEl.setAttribute('data-intro', '🧱 Esses são os blocos disponíveis. Clique e arraste um deles para o centro da tela.');
+            blocosEl.setAttribute('data-step', '1');
+        }
+
+        const editorEl = document.getElementById('editor');
+        if (editorEl) {
+            editorEl.setAttribute('data-intro', '🎯 Aqui é onde você monta seu site. Solte os blocos aqui, e clique nos elementos para editar textos, imagens, botões e tudo mais.');
+            editorEl.setAttribute('data-step', '2');
+        }
+
+        if (!localStorage.getItem('tutorial_feito')) {
+            iniciarTutorial(); // ✅ Tutorial automático só se nunca foi feito
+        }
+    }, 800);
+
+    
     const canvasDoc = editor.Canvas.getDocument();
      
     canvasDoc.addEventListener('click', function (e) {
@@ -382,6 +678,8 @@ editor.on('load', () => {
         }
     });
 });
+
+
    fetch(`/listar-paginas/{{ template_id }}`)
         .then(res => res.json())
         .then(paginas => {
@@ -429,6 +727,7 @@ editor.Commands.add("edit-link", {
     }
 });
 
+
 document.getElementById("nova-pagina-btn").addEventListener("click", function () {
     const nomePagina = prompt("Digite o nome da nova página:");
 
@@ -451,6 +750,8 @@ document.getElementById("nova-pagina-btn").addEventListener("click", function ()
     })
     .catch(error => alert("Erro ao criar a nova página."));
 });
+
+       
 window.salvarTemplate = function () {
     const html = editor.getHtml();
     const css = editor.getCss();
@@ -495,6 +796,18 @@ window.salvarTemplate = function () {
 });
 };
 });
+
+
+document.getElementById("reset-dicas").addEventListener("click", () => {
+    const confirmar = confirm("Tem certeza que deseja reexibir as dicas de imagem e texto? Elas vão aparecer novamente ao clicar nos elementos.");
+    if (!confirmar) return;
+
+    localStorage.removeItem("dica_img_vista");
+    localStorage.removeItem("dica_txt_vista");
+
+    mostrarModalAviso("As dicas serão exibidas novamente ao clicar em imagens e textos.");
+});
+
 
 document.getElementById("gerarIA")?.addEventListener("click", async () => {
     const prompt = document.getElementById("promptInput").value;
@@ -546,5 +859,20 @@ document.getElementById("gerarIA")?.addEventListener("click", async () => {
 });
 
     </script>
+
+
+<div id="modal-ajuda" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; color:#333; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3); padding:30px; max-width:600px; z-index:99999;">
+    <h2>Tutorial do Editor Visual</h2>
+    <ul>
+        <li>🔲 <strong>Blocos</strong>: Arraste da esquerda para o centro.</li>
+        <li>✏️ <strong>Edição</strong>: Clique nos textos ou imagens para editar.</li>
+        <li>💾 <strong>Salvar</strong>: Use o botão "Salvar" no canto inferior esquerdo.</li>
+        <li>➕ <strong>Nova Página</strong>: Crie outra página clicando em "Nova Página".</li>
+        <li>📄 <strong>Ir para Página</strong>: Use o campo e botão para trocar de página.</li>
+        <li>📨 <strong>Formulários</strong>: Clique neles para editar o destino de envio.</li>
+    </ul>
+    <button onclick="document.getElementById('modal-ajuda').style.display='none'" style="margin-top:20px; background:#e68900; border:none; color:white; padding:10px 20px; border-radius:5px; cursor:pointer;">Fechar</button>
+</div>
+
 </body>
 </html>
