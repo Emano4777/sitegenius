@@ -2264,19 +2264,51 @@ def register():
         nome = request.form['nome']
         email = request.form['email']
         senha = request.form['senha']
-        avatar_url = None
 
+        # 1. Verifica nome completo
+        if len(nome.strip().split()) < 2:
+            return render_template('register.html', erro="Informe seu nome completo.")
+
+        # 2. Valida e-mail com regex
+        email_regex = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        if not re.match(email_regex, email):
+            return render_template('register.html', erro="E-mail em formato inválido.")
+
+        # 3. Verifica se o e-mail existe via MailboxLayer
+        api_key = 'e85b58c746b9d7dcce1425d8a7dabf65'
+        try:
+            response = requests.get("http://apilayer.net/api/check", params={
+                'access_key': api_key,
+                'email': email,
+                'smtp': 1,
+                'format': 1
+            })
+            data = response.json()
+            if not data.get('smtp_check'):
+                return render_template('register.html', erro="Este e-mail não parece ser real ou ativo.")
+        except Exception as e:
+            print(f"Erro com MailboxLayer: {e}")
+            # Se der erro, segue o fluxo mesmo assim
+
+        # 4. Upload do avatar (opcional)
+        avatar_url = None
         if 'avatar' in request.files:
             avatar_file = request.files['avatar']
             if avatar_file.filename != '':
                 upload_result = cloudinary.uploader.upload(avatar_file)
                 avatar_url = upload_result['secure_url']
 
+        # 5. Criptografa a senha
         hashed_senha = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode()
 
+        # 6. Verifica se o e-mail já está cadastrado
         conn = get_db_connection()
         cur = conn.cursor()
         try:
+            cur.execute("SELECT id FROM users2 WHERE email = %s", (email,))
+            if cur.fetchone():
+                return render_template('register.html', erro="Já existe um cadastro com este e-mail.")
+
             cur.execute(
                 "INSERT INTO users2 (nome, email, senha, avatar_url) VALUES (%s, %s, %s, %s)", 
                 (nome, email, hashed_senha, avatar_url)
@@ -2291,6 +2323,9 @@ def register():
             conn.close()
 
     return render_template('register.html')
+
+
+
 
 
 @app.route("/sugerir-template", methods=["POST"])
