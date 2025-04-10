@@ -29,13 +29,18 @@ from flask import Response
 from collections import defaultdict
 from psycopg2.extras import RealDictCursor
 from cloudinary.uploader import upload
+import time
+import hashlib
+import hmac
 # Configuração
 cloudinary.config(
     cloud_name='dyyrgll7h',
     api_key='121426271799432',
     api_secret='pJuEZvImfvoRQQE3p5cWFxK9erA'
 )
-
+cloud_name = 'dyyrgll7h'
+api_key = '121426271799432'
+api_secret = 'pJuEZvImfvoRQQE3p5cWFxK9erA'
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -758,7 +763,20 @@ def meus_pedidos(subdomain):
     return render_template("template10_meuspedidos.html", pedidos=pedidos, subdomain=subdomain)
 
 
+@app.route('/gerar-assinatura-cloudinary', methods=['GET'])
+def gerar_assinatura_cloudinary():
+    timestamp = str(int(time.time()))
+    params_to_sign = f"timestamp={timestamp}{api_secret}"
+    signature = hashlib.sha1(params_to_sign.encode('utf-8')).hexdigest()
 
+    return jsonify({
+        "timestamp": timestamp,
+        "signature": signature,
+        "api_key": api_key,
+        "cloud_name": cloud_name
+
+        
+    })
 
 # Flask route adaptada para Cloudinary via frontend
 @app.route('/admin/experiencias', methods=['GET', 'POST'])
