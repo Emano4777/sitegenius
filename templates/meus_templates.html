@@ -902,10 +902,19 @@ td:last-child {
                 </td>
                 <td class="acoes-template">
                     {% if data.pages|length > 0 %}
-                      <a class="btn" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">Editar</a>
-                      <br>
-                      <small class="ultima-edicao">
-                        <i class="fas fa-clock"></i> Última edição em {{ data.ultima_edicao.strftime('%d/%m/%Y %H:%M') if data.ultima_edicao else 'Nunca salvo' }}
+                      {% if data.template_name == 'template17' %}
+                        <a class="btn" href="/admin/experiencias" style="margin-top: 8px; background: #1E2A38; color: white;">
+                          <i class="fas fa-gears"></i> Acessar o Painel Administrativo
+                        </a>
+                      {% else %}
+                        <a class="btn" style="background-color: #1E2A38; color: white;" href="{{ url_for('editar_pagina', template_id=data.template_id, page_name=data.pages[0]) }}">
+                          <i class="fas fa-pen-to-square"></i> Editar Site
+                        </a>
+                      {% endif %}
+                  
+                      <small class="ultima-edicao" style="margin-top: 6px; color: #555; font-size: 16px;">
+                        <i class="fas fa-calendar-check" style="color: #999;"></i>
+                        Última edição em {{ data.ultima_edicao.strftime('%d/%m/%Y %H:%M') if data.ultima_edicao else 'Nunca salvo' }}
                       </small>
                     {% else %}
                       <span class="btn disabled">Sem páginas</span>

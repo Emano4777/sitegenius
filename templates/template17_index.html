@@ -1,0 +1,303 @@
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
+  <style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #fefefe;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+  }
+  .titulo {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+  }
+  .subtitulo {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+  }
+  .experiencia {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .experiencia h2 {
+    margin: 0 0 10px;
+  }
+  .experiencia p {
+    margin: 0 0 10px;
+  }
+  .experiencia iframe {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    height: 120px;
+    margin-top: 10px;
+  }
+
+  .imagem-experiencia {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+.btn-clima {
+  background: #ff6f61;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-clima:hover {
+  background: #e25448;
+}
+
+.votos-box {
+  background-color: #ffe9b3;
+  color: #8a5b00;
+  font-weight: 600;
+  border: 1px solid #f5c16c;
+  border-radius: 8px;
+  padding: 10px 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  width: fit-content;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease;
+}
+.votos-box:hover {
+  transform: scale(1.03);
+}
+.votos-box i {
+  color: #ff9900;
+  font-size: 18px;
+}
+.btn-clima:hover {
+  background: #e25448;
+}
+
+body.clima-ativo {
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  transition: background 1s ease-in-out;
+}
+
+/* MEDIA QUERY PARA CELULARES E TELAS PEQUENAS */
+@media (max-width: 600px) {
+  .container {
+    padding: 10px;
+  }
+
+  .titulo {
+    font-size: 1.8em;
+  }
+
+  .subtitulo {
+    font-size: 1em;
+    margin-bottom: 20px;
+  }
+
+  .experiencia {
+    padding: 15px;
+  }
+
+  .experiencia h2 {
+    font-size: 1.3em;
+  }
+
+  .experiencia p {
+    font-size: 0.95em;
+  }
+
+  .btn-clima {
+    font-size: 0.9em;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+
+  .imagem-experiencia {
+    height: 150px;
+  }
+
+  .votos-box {
+    font-size: 0.9em;
+    padding: 8px 12px;
+  }
+}
+
+</style>
+  <div class="container">
+    <h1 class="titulo">Cardápio de Experiências</h1>
+    <p class="subtitulo">Escolha uma experiência completa para impressionar seus convidados</p>
+    
+    <div class="experiencias" id="experiencias-container">
+        {% for exp in experiencias %}
+          <div class="experiencia">
+            {% set imagem = exp.imagem if exp.imagem else 'https://via.placeholder.com/900x300' %}
+            <div class="imagem-experiencia" style="background-image: url('{{ imagem }}')"></div>
+      
+            <h2>{{ exp.titulo }}</h2>
+            <p>{{ exp.descricao }}</p>
+      
+            {% if exp.prato %}
+              <p><strong>🍽️ Prato servido:</strong> {{ exp.prato }}</p>
+            {% endif %}
+      
+            {% if exp.preco %}
+              <p><strong>💵 Preço:</strong> R$ {{ "%.2f"|format(exp.preco|float) }}</p>
+            {% endif %}
+      
+            {% if exp.imagem_prato %}
+              <p><strong>📸 Imagem do prato:</strong></p>
+              <img src="{{ exp.imagem_prato }}" alt="Imagem do prato" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin-top: 10px;">
+            {% endif %}
+      
+            <button class="btn-clima"
+              data-titulo="{{ exp.titulo }}"
+              data-video="{{ exp.video_fundo or '' }}"
+              data-som="{{ exp.som_clima or '' }}"
+              onclick="handleAtivarClima(this)">
+              <i class="fas fa-eye"></i> Ver Ambiente
+            </button>
+      
+            {% if exp.habilitar_escolha %}
+            <button class="btn-clima" onclick="votarExperiencia(this)" 
+            data-id="{{ exp.id }}">
+      <i class="fas fa-check-circle"></i> Escolher essa Experiência
+    </button>
+    <div class="votos-box" id="votos-{{ exp.id }}">
+        <i class="fas fa-thumbs-up"></i> Votos: {{ exp.votos }}
+      </div>
+            {% endif %}
+            
+  <button class="btn-clima" style="background: #007bff;" onclick="reservarMesa('{{ exp.titulo }}')">
+    <i class="fas fa-chair"></i> Reservar Mesa
+  </button>
+
+  <button class="btn-clima" style="background: #17a2b8;" onclick="solicitarDelivery('{{ exp.prato }}')">
+    <i class="fas fa-motorcycle"></i> Solicitar o prato da experiência por Delivery
+  </button>
+</div>
+      
+            <iframe src="{{ exp.playlist }}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+          </div>
+        {% endfor %}
+      </div>
+      
+      <video id="video-fundo" autoplay muted loop style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1;"></video>
+      <audio id="audio-clima-dinamico"></audio>
+      
+      
+      <script>
+        function handleAtivarClima(botao) {
+          const titulo = botao.getAttribute('data-titulo');
+          const videoURL = botao.getAttribute('data-video');
+          const somURL = botao.getAttribute('data-som');
+          ativarClima(titulo, videoURL, somURL);
+        }
+
+
+
+
+
+function reservarMesa(titulo) {
+  const numero = '5516999999999';  // coloque o número do WhatsApp aqui com DDI + DDD
+  const mensagem = `Olá! Gostaria de reservar uma mesa para a experiência: ${titulo}`;
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, '_blank');
+}
+
+function solicitarDelivery(prato) {
+  const numero = '5516999999999';  // coloque o número do WhatsApp aqui com DDI + DDD
+  const mensagem = `Olá! Gostaria de pedir por delivery o prato: ${prato}`;
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, '_blank');
+}
+        
+        function ativarClima(titulo, videoURL, somURL) {
+          // fundo
+          document.body.classList.add('clima-ativo');
+        
+
+
+            // vídeo de fundo
+            const video = document.getElementById('video-fundo');
+            video.pause(); // sempre pausa o vídeo anterior
+            video.style.display = 'none'; // esconde
+            video.src = ''; // limpa a URL
+
+            if (videoURL && videoURL.trim() !== '') {
+            video.src = videoURL;
+            video.style.display = 'block';
+            video.play(); // força a reprodução
+            }
+        
+          // som do clima
+          const som = document.getElementById('audio-clima-dinamico');
+          if (somURL) {
+            som.pause();
+            som.currentTime = 0;
+            som.src = somURL;
+            som.play();
+          }
+        
+          // alerta
+          setTimeout(() => {
+            alert("✨ Clima ativado para: " + titulo);
+          }, 1000);
+        
+          // desligar tudo depois de 5s
+          setTimeout(() => {
+            document.body.classList.remove('clima-ativo');
+        
+
+        
+            // oculta e reseta vídeo
+            video.style.display = 'none';
+            video.pause();
+            video.src = '';
+        
+            // para som
+            som.pause();
+            som.currentTime = 0;
+          }, 5000);
+        }
+
+
+        function votarExperiencia(botao) {
+    const id = botao.getAttribute('data-id');
+
+    fetch(`/votar_experiencia/${id}`, {
+      method: 'POST'
+    }).then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const contador = document.getElementById(`votos-${id}`);
+          const atual = parseInt(contador.innerText.replace(/\D/g, '')) || 0;
+          contador.innerText = `👍 Votos: ${atual + 1}`;
+          botao.disabled = true;
+          botao.innerHTML = '<i class="fas fa-check-circle"></i> Voto registrado';
+        }
+      });
+  }
+        </script>
+        

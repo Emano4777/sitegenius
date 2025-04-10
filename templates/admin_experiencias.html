@@ -1,36 +1,12 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-H7B8XFZ5Q6"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-H7B8XFZ5Q6');
-</script>
-
     <link rel="icon" href="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" type="image/x-icon">
-    <script async src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744072344/ChatGPT_Image_7_de_abr._de_2025_21_32_14_rd0uwq.png"
-     crossorigin="anonymous"></script>
-     <meta name="google-site-verification" content="Xn1U6lwnvEbVlVFhjSCeoC0kG7St9mE6xmvtx4i7HF4" />
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Crie sites incríveis com inteligência artificial de forma rápida e fácil. Experimente o Site Genius!">
-    <meta name="keywords" content="criar site, inteligência artificial, site fácil, templates, sitegenius, site grátis, app para site">
-    <meta name="robots" content="index, follow">
-
-    <title>Site Genius</title>
-   
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Experiências</title>
+  <style>
 * {
     margin: 0;
     padding: 0;
@@ -63,11 +39,11 @@ body {
     margin-right: 8px;
 }
 
-/* Cabeçalho */
 header {
     background: white;
     color: black;
-    padding: 20px 0;
+    padding: 12px 0;
+    height: 64px;
     position: fixed;
     width: 100%;
     top: 0;
@@ -75,18 +51,28 @@ header {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+
 header .container {
-    max-width: 1200px;
-    margin: auto;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: center; /* mantém centralizado */
     padding: 0 20px;
+    gap: 20px;
 }
 
 header h1 {
-    font-size: 24px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    gap: 10px;
+    margin: 0;
+    height: 40px;
+}
+
+header h1 img {
+    height: 30px;
+    vertical-align: middle;
+    object-fit: contain;
 }
 
 nav ul {
@@ -245,18 +231,19 @@ footer .container {
 .dropdown-menu {
     display: none;
     position: absolute;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 100%;
+    right: 0;
+    transform: none;
     background: white;
     list-style: none;
     padding: 10px 0;
     border-radius: 5px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
     min-width: 180px;
-    text-align: center;
-    opacity: 0; /* garanta que começa invisível */
+    text-align: left;
+    opacity: 0;
     transition: opacity 0.3s ease;
+    z-index: 9999;
 }
 
 /* ✅ Melhor visibilidade do texto */
@@ -458,12 +445,83 @@ footer .container {
   padding: 10px 10px 0;
   border-bottom: 1px dashed #ccc;
 }
-
+main {
+    padding-top: clamp(120px, 15vh, 180px);
+}
 
 .floating-premium-btn:hover {
     background: #e0b800;
     transform: scale(1.05);
 }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+      max-width: 600px;
+      margin: auto;
+    }
+    form input, form textarea, form label {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      display: block;
+    }
+    form button {
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .preview {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .preview img,
+    .preview video {
+      max-width: 100%;
+      max-height: 250px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    .lista {
+      max-width: 800px;
+      margin: auto;
+    }
+    .experiencia {
+      background: white;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-edit, .btn-delete {
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.95em;
+      cursor: pointer;
+    }
+    .btn-edit {
+      background: #ffc107;
+      color: #333;
+      margin-right: 10px;
+    }
+    .btn-delete {
+      background: #dc3545;
+      color: white;
+    }
 
 
 /* ✅ Responsividade */
@@ -517,9 +575,10 @@ footer .container {
 
 
 }
-</style>
+
+  </style>
 </head>
-<body> 
+<body>
     <header>  
           
         <div class="container">
@@ -647,258 +706,318 @@ footer .container {
         </div>
 
     </header>
-    <section class="hero">
-        <div class="container">
-            <h2>
-                <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo SiteGenius" style="height: 35px; vertical-align: middle; margin-right: 10px;">
-                Crie seu site e aplicativo facilmente!
-            </h2>              
-            <p>Escolha um template ou use nossa IA para criar um site e aplicativo personalizado em minutos.</p>
-    
-            <a href="/templates" class="btn">
-                <i class="fas fa-th-large" style="margin-right: 6px;"></i> Explorar Templates
-            </a>
-    
-            <a href="/tutorial" class="btn">
-                <i class="fas fa-question-circle" style="margin-right: 6px;"></i> Dúvidas de como funciona? Ver tutorial
-            </a>
-    
-            <div style="margin-top: 40px;">
-                <video controls style="max-width: 1000px; width: 100%; height: 600px; border-radius: 12px; display: block; margin: 0 auto;">
-                    <source src="https://res.cloudinary.com/dyyrgll7h/video/upload/v1743467271/V%C3%ADdeo_sem_t%C3%ADtulo_2_qdu6rb.mp4" type="video/mp4">
-                    Seu navegador não suporta vídeo HTML5.
-                  </video>
-                  
-            </div>
-        </div>
-    </section>
-    
 
-    <section class="features">
-        <div class="container">
-            <h2>Por que escolher o Site Genius?</h2>
-            <div class="feature-list">
-                <div class="feature-item">
-                    <h3><i class="fas fa-mouse-pointer"></i> Fácil de Usar</h3>
-                    <p>Sem necessidade de programação! Crie seu site com poucos cliques.</p>
-                </div>
-                <div class="feature-item">
-                    <h3><i class="fas fa-brain"></i> Inteligência Artificial</h3>
-                    <p>Nosso sistema IA personaliza seu site para atender suas necessidades. Ou seja basta digitar como quer o site e a IA cria para você.</p>
-                </div>
-                <div class="feature-item">
-                    <h3><i class="fas fa-bolt"></i> Rápido e Responsivo</h3>
-                    <p>Sites otimizados para carregar rápido e se adaptar a qualquer dispositivo.</p>
-                </div>
-                <div class="feature-item">
-                    <h3><i class="fas fa-tags"></i> O Melhor Preço</h3>
-                    <p>O site mais acessível do mercado, com planos que cabem no seu bolso.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    {% if not is_premium %}
-    <a href="/preco" class="floating-premium-btn">
-        <i class="fas fa-gem"></i> Vantagens Premium
-    </a>
-    {% endif %}
-    <script>
-            // Função para exibir/esconder o menu ao clicar no ícone do usuário
-            function toggleUserMenu(event) {
-    event.preventDefault();
-    let userMenu = document.querySelector('.user-menu');
-    userMenu.classList.toggle('open');
+    <main>
+        <h1>Painel de Experiências</h1>
+
+    <form method="POST" enctype="multipart/form-data" id="form-exp">
+        <input type="hidden" name="id_editar" id="id_editar">
+    <input type="text" name="titulo" placeholder="Título da experiência" required>
+    <textarea name="descricao" placeholder="Descrição" rows="3" required></textarea>
+    <input type="text" name="playlist" placeholder="URL da playlist (Spotify embed)" required>
+
+    <label for="imagem_file">Imagem de fundo:</label>
+    <input type="file" name="imagem_file" accept="image/*" onchange="previewImage(this, 'preview-imagem')">
+    <div class="preview" id="preview-imagem"></div>
+
+    <label for="video_fundo_file">Vídeo de fundo:</label>
+    <input type="file" name="video_fundo_file" accept="video/mp4,video/webm" onchange="previewVideo(this, 'preview-video')">
+    <div class="preview" id="preview-video"></div>
+
+    <label for="som_clima_file">Som do clima:</label>
+    <input type="file" name="som_clima_file" accept="audio/*" onchange="previewAudio(this, 'preview-audio')">
+    <div class="preview" id="preview-audio"></div>
+
+    <label for="prato">Prato servido:</label>
+    <input type="text" name="prato" id="prato" required>
+
+    <label for="imagem_prato_file">Imagem do prato:</label>
+    <input type="file" name="imagem_prato_file" accept="image/*" onchange="previewImage(this, 'preview-prato')">
+    <div class="preview" id="preview-prato"></div>
+
+    <label for="preco">Preço da Experiência (R$):</label>
+    <input type="number" name="preco" id="preco" step="0.01" required>
+
+    <label>
+        <input type="checkbox" name="habilitar_escolha">
+        Permitir que usuários escolham essa experiência
+    </label>
+      
+
+    
+    <button type="submit"><i class="fas fa-plus"></i> Adicionar Experiência</button>
+  </form>
+
+  <div class="lista">
+    {% for exp in experiencias %}
+    <div class="experiencia">
+      <h3>{{ exp.titulo }}</h3>
+      <p>{{ exp.descricao }}</p>
+      <p><strong>Playlist:</strong> <a href="{{ exp.playlist }}" target="_blank">{{ exp.playlist }}</a></p>
+  
+      {% if exp.imagem %}
+        <p><strong>Imagem:</strong> <a href="{{ exp.imagem }}" target="_blank">Ver imagem</a></p>
+      {% endif %}
+  
+      <div style="margin-top: 10px;">
+        <button 
+          type="button"
+          onclick="editarExperiencia(this)"
+          data-id="{{ exp.id }}"
+          data-titulo="{{ exp.titulo }}"
+          data-descricao="{{ exp.descricao }}"
+          data-playlist="{{ exp.playlist }}"
+          data-prato="{{ exp.prato }}"
+          data-preco="{{ exp.preco }}"
+          style="background:#ffc107;color:black;padding:5px 12px;border:none;border-radius:6px;margin-right:8px;">
+          <i class="fas fa-pen"></i> Editar
+        </button>
+  
+        <a href="{{ url_for('deletar_experiencia', id=exp.id) }}"
+          onclick="return confirm('Deseja excluir esta experiência?')"
+          style="background:red;color:white;padding:5px 12px;border-radius:6px;text-decoration:none;">
+          <i class="fas fa-trash"></i> Excluir
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  
+
+  <script>
+    function previewImage(input, targetId) {
+      const target = document.getElementById(targetId);
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          target.innerHTML = '<img src="' + e.target.result + '" alt="Pré-visualização da imagem">';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function editarExperiencia(btn) {
+    document.getElementById("id_editar").value = btn.dataset.id;
+    document.querySelector('[name="titulo"]').value = btn.dataset.titulo;
+    document.querySelector('[name="descricao"]').value = btn.dataset.descricao;
+    document.querySelector('[name="playlist"]').value = btn.dataset.playlist;
+    document.querySelector('[name="prato"]').value = btn.dataset.prato;
+    document.querySelector('[name="preco"]').value = btn.dataset.preco;
+
+    alert("📝 Você está editando: " + btn.dataset.titulo);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+    function previewVideo(input, targetId) {
+      const target = document.getElementById(targetId);
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          target.innerHTML = '<video controls src="' + e.target.result + '"></video>';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function previewAudio(input, targetId) {
+      const target = document.getElementById(targetId);
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          target.innerHTML = '<audio controls src="' + e.target.result + '"></audio>';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+  </script>
+
+<script>
+function toggleUserMenu(event) {
+event.preventDefault();
+let userMenu = document.querySelector('.user-menu');
+userMenu.classList.toggle('open');
 }
 
 
-    // ✅ Função para exibir/esconder o menu no mobile
+// ✅ Função para exibir/esconder o menu no mobile
 function toggleMobileUserMenu(event) {
-    event.preventDefault();
-    let menu = document.getElementById('mobile-user-dropdown');
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+event.preventDefault();
+let menu = document.getElementById('mobile-user-dropdown');
+menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 fetch('/check-login')
-    .then(response => response.json())
-    .then(data => {
-        
-        let userNameElement = document.getElementById('user-name');
-        let relatorioOption = document.getElementById('relatorio-option');
-        let mobileRelatorioOption = document.getElementById('mobile-relatorio-option');
-        let userNameText = document.getElementById('user-name-text');
-        let loginOption = document.getElementById('login-option');
-        let logoutOption = document.getElementById('logout-option');
-        let meusTemplatesOption = document.getElementById('meus-templates-option');
+.then(response => response.json())
+.then(data => {
 
-        let mobileUserNameElement = document.getElementById('mobile-user-name');
-        let mobileUserNameText = document.getElementById('mobile-username-text');
-        let mobileLoginOption = document.getElementById('mobile-login-option');
-        let mobileLogoutOption = document.getElementById('mobile-logout-option');
-        let mobileUserText = document.getElementById('mobile-user-name-text');
-        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+let userNameElement = document.getElementById('user-name');
+let relatorioOption = document.getElementById('relatorio-option');
+let mobileRelatorioOption = document.getElementById('mobile-relatorio-option');
+let userNameText = document.getElementById('user-name-text');
+let loginOption = document.getElementById('login-option');
+let logoutOption = document.getElementById('logout-option');
+let meusTemplatesOption = document.getElementById('meus-templates-option');
 
-        let editarDadosOption = document.getElementById('editar-dados-option');
-        let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
+let mobileUserNameElement = document.getElementById('mobile-user-name');
+let mobileUserNameText = document.getElementById('mobile-username-text');
+let mobileLoginOption = document.getElementById('mobile-login-option');
+let mobileLogoutOption = document.getElementById('mobile-logout-option');
+let mobileUserText = document.getElementById('mobile-user-name-text');
+let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
 
-        if (data.logged_in) {
+let editarDadosOption = document.getElementById('editar-dados-option');
+let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
 
-            if (relatorioOption) relatorioOption.style.display = 'block';
-            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'block';
+if (data.logged_in) {
 
-            if (data.premium_level) {
-                document.getElementById('user-premium-info').textContent = 
-                    data.premium_level === 'free' 
-                        ? 'Plano Gratuito'
-                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+if (relatorioOption) relatorioOption.style.display = 'block';
+if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'block';
 
-                document.getElementById('mobile-user-premium-info').textContent = 
-                    data.premium_level === 'free' 
-                        ? 'Plano Gratuito'
-                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
-            }
+if (data.premium_level) {
+    document.getElementById('user-premium-info').textContent = 
+        data.premium_level === 'free' 
+            ? 'Plano Gratuito'
+            : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
 
-            loginOption.style.display = 'none';
-            logoutOption.style.display = 'block';
-            meusTemplatesOption.style.display = 'block';
-
-            mobileLoginOption.style.display = 'none';
-            mobileLogoutOption.style.display = 'block';
-            mobileMeusTemplatesOption.style.display = 'block';
-
-            if (data.premium_level && data.premium_level !== 'free') {
-    const adminOption = document.getElementById('admin-lojas-option');
-    const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
-    if (adminOption) adminOption.style.display = 'block';
-    if (mobileAdminOption) mobileAdminOption.style.display = 'block';
+    document.getElementById('mobile-user-premium-info').textContent = 
+        data.premium_level === 'free' 
+            ? 'Plano Gratuito'
+            : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
 }
 
-            if (data.user_name) {
-                userNameText.textContent = data.user_name;
+loginOption.style.display = 'none';
+logoutOption.style.display = 'block';
+meusTemplatesOption.style.display = 'block';
 
-                // ✅ Desktop Avatar
-                const avatarContainer = document.getElementById('user-avatar-container');
-                avatarContainer.innerHTML = '';
-                if (data.avatar_url) {
-                    const img = document.createElement('img');
-                    img.src = data.avatar_url;
-                    img.alt = 'Avatar';
-                    img.style.width = '28px';
-                    img.style.height = '28px';
-                    img.style.borderRadius = '50%';
-                    img.style.objectFit = 'cover';
-                    avatarContainer.appendChild(img);
-                } else {
+mobileLoginOption.style.display = 'none';
+mobileLogoutOption.style.display = 'block';
+mobileMeusTemplatesOption.style.display = 'block';
+
+if (data.premium_level && data.premium_level !== 'free') {
+const adminOption = document.getElementById('admin-lojas-option');
+const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
+if (adminOption) adminOption.style.display = 'block';
+if (mobileAdminOption) mobileAdminOption.style.display = 'block';
+}
+
+if (data.user_name) {
+    userNameText.textContent = data.user_name;
+
+    // ✅ Desktop Avatar
+    const avatarContainer = document.getElementById('user-avatar-container');
+    avatarContainer.innerHTML = '';
+    if (data.avatar_url) {
+        const img = document.createElement('img');
+        img.src = data.avatar_url;
+        img.alt = 'Avatar';
+        img.style.width = '28px';
+        img.style.height = '28px';
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        avatarContainer.appendChild(img);
+    } else {
 
 
-                    const icon = document.createElement('i');
-                    icon.className = 'fas fa-user user-icon';
-                    avatarContainer.appendChild(icon);
-                }
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-user user-icon';
+        avatarContainer.appendChild(icon);
+    }
 
-                // ✅ Mobile Avatar
-                const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
-                mobileAvatarContainer.innerHTML = '';
-                if (data.avatar_url) {
-                    const img = document.createElement('img');
-                    img.src = data.avatar_url;
-                    img.alt = 'Avatar';
-                    img.style.width = '28px';
-                    img.style.height = '28px';
-                    img.style.borderRadius = '50%';
-                    img.style.objectFit = 'cover';
-                    mobileAvatarContainer.appendChild(img);
-                } else {
-                    const icon = document.createElement('i');
-                    icon.className = 'fas fa-user';
-                    mobileAvatarContainer.appendChild(icon);
-                }
+    // ✅ Mobile Avatar
+    const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
+    mobileAvatarContainer.innerHTML = '';
+    if (data.avatar_url) {
+        const img = document.createElement('img');
+        img.src = data.avatar_url;
+        img.alt = 'Avatar';
+        img.style.width = '28px';
+        img.style.height = '28px';
+        img.style.borderRadius = '50%';
+        img.style.objectFit = 'cover';
+        mobileAvatarContainer.appendChild(img);
+    } else {
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-user';
+        mobileAvatarContainer.appendChild(icon);
+    }
 
-                const mobileSpan = document.createElement('span');
-                mobileSpan.id = 'mobile-user-name-text';
-                mobileSpan.textContent = data.user_name;
-                mobileAvatarContainer.appendChild(mobileSpan);
+    const mobileSpan = document.createElement('span');
+    mobileSpan.id = 'mobile-user-name-text';
+    mobileSpan.textContent = data.user_name;
+    mobileAvatarContainer.appendChild(mobileSpan);
 
-                userNameElement.style.display = 'block';
-                editarDadosOption.style.display = 'block';
-                mobileEditarDadosOption.style.display = 'block';
-                mobileUserNameText.textContent = data.user_name;
-                mobileUserNameElement.style.display = 'block';
-                mobileUserText.textContent = data.user_name;
-            }
-        } else {
-            if (relatorioOption) relatorioOption.style.display = 'none';
-            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'none';
+    userNameElement.style.display = 'block';
+    editarDadosOption.style.display = 'block';
+    mobileEditarDadosOption.style.display = 'block';
+    mobileUserNameText.textContent = data.user_name;
+    mobileUserNameElement.style.display = 'block';
+    mobileUserText.textContent = data.user_name;
+}
+} else {
+if (relatorioOption) relatorioOption.style.display = 'none';
+if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'none';
 
-            loginOption.style.display = 'block';
-            logoutOption.style.display = 'none';
-            meusTemplatesOption.style.display = 'none';
-            userNameElement.style.display = 'none';
+loginOption.style.display = 'block';
+logoutOption.style.display = 'none';
+meusTemplatesOption.style.display = 'none';
+userNameElement.style.display = 'none';
 
-            mobileLoginOption.style.display = 'block';
-            mobileLogoutOption.style.display = 'none';
-            mobileMeusTemplatesOption.style.display = 'none';
-            editarDadosOption.style.display = 'none';
-            mobileEditarDadosOption.style.display = 'none';
-            mobileUserNameElement.style.display = 'none';
-            mobileUserText.textContent = "Entrar";
-        }
-    })
-    .catch(error => console.error('Erro ao verificar login:', error));
+mobileLoginOption.style.display = 'block';
+mobileLogoutOption.style.display = 'none';
+mobileMeusTemplatesOption.style.display = 'none';
+editarDadosOption.style.display = 'none';
+mobileEditarDadosOption.style.display = 'none';
+mobileUserNameElement.style.display = 'none';
+mobileUserText.textContent = "Entrar";
+}
+})
+.catch(error => console.error('Erro ao verificar login:', error));
 
 
 
 // ✅ Função para logout e redirecionamento
 function logout() {
-    fetch('/logout', { method: 'POST' })
-        .then(() => {
-            window.location.href = '/login'; // Redireciona para a página de login
-        });
+fetch('/logout', { method: 'POST' })
+.then(() => {
+window.location.href = '/login'; // Redireciona para a página de login
+});
 }
 
 // ✅ Fecha o dropdown se clicar fora dele (Desktop e Mobile)
 document.addEventListener('click', function(event) {
-    let userMenu = document.querySelector('.user-menu');
-    let userIcon = document.getElementById('user-profile');
+let userMenu = document.querySelector('.user-menu');
+let userIcon = document.getElementById('user-profile');
 
-    let mobileUserMenu = document.querySelector('.mobile-user-menu');
-    let mobileUserIcon = document.getElementById('mobile-user-profile');
+let mobileUserMenu = document.querySelector('.mobile-user-menu');
+let mobileUserIcon = document.getElementById('mobile-user-profile');
 
-    // Fecha menu desktop
-    if (!userIcon.contains(event.target) && !userMenu.contains(event.target)) {
-        userMenu.classList.remove('open');
-    }
+// Fecha menu desktop
+if (!userIcon.contains(event.target) && !userMenu.contains(event.target)) {
+userMenu.classList.remove('open');
+}
 
-    // Fecha menu mobile
-    if (!mobileUserIcon.contains(event.target) && !mobileUserMenu.contains(event.target)) {
-        mobileUserMenu.classList.remove('open');
-    }
+// Fecha menu mobile
+if (!mobileUserIcon.contains(event.target) && !mobileUserMenu.contains(event.target)) {
+mobileUserMenu.classList.remove('open');
+}
 });
 
 
 
 
 
-    document.getElementById('mobile-logout-option').addEventListener('click', function() {
-        fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
-    });
+document.getElementById('mobile-logout-option').addEventListener('click', function() {
+fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
+});
 
-    // Funções para abrir e fechar o menu mobile
-    function openMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'block';
-    }
+// Funções para abrir e fechar o menu mobile
+function openMobileMenu() {
+document.getElementById('mobileMenuModal').style.display = 'block';
+}
 
-    function closeMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'none';
-    }
+function closeMobileMenu() {
+document.getElementById('mobileMenuModal').style.display = 'none';
+}
 
 
-    </script>
-    
-<script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
-<script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
-        </div>
-    </footer>
+</script>
 </body>
 </html>

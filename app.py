@@ -27,8 +27,8 @@ import json
 from openai import OpenAI
 from flask import Response
 from collections import defaultdict
-
-
+from psycopg2.extras import RealDictCursor
+from cloudinary.uploader import upload
 # Configuração
 cloudinary.config(
     cloud_name='dyyrgll7h',
@@ -523,12 +523,25 @@ def exibir_site_por_subdominio(subdomain, page):
         LIMIT 1
     """, (subdomain, page))
     resultado = cur.fetchone()
-    cur.close(); conn.close()
 
     if not resultado:
+        cur.execute("SELECT user_id, template_name FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+        dono = cur.fetchone()
+        cur.close(); conn.close()
+
+        # Redireciona pro index que já trata o template17 com dono_id corretamente
+        if dono and dono[1] == "template17":
+            return redirect(url_for('index_loja', subdomain=subdomain))
+
         return "Página não encontrada", 404
 
     html, user_id, template_name, template_id = resultado
+
+    # Se for template17, redireciona para o index que já faz tudo corretamente com dono_id
+    if template_name == "template17":
+        cur.close(); conn.close()
+        return redirect(url_for('index_loja', subdomain=subdomain))
+
     if template_name == "template10":
         try:
             return render_template(f"{page}.html", subdomain=subdomain)
@@ -541,13 +554,12 @@ def exibir_site_por_subdominio(subdomain, page):
             else:
                 return f"Página '{page}' não encontrada para subdomínio '{subdomain}'.", 404
 
+    # Templates padrão com custom_html
     soup = BeautifulSoup(html, 'html.parser')
-
     registrar_acesso(user_id, request.remote_addr, subdomain)
-
     html_renderizado = str(soup).replace("{{sub}}", subdomain)
+    cur.close(); conn.close()
     return Response(html_renderizado, mimetype='text/html')
-
 
 
 
@@ -747,6 +759,82 @@ def meus_pedidos(subdomain):
 
 
 
+
+@app.route('/admin/experiencias', methods=['GET', 'POST'])
+def admin_experiencias():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/login")
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+
+    def upload_para_cloudinary(arquivo, tipo='auto'):
+        if arquivo:
+            resultado = upload(arquivo, resource_type=tipo)
+            return resultado['secure_url']
+        return None
+
+    if request.method == 'POST':
+        id_editar = request.form.get('id_editar')
+        titulo = request.form['titulo']
+        descricao = request.form['descricao']
+        playlist = request.form['playlist']
+        prato = request.form.get("prato")
+        preco = request.form.get("preco")
+
+        habilitar_escolha = 'habilitar_escolha' in request.form
+
+        imagem = upload_para_cloudinary(request.files.get('imagem_file'), 'image')
+        video_fundo = upload_para_cloudinary(request.files.get('video_fundo_file'), 'video')
+        som_clima = upload_para_cloudinary(request.files.get('som_clima_file'), 'video')
+        imagem_prato = upload_para_cloudinary(request.files.get('imagem_prato_file'), 'image')
+
+        if id_editar:
+            cur.execute("""
+        UPDATE experiencias SET titulo=%s, descricao=%s, playlist=%s, imagem=%s, video_fundo=%s, 
+            som_clima=%s, prato=%s, preco=%s, imagem_prato=%s, habilitar_escolha=%s
+        WHERE id=%s
+    """, (titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, habilitar_escolha, id_editar))
+
+        else:
+            cur.execute("""
+                INSERT INTO experiencias (user_id, titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, votos, habilitar_escolha)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (user_id, titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, 0, habilitar_escolha))
+
+        conn.commit()
+        return redirect(url_for('admin_experiencias'))
+
+  
+
+    cur.execute("SELECT * FROM experiencias WHERE user_id = %s ORDER BY id DESC", (user_id,))
+    experiencias = cur.fetchall()
+    cur.close()
+    conn.close()
+    return render_template("admin_experiencias.html", experiencias=experiencias)
+
+@app.route('/votar_experiencia/<int:id>', methods=['POST'])
+def votar_experiencia(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE experiencias SET votos = votos + 1 WHERE id = %s AND habilitar_escolha = TRUE", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'success': True})
+@app.route('/admin/experiencias/delete/<int:id>')
+def deletar_experiencia(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM experiencias WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('admin_experiencias'))
+
+
+
 @app.route('/<subdomain>/cadastrar', methods=['GET', 'POST'])
 def cadastrar_cliente(subdomain):
     if request.method == 'POST':
@@ -837,28 +925,48 @@ def logout_cliente(subdomain):
 @app.route('/<subdomain>')
 @app.route('/<subdomain>/index')
 def index_loja(subdomain):
+    print(f"[DEBUG] Subdomínio acessado: {subdomain}")
+
     conn = get_db_connection()
     cur = conn.cursor()
 
     cur.execute("SELECT user_id, template_name FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
     dono = cur.fetchone()
+    print(f"[DEBUG] Resultado dono do template: {dono}")
 
     if not dono:
+        print("[ERRO] Loja não encontrada para esse subdomínio.")
         return "Loja não encontrada", 404
 
     dono_id, template_name = dono
+    print(f"[DEBUG] Template: {template_name} | User ID: {dono_id}")
 
     if template_name == "template10":
         cur.execute("SELECT id, nome, descricao, preco, imagem FROM produtos WHERE user_id = %s", (dono_id,))
         produtos = cur.fetchall()
+        print(f"[DEBUG] Produtos encontrados: {len(produtos)}")
         cur.close(); conn.close()
-
         return render_template("template10_index.html", produtos=produtos, subdomain=subdomain)
 
+    elif template_name == "template17":
+        cur.close(); conn.close()
 
-    # Outros templates → usar exibir_site_por_subdominio
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT id, titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, votos, habilitar_escolha 
+            FROM experiencias WHERE user_id = %s ORDER BY id DESC
+        """, (dono_id,))
+        experiencias = cur.fetchall()
+        print(f"[DEBUG] Experiências encontradas: {len(experiencias)}")
+        cur.close(); conn.close()
+        return render_template("template17_index.html", experiencias=experiencias, subdomain=subdomain)
+
+
     cur.close(); conn.close()
     return exibir_site_por_subdominio(subdomain=subdomain, page='index')
+
+
 
 
 
@@ -2657,7 +2765,8 @@ def usar_template(template_name):
         "success": True,
         "message": "Template vinculado!",
         "template_id": template_id,
-        "page_name": 'index'
+        "page_name": 'index',
+        "template_name": template_name
     })
 
 def adaptar_links(html, template_name, subdomain, template_id):

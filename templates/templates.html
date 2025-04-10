@@ -1330,6 +1330,45 @@ iframe {
             
             <h2 id="gourmet" class="categoria-titulo"><i class="fas fa-utensils"></i> Segmento: Alimentação, Gourmet e Gelados</h2>
             <div class="template-list">
+
+              <div class="template destaque-gratis" style="background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1744298546/images_6_oglbkl.jpg'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; right: 0; background: gold; color: #222; font-weight: bold; padding: 5px 10px; border-bottom-left-radius: 10px;">
+                  GRÁTIS ESPECIAL
+                </div>
+              
+                <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+                  <h3 style="margin: 0; color: white;">
+                    <i class="fas fa-spa"></i> Template de Cardápio de Experiência Sensorial
+                  </h3>
+                </div>
+              
+                <button class="btn" onclick="previewTemplate('/template-preview/template17/index')">
+                  <i class="fas fa-eye"></i> Visualizar
+                </button>
+                <button class="btn" onclick="toggleDetalhes('detalhes-template17')">
+                  <i class="fas fa-info-circle"></i> Detalhes
+                </button>
+              
+                <div id="detalhes-template17" style="display: none; text-align: left; margin-top: 10px; background: rgba(255,255,255,0.95); padding: 12px; border-radius: 6px; font-size: 14px; color: #333; box-shadow: 0px 2px 6px rgba(0,0,0,0.1);">
+                  <p><strong>🎯 Ideal para:</strong> Restaurantes, eventos gastronômicos, chefs de cozinha, pousadas, espaços sensoriais e até vinícolas que desejam vender experiências e não apenas pratos.</p>
+              
+                  <p><strong>🧠 Funcionalidades:</strong></p>
+                  <ul style="padding-left: 20px; margin: 0;">
+                    <li>Painel administrativo para adicionar, editar e organizar experiências com poucos cliques.</li>
+                    <li>Cardápio interativo com playlist personalizada, imagem, vídeo de fundo e som ambiente dinâmico.</li>
+                    <li>Botão de <strong>“Ver Ambiente”</strong> que ativa som e vídeo combinando com o clima da experiência.</li>
+                    <li>Sistema de <strong>votação</strong> para visitantes escolherem a experiência preferida do dia.</li>
+                    <li>Botões integrados de <strong>“Reservar Mesa”</strong> e <strong>“Pedir por Delivery”</strong> direto no WhatsApp.</li>
+                  </ul>
+              
+                  <p><strong>📱 Responsivo:</strong> Totalmente adaptado para celular e qualquer dispositivo, com layout moderno e leve.</p>
+              
+                  <p><strong>💡 Por que escolher esse template?</strong><br>
+                  Porque ele une o melhor do design com o que há de mais funcional para transformar cada prato em uma experiência sensorial inesquecível.</p>
+                </div>
+              </div>
+              
+
         
               <div class="template" style="background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1742940658/pingyangsp_1681758139_3083133193474159437_56007568342_hyghhf.jpg'); background-size: cover; background-position: center; color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-bottom: 30px;">
                 <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
@@ -1830,7 +1869,16 @@ iframe {
               Seu navegador não suporta a tag de vídeo.
             </video>
           </div>
-        </div>   
+        </div> 
+        <div id="carousel-template17" class="carousel-modal" style="display: none;">
+          <div class="carousel-track" style="display: flex; justify-content: center;">
+            <video class="carousel-video" controls autoplay loop muted style="max-width: 100%; border-radius: 10px;">
+              <source src="https://res.cloudinary.com/dizfq460q/video/upload/v1744307036/recording-2025-04-10-14-42-52_nbh4uy.mp4" type="video/mp4">
+              Seu navegador não suporta a tag de vídeo.
+            </video>
+          </div>
+        </div>
+          
         <div class="modal-actions">
             <button class="btn" onclick="downloadTemplate()"><i class="fas fa-download"></i> Usar este template</button>
             <button class="btn close-btn" onclick="closePreview()"><i class="fas fa-times"></i> Fechar</button>
@@ -2034,6 +2082,30 @@ function exibirCarrosselTemplate10() {
     }, 4000);
   }
 }
+
+function exibirCarrosselTemplate17() {
+  const modal = document.getElementById("previewModal");
+  const iframe = document.getElementById("previewFrame");
+  const carrossel = document.getElementById("carousel-template17");
+
+  if (!modal || !iframe || !carrossel) return;
+
+  iframe.style.display = "none";
+  carrossel.style.display = "block";
+  modal.style.display = "flex";
+
+  const track = carrossel.querySelector('.carousel-track');
+  const totalSlides = track.children.length;
+
+  if (!carrosselIniciado) {
+    carrosselIniciado = true;
+    setInterval(() => {
+      index10 = (index10 + 1) % totalSlides;
+      track.style.transform = `translateX(-${index10 * 100}%)`;
+    }, 4000);
+  }
+}
+
 function exibirCarrosselTemplate11() {
   const modal = document.getElementById("previewModal");
   const iframe = document.getElementById("previewFrame");
@@ -2092,6 +2164,19 @@ function previewTemplate(templateURL) {
     exibirCarrosselTemplate11();
     return;
   }
+
+  // Template 17 com vídeo
+if (templateURL.includes('template17')) {
+  currentTemplate = 'template17';
+  document.getElementById("carousel-template17").style.display = "block";
+  document.getElementById("carousel-template10").style.display = "none";
+  document.getElementById("carousel-template11").style.display = "none";
+  document.getElementById("previewFrame").style.display = "none";
+  document.getElementById("previewModal").style.display = "flex";
+  exibirCarrosselTemplate17();
+  return;
+}
+
 
   // Template 10 com vídeo
   if (templateURL.includes('template10')) {
@@ -2239,7 +2324,12 @@ if (!templateName) {
         .then(data => {
             if (data.success) {
                 alert("Template vinculado com sucesso!");
-                window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name;
+
+                if (data.template_name === "template17") {
+                    window.location.href = "/admin/experiencias";
+                } else {
+                    window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name;
+                }
             } else {
                 alert(data.message || "Erro ao vincular template");
             }
