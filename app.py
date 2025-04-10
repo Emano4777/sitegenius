@@ -766,11 +766,8 @@ def admin_experiencias():
     if not user_id:
         return redirect("/login")
 
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
     def upload_para_cloudinary(arquivo, tipo='auto'):
-        if arquivo:
+        if arquivo and arquivo.filename != '':
             resultado = upload(arquivo, resource_type=tipo)
             return resultado['secure_url']
         return None
@@ -782,7 +779,6 @@ def admin_experiencias():
         playlist = request.form['playlist']
         prato = request.form.get("prato")
         preco = request.form.get("preco")
-
         habilitar_escolha = 'habilitar_escolha' in request.form
 
         imagem = upload_para_cloudinary(request.files.get('imagem_file'), 'image')
@@ -790,29 +786,62 @@ def admin_experiencias():
         som_clima = upload_para_cloudinary(request.files.get('som_clima_file'), 'video')
         imagem_prato = upload_para_cloudinary(request.files.get('imagem_prato_file'), 'image')
 
-        if id_editar:
-            cur.execute("""
-        UPDATE experiencias SET titulo=%s, descricao=%s, playlist=%s, imagem=%s, video_fundo=%s, 
-            som_clima=%s, prato=%s, preco=%s, imagem_prato=%s, habilitar_escolha=%s
-        WHERE id=%s
-    """, (titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, habilitar_escolha, id_editar))
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                if id_editar:
+                    # Atualização parcial: só substitui arquivos se novos forem enviados
+                    cur.execute("SELECT * FROM experiencias WHERE id = %s AND user_id = %s", (id_editar, user_id))
+                    experiencia = cur.fetchone()
 
-        else:
-            cur.execute("""
-                INSERT INTO experiencias (user_id, titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, votos, habilitar_escolha)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (user_id, titulo, descricao, playlist, imagem, video_fundo, som_clima, prato, preco, imagem_prato, 0, habilitar_escolha))
+                    cur.execute("""
+                        UPDATE experiencias SET
+                            titulo=%s,
+                            descricao=%s,
+                            playlist=%s,
+                            imagem=%s,
+                            video_fundo=%s,
+                            som_clima=%s,
+                            prato=%s,
+                            preco=%s,
+                            imagem_prato=%s,
+                            habilitar_escolha=%s
+                        WHERE id=%s
+                    """, (
+                        titulo,
+                        descricao,
+                        playlist,
+                        imagem or experiencia[4],         # mantém valor antigo se não houver novo
+                        video_fundo or experiencia[5],
+                        som_clima or experiencia[6],
+                        prato,
+                        preco,
+                        imagem_prato or experiencia[9],
+                        habilitar_escolha,
+                        id_editar
+                    ))
+                else:
+                    cur.execute("""
+                        INSERT INTO experiencias (
+                            user_id, titulo, descricao, playlist, imagem,
+                            video_fundo, som_clima, prato, preco,
+                            imagem_prato, votos, habilitar_escolha
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, %s)
+                    """, (
+                        user_id, titulo, descricao, playlist, imagem,
+                        video_fundo, som_clima, prato, preco,
+                        imagem_prato, habilitar_escolha
+                    ))
 
-        conn.commit()
+            conn.commit()
         return redirect(url_for('admin_experiencias'))
 
-  
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM experiencias WHERE user_id = %s ORDER BY id DESC", (user_id,))
+            experiencias = cur.fetchall()
 
-    cur.execute("SELECT * FROM experiencias WHERE user_id = %s ORDER BY id DESC", (user_id,))
-    experiencias = cur.fetchall()
-    cur.close()
-    conn.close()
     return render_template("admin_experiencias.html", experiencias=experiencias)
+
 
 @app.route('/votar_experiencia/<int:id>', methods=['POST'])
 def votar_experiencia(id):
