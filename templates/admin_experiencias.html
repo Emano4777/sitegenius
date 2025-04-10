@@ -710,43 +710,49 @@ main {
     <main>
         <h1>Painel de Experiências</h1>
 
-    <form method="POST" enctype="multipart/form-data" id="form-exp">
-        <input type="hidden" name="id_editar" id="id_editar">
-    <input type="text" name="titulo" placeholder="Título da experiência" required>
-    <textarea name="descricao" placeholder="Descrição" rows="3" required></textarea>
-    <input type="text" name="playlist" placeholder="URL da playlist (Spotify embed)" required>
-
-    <label for="imagem_file">Imagem de fundo:</label>
-    <input type="file" name="imagem_file" accept="image/*" onchange="previewImage(this, 'preview-imagem')">
-    <div class="preview" id="preview-imagem"></div>
-
-    <label for="video_fundo_file">Vídeo de fundo:</label>
-    <input type="file" name="video_fundo_file" accept="video/mp4,video/webm" onchange="previewVideo(this, 'preview-video')">
-    <div class="preview" id="preview-video"></div>
-
-    <label for="som_clima_file">Som do clima:</label>
-    <input type="file" name="som_clima_file" accept="audio/*" onchange="previewAudio(this, 'preview-audio')">
-    <div class="preview" id="preview-audio"></div>
-
-    <label for="prato">Prato servido:</label>
-    <input type="text" name="prato" id="prato" required>
-
-    <label for="imagem_prato_file">Imagem do prato:</label>
-    <input type="file" name="imagem_prato_file" accept="image/*" onchange="previewImage(this, 'preview-prato')">
-    <div class="preview" id="preview-prato"></div>
-
-    <label for="preco">Preço da Experiência (R$):</label>
-    <input type="number" name="preco" id="preco" step="0.01" required>
-
-    <label>
-        <input type="checkbox" name="habilitar_escolha">
-        Permitir que usuários escolham essa experiência
-    </label>
-      
-
-    
-    <button type="submit"><i class="fas fa-plus"></i> Adicionar Experiência</button>
-  </form>
+        <form method="POST" id="form-exp">
+          <input type="hidden" name="id_editar" id="id_editar">
+          <input type="text" name="titulo" placeholder="Título da experiência" required>
+          <textarea name="descricao" placeholder="Descrição" rows="3" required></textarea>
+          <input type="text" name="playlist" placeholder="URL da playlist (Spotify embed)" required>
+        
+          <!-- Imagem de fundo -->
+          <label>Imagem de fundo:</label>
+          <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem')">
+          <input type="hidden" name="imagem" id="imagem">
+          <div class="preview" id="preview-imagem"></div>
+        
+          <!-- Vídeo de fundo -->
+          <label>Vídeo de fundo:</label>
+          <input type="file" accept="video/mp4,video/webm" onchange="uploadParaCloudinary(this, 'video_fundo', 'video')">
+          <input type="hidden" name="video_fundo" id="video_fundo">
+          <div class="preview" id="preview-video"></div>
+        
+          <!-- Som do clima -->
+          <label>Som do clima:</label>
+          <input type="file" accept="audio/*" onchange="uploadParaCloudinary(this, 'som_clima', 'video')">
+          <input type="hidden" name="som_clima" id="som_clima">
+          <div class="preview" id="preview-audio"></div>
+        
+          <!-- Prato e imagem do prato -->
+          <label>Prato servido:</label>
+          <input type="text" name="prato" id="prato" required>
+        
+          <label>Imagem do prato:</label>
+          <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem_prato')">
+          <input type="hidden" name="imagem_prato" id="imagem_prato">
+          <div class="preview" id="preview-prato"></div>
+        
+          <label>Preço da Experiência (R$):</label>
+          <input type="number" name="preco" id="preco" step="0.01" required>
+        
+          <label>
+            <input type="checkbox" name="habilitar_escolha">
+            Permitir que usuários escolham essa experiência
+          </label>
+        
+          <button type="submit"><i class="fas fa-plus"></i> Adicionar Experiência</button>
+        </form>
 
   <div class="lista">
     {% for exp in experiencias %}
@@ -783,7 +789,48 @@ main {
     {% endfor %}
   </div>
   
-
+  <script>
+    async function uploadParaCloudinary(inputFile, campoHidden, tipo = 'auto') {
+      const file = inputFile.files[0];
+      if (!file) return;
+    
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "ml_default"); // preset padrão para testes (pode personalizar depois)
+    
+      const url = `https://api.cloudinary.com/v1_1/dyyrgll7h/${tipo}/upload`;
+    
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          body: formData
+        });
+    
+        const data = await response.json();
+    
+        if (data.secure_url) {
+          // Define no campo hidden
+          document.getElementById(campoHidden).value = data.secure_url;
+    
+          // Pré-visualização
+          const previewDiv = document.getElementById("preview-" + campoHidden);
+          if (file.type.startsWith("image/")) {
+            previewDiv.innerHTML = `<img src="${data.secure_url}" style="max-width:100%; border-radius:8px;">`;
+          } else if (file.type.startsWith("video/")) {
+            previewDiv.innerHTML = `<video src="${data.secure_url}" controls style="max-width:100%; border-radius:8px;"></video>`;
+          } else if (file.type.startsWith("audio/")) {
+            previewDiv.innerHTML = `<audio src="${data.secure_url}" controls></audio>`;
+          }
+        } else {
+          alert("Erro ao enviar para o Cloudinary.");
+        }
+      } catch (error) {
+        console.error("Erro no upload:", error);
+        alert("Falha ao enviar arquivo.");
+      }
+    }
+    </script>
+    
   <script>
     function previewImage(input, targetId) {
       const target = document.getElementById(targetId);

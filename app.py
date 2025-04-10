@@ -760,17 +760,12 @@ def meus_pedidos(subdomain):
 
 
 
+# Flask route adaptada para Cloudinary via frontend
 @app.route('/admin/experiencias', methods=['GET', 'POST'])
 def admin_experiencias():
     user_id = session.get("user_id")
     if not user_id:
         return redirect("/login")
-
-    def upload_para_cloudinary(arquivo, tipo='auto'):
-        if arquivo and arquivo.filename != '':
-            resultado = upload(arquivo, resource_type=tipo)
-            return resultado['secure_url']
-        return None
 
     if request.method == 'POST':
         id_editar = request.form.get('id_editar')
@@ -781,15 +776,14 @@ def admin_experiencias():
         preco = request.form.get("preco")
         habilitar_escolha = 'habilitar_escolha' in request.form
 
-        imagem = upload_para_cloudinary(request.files.get('imagem_file'), 'image')
-        video_fundo = upload_para_cloudinary(request.files.get('video_fundo_file'), 'video')
-        som_clima = upload_para_cloudinary(request.files.get('som_clima_file'), 'video')
-        imagem_prato = upload_para_cloudinary(request.files.get('imagem_prato_file'), 'image')
+        imagem = request.form.get('imagem')
+        video_fundo = request.form.get('video_fundo')
+        som_clima = request.form.get('som_clima')
+        imagem_prato = request.form.get('imagem_prato')
 
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 if id_editar:
-                    # Atualização parcial: só substitui arquivos se novos forem enviados
                     cur.execute("SELECT * FROM experiencias WHERE id = %s AND user_id = %s", (id_editar, user_id))
                     experiencia = cur.fetchone()
 
@@ -810,7 +804,7 @@ def admin_experiencias():
                         titulo,
                         descricao,
                         playlist,
-                        imagem or experiencia[4],         # mantém valor antigo se não houver novo
+                        imagem or experiencia[4],
                         video_fundo or experiencia[5],
                         som_clima or experiencia[6],
                         prato,
