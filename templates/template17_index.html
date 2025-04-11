@@ -178,6 +178,10 @@ body.clima-ativo {
               onclick="handleAtivarClima(this)">
               <i class="fas fa-eye"></i> Ver Ambiente
             </button>
+              <!-- AQUI DENTRO DO BLOCO! -->
+  {% if exp.playlist %}
+  <iframe src="{{ exp.playlist }}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+{% endif %}
       
             {% if exp.habilitar_escolha %}
             <button class="btn-clima" onclick="votarExperiencia(this)" 
@@ -196,9 +200,10 @@ body.clima-ativo {
   <button class="btn-clima" style="background: #17a2b8;" onclick="solicitarDelivery('{{ exp.prato }}')">
     <i class="fas fa-motorcycle"></i> Solicitar o prato da experiência por Delivery
   </button>
+
 </div>
       
-            <iframe src="{{ exp.playlist }}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+           
           </div>
         {% endfor %}
       </div>

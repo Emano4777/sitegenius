@@ -792,45 +792,56 @@ main {
   </div>
   
   <script>
-    async function uploadParaCloudinary(inputFile, campoHidden, tipo = 'auto') {
-      const file = inputFile.files[0];
-      if (!file) return;
-    
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "ml_default"); // preset padrão para testes (pode personalizar depois)
-    
-      const url = `https://api.cloudinary.com/v1_1/dyyrgll7h/${tipo}/upload`;
-    
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          body: formData
-        });
-    
-        const data = await response.json();
-    
-        if (data.secure_url) {
-          // Define no campo hidden
-          document.getElementById(campoHidden).value = data.secure_url;
-    
-          // Pré-visualização
-          const previewDiv = document.getElementById("preview-" + campoHidden);
-          if (file.type.startsWith("image/")) {
-            previewDiv.innerHTML = `<img src="${data.secure_url}" style="max-width:100%; border-radius:8px;">`;
-          } else if (file.type.startsWith("video/")) {
-            previewDiv.innerHTML = `<video src="${data.secure_url}" controls style="max-width:100%; border-radius:8px;"></video>`;
-          } else if (file.type.startsWith("audio/")) {
-            previewDiv.innerHTML = `<audio src="${data.secure_url}" controls></audio>`;
-          }
-        } else {
-          alert("Erro ao enviar para o Cloudinary.");
-        }
-      } catch (error) {
-        console.error("Erro no upload:", error);
-        alert("Falha ao enviar arquivo.");
-      }
+ async function uploadParaCloudinary(inputFile, campoHidden, tipo = 'auto') {
+  const file = inputFile.files[0];
+  if (!file) return;
+
+  try {
+    const resposta = await fetch("/gerar-assinatura-cloudinary");
+    const dados = await resposta.json();
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", dados.api_key);
+    formData.append("timestamp", dados.timestamp);
+    formData.append("signature", dados.signature);
+    formData.append("folder", "experiencias_sitegenius");
+
+    const url = `https://api.cloudinary.com/v1_1/${dados.cloud_name}/${tipo}/upload`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      alert("Resposta inválida do Cloudinary");
+      return;
     }
+
+    if (data.secure_url) {
+      document.getElementById(campoHidden).value = data.secure_url;
+      const previewDiv = document.getElementById("preview-" + campoHidden);
+
+      if (file.type.startsWith("image/")) {
+        previewDiv.innerHTML = `<img src="${data.secure_url}" style="max-width:100%; border-radius:8px;">`;
+      } else if (file.type.startsWith("video/")) {
+        previewDiv.innerHTML = `<video src="${data.secure_url}" controls style="max-width:100%; border-radius:8px;"></video>`;
+      } else if (file.type.startsWith("audio/")) {
+        previewDiv.innerHTML = `<audio src="${data.secure_url}" controls></audio>`;
+      }
+    } else {
+      alert("Erro ao enviar para o Cloudinary.");
+    }
+  } catch (error) {
+    alert("Falha ao enviar arquivo.");
+  }
+}
+
     </script>
     
   <script>

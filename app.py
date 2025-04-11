@@ -766,17 +766,19 @@ def meus_pedidos(subdomain):
 @app.route('/gerar-assinatura-cloudinary', methods=['GET'])
 def gerar_assinatura_cloudinary():
     timestamp = str(int(time.time()))
-    params_to_sign = f"timestamp={timestamp}{api_secret}"
-    signature = hashlib.sha1(params_to_sign.encode('utf-8')).hexdigest()
+    folder = "experiencias_sitegenius"
+
+    string_to_sign = f"folder={folder}&timestamp={timestamp}{api_secret}"
+    signature = hashlib.sha1(string_to_sign.encode('utf-8')).hexdigest()
 
     return jsonify({
         "timestamp": timestamp,
         "signature": signature,
         "api_key": api_key,
-        "cloud_name": cloud_name
-
-        
+        "cloud_name": cloud_name,
+        "folder": folder  # 👈 se quiser usar no frontend
     })
+
 
 # Flask route adaptada para Cloudinary via frontend
 @app.route('/admin/experiencias', methods=['GET', 'POST'])
