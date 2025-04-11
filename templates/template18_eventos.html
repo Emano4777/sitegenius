@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Comunitário</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/template18.css">
+</head>
+
+<style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f5f6fa;
+      margin: 0;
+      padding: 0;
+      color: #2f3640;
+    }
+    
+    header {
+      background: #273c75;
+      color: white;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    nav ul {
+      margin-top: 10px;
+      list-style: none;
+      padding: 0;
+      display: flex;
+      gap: 20px;
+    }
+    
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.2s ease;
+    }
+    
+    nav a:hover {
+      text-decoration: underline;
+    }
+    
+    main {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    
+    h2 {
+      margin-top: 40px;
+      color: #192a56;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card-evento {
+      background: white;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      border-left: 5px solid #44bd32;
+    }
+    
+    .card-evento img {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 6px;
+    }
+    
+    #form-evento {
+      background: #dff9fb;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    #form-evento input[type="text"],
+    #form-evento textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    
+    #form-evento button {
+      background: #273c75;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    
+    #form-evento button:hover {
+      background: #40739e;
+    }
+    
+    #chat {
+      background: #fff;
+      margin-top: 50px;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 5px solid #8c7ae6;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    
+    #chat-mensagens {
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 15px;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    
+    #form-chat input[type="text"] {
+      width: calc(100% - 120px);
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    
+    #form-chat button {
+      padding: 10px 15px;
+      margin-left: 10px;
+      background: #8c7ae6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 20px;
+      margin-top: 60px;
+      background: #dcdde1;
+      color: #444;
+    }
+
+    #chat-flutuante {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 1000;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+#chat-header {
+  background: #8c7ae6;
+  color: white;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#chat-corpo {
+  display: flex;
+  flex-direction: column;
+  height: 300px;
+}
+
+#chat-mensagens {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background: #f0f0f0;
+}
+
+#form-chat {
+  display: flex;
+  border-top: 1px solid #ccc;
+  padding: 5px;
+}
+
+#form-chat input {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 5px;
+}
+
+#form-chat button {
+  background: #8c7ae6;
+  color: white;
+  border: none;
+  padding: 8px 10px;
+  margin-left: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#chat-flutuante.fechado #chat-corpo {
+  display: none;
+}
+
+#chat-flutuante.fechado #chat-toggle-icon i {
+  transform: rotate(180deg);
+}
+
+    </style>
+<body>
+  <header>
+    <div class="container">
+      <h1><i class="fas fa-people-roof"></i> Portal Comunitário</h1>
+      <nav>
+        <ul>
+            <a href="/{{sub}}/index"><i class="fas fa-home"></i> Classificados</a>
+            <a href="/{{sub}}/eventos"><i class="fas fa-user"></i> Eventos</a>
+            
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section id="classificados">
+        <h2><i class="fas fa-calendar-alt"></i> Eventos da Comunidade</h2>
+      <div id="lista-classificados">
+        {% for c in eventos %}
+          <div class="card-classificado">
+            {% if c[3] %}
+              <img src="{{ c[3] }}" alt="Imagem do classificado">
+            {% endif %}
+            <h3>{{ c[1] }}</h3>
+            <p>{{ c[2] }}</p>
+            <small>Publicado por {{ c[5] or 'Anônimo' }} em {{ c[4].strftime('%d/%m/%Y %H:%M') }}</small>
+          </div>
+        {% endfor %}
+      </div>
+      <form id="form-evento">
+        <input type="text" id="titulo-evento" placeholder="Qual é o título do evento?" required>
+        <textarea id="descricao-evento" placeholder="Descreva o evento com detalhes" required></textarea>
+        <label><i class="fas fa-image"></i> Imagem do evento:</label>
+        <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem_evento', 'image')">
+        <input type="hidden" id="imagem_evento" name="imagem">
+        <div id="preview-imagem_evento" style="margin-top: 10px;"></div>
+      
+        <button type="submit"><i class="fas fa-plus"></i> Publicar</button>
+      </form>
+    </section>
+
+    <div id="chat-flutuante">
+        <div id="chat-header" onclick="alternarChat()">
+          <i class="fas fa-comments"></i> Chat da Comunidade
+          <span id="chat-toggle-icon"><i class="fas fa-chevron-up"></i></span>
+        </div>
+        <div id="chat-corpo">
+          <div id="chat-mensagens"></div>
+          <form id="form-chat">
+            <input type="text" id="mensagem-chat" placeholder="Escreva sua mensagem..." required>
+            <button type="submit"><i class="fas fa-paper-plane"></i></button>
+          </form>
+        </div>
+      </div>
+  </main>
+  <script>
+  async function uploadParaCloudinary(inputFile, campoHidden, tipo = 'auto') {
+    const file = inputFile.files[0];
+    if (!file) return;
+  
+    try {
+      const resposta = await fetch("/gerar-assinatura-cloudinary");
+      const dados = await resposta.json();
+  
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", dados.api_key);
+      formData.append("timestamp", dados.timestamp);
+      formData.append("signature", dados.signature);
+      formData.append("folder", "experiencias_sitegenius");
+  
+      const url = `https://api.cloudinary.com/v1_1/${dados.cloud_name}/${tipo}/upload`;
+  
+      const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+      });
+  
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        alert("Resposta inválida do Cloudinary");
+        return;
+      }
+  
+      if (data.secure_url) {
+        document.getElementById(campoHidden).value = data.secure_url;
+        const previewDiv = document.getElementById("preview-" + campoHidden);
+  
+        if (file.type.startsWith("image/")) {
+          previewDiv.innerHTML = `<img src="${data.secure_url}" style="max-width:100%; border-radius:8px;">`;
+        } else if (file.type.startsWith("video/")) {
+          previewDiv.innerHTML = `<video src="${data.secure_url}" controls style="max-width:100%; border-radius:8px;"></video>`;
+        } else if (file.type.startsWith("audio/")) {
+          previewDiv.innerHTML = `<audio src="${data.secure_url}" controls></audio>`;
+        }
+      } else {
+        alert("Erro ao enviar para o Cloudinary.");
+      }
+    } catch (error) {
+      alert("Falha ao enviar arquivo.");
+    }
+  }
+</script>
+  <script>
+    function alternarChat() {
+  const chatBox = document.getElementById("chat-flutuante");
+  chatBox.classList.toggle("fechado");
+}
+
+    let chatMensagens = document.getElementById("chat-mensagens");
+    let formChat = document.getElementById("form-chat");
+    let inputChat = document.getElementById("mensagem-chat");
+    
+    formChat.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const texto = inputChat.value.trim();
+      if (!texto) return;
+    
+      await fetch("/api/chat/enviar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto })
+      });
+    
+      inputChat.value = "";
+      buscarMensagens(); // Atualiza imediatamente
+    });
+    
+    async function buscarMensagens() {
+      const res = await fetch("/api/chat/mensagens");
+      const mensagens = await res.json();
+    
+      chatMensagens.innerHTML = "";
+      mensagens.forEach(m => {
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>[${m.hora}]</strong> ${m.texto}`;
+        chatMensagens.appendChild(div);
+      });
+    
+      chatMensagens.scrollTop = chatMensagens.scrollHeight;
+    }
+    function alternarChat() {
+  const chatBox = document.getElementById("chat-flutuante");
+  chatBox.classList.toggle("fechado");
+}
+    // Atualiza a cada 2 segundos
+    setInterval(buscarMensagens, 2000);
+    buscarMensagens();
+    </script>
+    
+  <script>
+
+    
+document.getElementById("form-evento").addEventListener("submit", async function(e) {
+  e.preventDefault();
+
+  const formData = new FormData();
+  formData.append("titulo", document.getElementById("titulo-evento").value.trim());
+  formData.append("descricao", document.getElementById("descricao-evento").value.trim());
+  formData.append("imagem", document.getElementById("imagem_evento").value);
+
+  try {
+    const res = await fetch(window.location.pathname, {
+      method: "POST",
+      body: formData
+    });
+
+    if (res.ok) {
+      location.reload();
+    } else {
+      alert("Erro ao enviar evento.");
+    }
+  } catch (error) {
+    console.error("Erro:", error);
+    alert("Erro de rede.");
+  }
+});
+
+    </script>
+    
+  <footer>
+    <p>&copy; 2025 Portal Comunitário. Feito com <i class="fas fa-heart"></i> pela comunidade.</p>
+  </footer>
+
+  <script src="/static/js/template18.js"></script>
+</body>
+</html>

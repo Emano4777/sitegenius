@@ -32,6 +32,7 @@ from cloudinary.uploader import upload
 import time
 import hashlib
 import hmac
+from dateutil import parser
 # Configuração
 cloudinary.config(
     cloud_name='dyyrgll7h',
@@ -109,6 +110,36 @@ def login_google():
 @app.route("/template-ia")
 def template_ia():
     return render_template("template11_index.html")
+
+
+@app.route('/api/chat/enviar', methods=['POST'])
+def enviar_mensagem():
+    data = request.get_json()
+    texto = data.get('texto')
+
+    if not texto:
+        return jsonify({'erro': 'Mensagem vazia'}), 400
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO mensagens (texto) VALUES (%s)", (texto,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return jsonify({'status': 'ok'}), 200
+
+
+@app.route('/api/chat/mensagens')
+def listar_mensagens():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT texto, to_char(timestamp, 'HH24:MI:SS') FROM mensagens ORDER BY timestamp DESC LIMIT 10")
+    mensagens = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    return jsonify([{'texto': m[0], 'hora': m[1]} for m in mensagens[::-1]])
 
 
 @app.route('/auth/google/callback')
@@ -297,27 +328,190 @@ def gerar_site():
 
     return jsonify({"html": html_sem_style, "css": style})
 
+@app.route("/template18", methods=["GET", "POST"])
+def classificados():
+    conn = get_db_connection()
 
+    if request.method == "POST":
+        if request.is_json:
+            data = request.get_json()
+            titulo = data.get("titulo")
+            descricao = data.get("descricao")
+            imagem = data.get("imagem")
+        else:
+            titulo = request.form["titulo"]
+            descricao = request.form["descricao"]
+            imagem = request.form.get("imagem")
 
+        autor = session.get("user_name", "Anônimo")
 
-@app.route('/api/quem-sou-eu')
-def quem_sou_eu():
-    if 'user_id' in session:
-        return jsonify({'logado': True, 'tipo': 'dono', 'user_id': session['user_id']})
-    elif 'cliente_id' in session:
-        # opcional: descobrir o subdomínio da loja
-        conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            SELECT subdomain
-            FROM user_templates
-            WHERE id = (SELECT loja_id FROM clientes_loja WHERE id = %s)
-        """, (session['cliente_id'],))
-        loja = cur.fetchone()
-        cur.close(); conn.close()
-        return jsonify({'logado': True, 'tipo': 'cliente', 'cliente_id': session['cliente_id'], 'subdomain': loja[0] if loja else None})
-    else:
-        return jsonify({'logado': False})
+            INSERT INTO classificados (titulo, descricao, imagem, comunidade, autor, aprovado)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (titulo, descricao, imagem, "comunidade_padrao", autor, False))
+        conn.commit()
+        cur.close()
+        return "", 200
+
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM classificados WHERE comunidade = %s AND aprovado = TRUE ORDER BY data DESC", ("comunidade_padrao",))
+    classificados = cur.fetchall()
+    cur.close()
+
+    return render_template("template18_index.html", sub="comunidade_padrao", classificados=classificados)
+
+@app.route("/template18/eventos", methods=["GET", "POST"])
+def eventos():
+    conn = get_db_connection()
+
+    if request.method == "POST": 
+        if request.is_json:
+            data = request.get_json()
+            titulo = data.get("titulo")
+            descricao = data.get("descricao")
+            imagem = data.get("imagem")
+        else:
+            titulo = request.form["titulo"]
+            descricao = request.form["descricao"]
+            imagem = request.form.get("imagem")
+
+        autor = session.get("user_name", "Anônimo")
+
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO eventos (titulo, descricao, imagem, comunidade, autor, aprovado)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (titulo, descricao, imagem, "comunidade_padrao", autor, False))
+        conn.commit()
+        cur.close()
+        return "", 200
+
+    cur = conn.cursor()
+    cur.execute("""
+    SELECT id, titulo, descricao, imagem, data, autor, aprovado 
+    FROM eventos 
+    WHERE comunidade = %s AND aprovado = TRUE 
+    ORDER BY data DESC
+""", ("comunidade_padrao",))
+
+    eventos = cur.fetchall()
+    cur.close()
+
+    eventos = [
+        (
+            *linha[:4],
+            parser.parse(linha[4]) if isinstance(linha[4], str) else linha[4],
+            *linha[5:]
+        )
+        for linha in eventos
+    ]
+
+
+    return render_template("template18_eventos.html", sub="comunidade_padrao", eventos=eventos)
+
+
+
+@app.route("/admin/classificados")
+def admin_classificados():
+    if not session.get("user_id"):
+        return redirect("/login")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, titulo, descricao, imagem, data, autor, aprovado FROM classificados ORDER BY data DESC")
+    classificados = cur.fetchall()
+    cur.close()
+
+    return render_template("admin_classificados.html", classificados=classificados, tipo="classificado")  # <<< adicionado tipo
+
+
+@app.route("/admin/eventos")
+def admin_eventos():
+    if not session.get("user_id"):
+        return redirect("/login")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, titulo, descricao, imagem, data, autor, aprovado FROM eventos ORDER BY data DESC")
+    eventos = cur.fetchall()
+    cur.close()
+
+    return render_template("admin_classificados.html", classificados=eventos, tipo="evento")
+
+
+
+@app.route("/admin/eventos/moderar", methods=["POST"])
+def moderar_evento():
+    if "user_id" not in session:
+        return "Acesso negado", 403
+
+    data = request.get_json()
+    id = data.get("id")
+    aprovar = data.get("aprovar")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE eventos SET aprovado = %s WHERE id = %s", (aprovar, id))
+    conn.commit()
+    cur.close()
+
+    return "", 204
+
+
+@app.route("/admin/eventos/excluir", methods=["POST"])
+def excluir_evento():
+    if "user_id" not in session:
+        return "Acesso negado", 403
+
+    data = request.get_json()
+    id = data.get("id")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM eventos WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+
+    return "", 204
+
+
+@app.route("/admin/classificados/moderar", methods=["POST"])
+def moderar_classificado():
+    if "user_id" not in session:
+        return "Acesso negado", 403
+
+    data = request.get_json()
+    id = data.get("id")
+    aprovar = data.get("aprovar")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE classificados SET aprovado = %s WHERE id = %s", (aprovar, id))
+    conn.commit()
+    cur.close()
+
+    return "", 204
+
+
+@app.route("/admin/classificados/excluir", methods=["POST"])
+def excluir_classificado():
+    if "user_id" not in session:
+        return "Acesso negado", 403
+
+    data = request.get_json()
+    id = data.get("id")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM classificados WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+
+    return "", 204
+
+
+
 
 @app.route('/<subdomain>/login-cliente', methods=['GET', 'POST'])
 def login_cliente(subdomain):

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Administrativo - Classificados</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+ body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 28px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 6px solid #2980b9;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      color: #34495e;
+    }
+
+    .card p {
+      color: #555;
+      margin-bottom: 15px;
+    }
+
+    .card img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    small {
+      color: #7f8c8d;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .botoes {
+      margin-top: 15px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: 0.2s ease;
+      margin-right: 10px;
+    }
+
+    .aprovar {
+      background: #27ae60;
+      color: white;
+    }
+
+    .aprovar:hover {
+      background: #1e8449;
+    }
+
+    .rejeitar {
+      background: #f39c12;
+      color: white;
+    }
+
+    .rejeitar:hover {
+      background: #d68910;
+    }
+
+    .excluir {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .excluir:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+
+    <h1><i class="fas fa-user-shield"></i> Administração de {{ 'Eventos' if tipo == 'evento' else 'Classificados' }}</h1>
+
+
+    {% for c in classificados %}
+    <div class="card" data-id="{{ c[0] }}">
+      <h3>{{ c[1] }}</h3>
+      <p>{{ c[2] }}</p>
+  
+      {% if c[3] %}
+        <img src="{{ c[3] }}" alt="Imagem do classificado">
+      {% endif %}
+  
+      <small><i class="fas fa-user"></i> {{ c[5] or "Anônimo" }}</small>
+      <small><i class="fas fa-clock"></i> {{ c[4].strftime('%d/%m/%Y %H:%M') }}</small>
+      <small><i class="fas fa-clipboard-check"></i> Status: {{ '✅ Aprovado' if c[6] else '🕓 Pendente' }}</small>
+  
+      <div class="botoes">
+        {% if not c[6] %}
+          <button class="aprovar" data-id="{{ c[0] }}" data-aprovar="true"><i class="fas fa-check"></i> Aprovar</button>
+        {% endif %}
+        <button class="rejeitar" data-id="{{ c[0] }}" data-aprovar="false"><i class="fas fa-ban"></i> Rejeitar</button>
+        <button class="excluir" data-id="{{ c[0] }}"><i class="fas fa-trash"></i> Excluir</button>
+      </div>
+    </div>
+    {% endfor %}
+
+  <script>
+    document.querySelectorAll(".aprovar, .rejeitar").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
+        const aprovar = btn.getAttribute("data-aprovar") === "true";
+    
+        const resp = await fetch("/admin/{{ 'eventos' if tipo == 'evento' else 'classificados' }}/moderar", {
+
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, aprovar })
+        });
+    
+        if (resp.ok) location.reload();
+        else alert("Erro ao atualizar.");
+      });
+    });
+    
+    document.querySelectorAll(".excluir").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
+        if (!confirm("Tem certeza que deseja excluir?")) return;
+    
+        const resp = await fetch("/admin/{{ 'eventos' if tipo == 'evento' else 'classificados' }}/excluir", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id })
+        });
+    
+        if (resp.ok) location.reload();
+        else alert("Erro ao excluir.");
+      });
+    });
+    </script>
+    
+
+</body>
+</html>
