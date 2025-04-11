@@ -458,6 +458,59 @@ main {
       text-align: center;
       margin-bottom: 30px;
     }
+
+
+    .form-experiencia label {
+  font-weight: 500;
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-experiencia input[type="text"],
+.form-experiencia input[type="number"],
+.form-experiencia textarea,
+.form-experiencia input[type="file"] {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.form-experiencia textarea {
+  resize: vertical;
+}
+
+.form-experiencia small {
+  font-style: italic;
+}
+
+.checkbox-escolha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+.btn-adicionar {
+  margin-top: 20px;
+  background-color: #28a745;
+  border: none;
+  color: white;
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-adicionar:hover {
+  background-color: #218838;
+}
     form {
       background: #fff;
       padding: 20px;
@@ -710,50 +763,69 @@ main {
     <main>
         <h1>Painel de Experiências</h1>
 
-        <form method="POST" id="form-exp">
-            <input type="hidden" name="id_editar" id="id_editar">
-            
-            <input type="text" name="titulo" placeholder="Título da experiência" required>
-            <textarea name="descricao" placeholder="Descrição" rows="3" required></textarea>
-            <input type="text" name="playlist" placeholder="URL da playlist (Spotify embed)" required>
-          
-            <!-- Imagem de fundo -->
-            <label>Imagem de fundo:</label>
-            <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem', 'image')">
-            <input type="hidden" name="imagem" id="imagem">
-            <div class="preview" id="preview-imagem"></div>
-          
-            <!-- Vídeo de fundo -->
-            <label>Vídeo de fundo:</label>
-            <input type="file" accept="video/mp4,video/webm" onchange="uploadParaCloudinary(this, 'video_fundo', 'video')">
-            <input type="hidden" name="video_fundo" id="video_fundo">
-            <div class="preview" id="preview-video_fundo"></div>
-          
-            <!-- Som do clima -->
-            <label>Som do clima:</label>
-            <input type="file" accept="audio/*" onchange="uploadParaCloudinary(this, 'som_clima', 'video')">
-            <input type="hidden" name="som_clima" id="som_clima">
-            <div class="preview" id="preview-som_clima"></div>
-          
-            <!-- Prato e imagem do prato -->
-            <label>Prato servido:</label>
-            <input type="text" name="prato" id="prato" required>
-          
-            <label>Imagem do prato:</label>
-            <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem_prato', 'image')">
-            <input type="hidden" name="imagem_prato" id="imagem_prato">
-            <div class="preview" id="preview-imagem_prato"></div>
-          
-            <label>Preço da Experiência (R$):</label>
-            <input type="number" name="preco" id="preco" step="0.01" required>
-          
-            <label>
-              <input type="checkbox" name="habilitar_escolha">
-              Permitir que usuários escolham essa experiência
-            </label>
-          
-            <button type="submit"><i class="fas fa-plus"></i> Adicionar Experiência</button>
-          </form>
+        <form method="POST" id="form-exp" class="form-experiencia">
+          <input type="hidden" name="id_editar" id="id_editar">
+        
+          <label for="titulo"><i class="fas fa-heading"></i> Título da experiência:</label>
+          <input type="text" name="titulo" id="titulo" placeholder="Ex: Jantar à luz de velas" required>
+        
+          <label for="descricao"><i class="fas fa-align-left"></i> Descrição:</label>
+          <textarea name="descricao" id="descricao" rows="3" placeholder="Descreva a experiência completa..." required></textarea>
+        
+          <label for="playlist"><i class="fab fa-spotify"></i> Link da Playlist (Spotify):</label>
+          <input 
+  type="text" 
+  name="playlist" 
+  id="playlist"
+  placeholder="Cole o link do Spotify" 
+  required
+  pattern="https:\/\/open\.spotify\.com\/(embed\/)?(playlist|track|album|episode)\/[a-zA-Z0-9]+" 
+  title="Cole o link da playlist, música ou álbum do Spotify. Ex: https://open.spotify.com/playlist/ID">
+          <small style="color: #666; margin-top: -8px; display: block; font-size: 13px;">
+            Exemplo: <code>https://open.spotify.com/playlist/1QGrsXAiLUHEcHTnSYgDb9</code><br>
+            O link será automaticamente formatado para embed. 🎵
+          </small>
+
+          <button type="button" onclick="testarSpotify()" style="background:#666;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;margin-bottom:15px;">
+            <i class="fas fa-play-circle"></i> Testar Link
+          </button>
+        
+          <label><i class="fas fa-image"></i> Imagem de fundo:</label>
+          <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem', 'image')">
+          <input type="hidden" name="imagem" id="imagem">
+          <div class="preview" id="preview-imagem"></div>
+        
+          <label><i class="fas fa-video"></i> Vídeo de fundo:</label>
+          <input type="file" accept="video/mp4,video/webm" onchange="uploadParaCloudinary(this, 'video_fundo', 'video')">
+          <input type="hidden" name="video_fundo" id="video_fundo">
+          <div class="preview" id="preview-video_fundo"></div>
+        
+          <label><i class="fas fa-volume-up"></i> Som do clima:</label>
+          <input type="file" accept="audio/*" onchange="uploadParaCloudinary(this, 'som_clima', 'video')">
+          <input type="hidden" name="som_clima" id="som_clima">
+          <div class="preview" id="preview-som_clima"></div>
+        
+          <label for="prato"><i class="fas fa-utensils"></i> Prato servido:</label>
+          <input type="text" name="prato" id="prato" placeholder="Ex: Filé ao molho madeira" required>
+        
+          <label><i class="fas fa-camera"></i> Imagem do prato:</label>
+          <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem_prato', 'image')">
+          <input type="hidden" name="imagem_prato" id="imagem_prato">
+          <div class="preview" id="preview-imagem_prato"></div>
+        
+          <label for="preco"><i class="fas fa-dollar-sign"></i> Preço da Experiência (R$):</label>
+          <input type="number" name="preco" id="preco" step="0.01" placeholder="Ex: 149.90" required>
+        
+          <label class="checkbox-escolha">
+            <input type="checkbox" name="habilitar_escolha">
+            <i class="fas fa-check-circle"></i> Permitir que usuários escolham essa experiência
+          </label>
+        
+          <button type="submit" class="btn-adicionar">
+            <i class="fas fa-plus-circle"></i> Adicionar Experiência
+          </button>
+        </form>
+        
           
 
   <div class="lista">
@@ -1079,5 +1151,60 @@ document.getElementById('mobileMenuModal').style.display = 'none';
 
 
 </script>
+<script>
+
+function testarSpotify() {
+  const link = document.getElementById("playlist").value.trim();
+  if (link.startsWith("https://open.spotify.com/")) {
+    window.open(link, "_blank");
+  } else {
+    alert("🔗 O link informado não parece ser do Spotify.");
+  }
+}
+document.getElementById("form-exp").addEventListener("submit", function(e) {
+    const titulo = document.querySelector('[name="titulo"]').value.trim();
+    const descricao = document.querySelector('[name="descricao"]').value.trim();
+    
+    const playlist = document.querySelector('[name="playlist"]').value.trim();
+    const prato = document.querySelector('[name="prato"]').value.trim();
+    const preco = document.querySelector('[name="preco"]').value.trim();
+    const playlistInput = document.querySelector('[name="playlist"]');
+
+
+
+    if (!titulo || !descricao || !playlist || !prato || !preco) {
+      alert("❗ Todos os campos obrigatórios devem ser preenchidos.");
+      e.preventDefault();
+      return;
+    }
+
+    // Validação da playlist
+    const padraoSpotify = /^https:\/\/open\.spotify\.com\/(embed\/)?(playlist|track|album|episode)\/[a-zA-Z0-9]+/;
+    if (!padraoSpotify.test(playlist)) {
+      alert("❗ A URL da playlist deve ser um link válido do Spotify (ex: https://open.spotify.com/playlist/XXXX).");
+      e.preventDefault();
+      return;
+    }
+  });
+
+  document.querySelector('input[name="playlist"]').addEventListener('blur', function () {
+  let val = this.value.trim();
+
+  val = val.replace(/open\.spotify\.com\/[a-z]{2,5}-[a-z]{2}\//, "open.spotify.com/");
+
+
+  const tiposSuportados = ['playlist', 'track', 'album', 'episode'];
+  for (let tipo of tiposSuportados) {
+    if (val.includes(`open.spotify.com/${tipo}/`) && !val.includes('/embed/')) {
+      const id = val.split(`${tipo}/`)[1].split("?")[0];
+      this.value = `https://open.spotify.com/embed/${tipo}/${id}`;
+      console.log(`✅ Link convertido para embed (${tipo}):`, this.value);
+      break;
+    }
+  }
+});
+  </script>
+  
+
 </body>
 </html>
