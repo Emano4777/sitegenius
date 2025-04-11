@@ -1208,6 +1208,8 @@ iframe {
             <option value="construcao">🏗️ Construção</option>
             <option value="sexyshop">💋 Sexyshop</option>
             <option value="petshop">🐾 Petshop</option>
+            <option value="comunitario">🏘️ Utilidade Pública</option>
+
           </select>
         </div>
         
@@ -1857,7 +1859,52 @@ iframe {
     <p><strong>Diferenciais:</strong> Visual atrativo com ícones fofos, totalmente responsivo, integração direta com WhatsApp, formulário funcional e foco total em conversão para negócios do mundo pet.</p>
   </div>
 </div>
-            
+<h2 id="Utilidade Pública" class="categoria-titulo"><i class="fas fa-hand-holding-heart"></i> Segmento: Utilidade Pública</h2>
+<div class="template" style="
+  background-image: url('https://res.cloudinary.com/dyyrgll7h/image/upload/v1744404611/images_1_qjut7v.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin-bottom: 30px;
+">
+  <div style="background-color: rgba(0, 0, 0, 0.5); padding: 10px; border-radius: 6px; display: inline-block;">
+    <h3 style="margin: 0; color: white;">
+      <i class="fas fa-people-roof"></i> Template para Portal Comunitário
+    </h3>
+  </div>
+
+  <!-- Botão de Visualizar -->
+  <button class="btn" onclick="previewTemplate('/template-preview/template18/index')">
+    <i class="fas fa-eye"></i> Visualizar
+  </button>
+
+  <!-- Botão de Detalhes -->
+  <button class="btn" onclick="toggleDetalhes('detalhes-template18')">
+    <i class="fas fa-info-circle"></i> Detalhes
+  </button>
+
+  <div id="detalhes-template18" style="
+    display: none;
+    text-align: left;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.95);
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+  ">
+    <p><strong>Ideal para:</strong> Bairros, condomínios, vilas, associações de moradores e comunidades que desejam se organizar e se comunicar melhor.</p>
+
+    <p><strong>Inclui:</strong> Espaço para moradores anunciarem produtos e serviços, agenda de eventos da comunidade, bate-papo em tempo real entre vizinhos, sistema para envio de fotos e painel exclusivo para quem administra o portal.</p>
+    
+    <p><strong>Diferenciais:</strong> Visual moderno e fácil de usar, funciona perfeitamente no celular, incentiva o engajamento entre moradores e fortalece o senso de comunidade. Uma ferramenta completa para unir pessoas e valorizar o que acontece no seu bairro.</p>
+    
+  </div>
+</div>
 
 
 
@@ -1886,6 +1933,14 @@ iframe {
           <div class="carousel-track" style="display: flex; justify-content: center;">
             <video class="carousel-video" controls autoplay loop muted style="max-width: 100%; border-radius: 10px;">
               <source src="https://res.cloudinary.com/dizfq460q/video/upload/v1744307036/recording-2025-04-10-14-42-52_nbh4uy.mp4" type="video/mp4">
+              Seu navegador não suporta a tag de vídeo.
+            </video>
+          </div>
+        </div>
+        <div id="carousel-template18" class="carousel-modal" style="display: none;">
+          <div class="carousel-track" style="display: flex; justify-content: center;">
+            <video class="carousel-video" controls autoplay loop muted style="max-width: 100%; border-radius: 10px;">
+              <source src="https://res.cloudinary.com/dyyrgll7h/video/upload/v1744359387/recording-2025-04-10-17-16-16_mch5rp.mp4" type="video/mp4">
               Seu navegador não suporta a tag de vídeo.
             </video>
           </div>
@@ -2095,6 +2150,20 @@ function exibirCarrosselTemplate10() {
   }
 }
 
+
+function exibirCarrosselTemplate18() {
+  const modal = document.getElementById("previewModal");
+  const iframe = document.getElementById("previewFrame");
+  const carrossel = document.getElementById("carousel-template18");
+
+  if (!modal || !iframe || !carrossel) return;
+
+  iframe.style.display = "none";
+  carrossel.style.display = "block";
+  modal.style.display = "flex";
+}
+
+
 function exibirCarrosselTemplate17() {
   const modal = document.getElementById("previewModal");
   const iframe = document.getElementById("previewFrame");
@@ -2176,6 +2245,20 @@ function previewTemplate(templateURL) {
     exibirCarrosselTemplate11();
     return;
   }
+
+  // Template 18 com vídeo
+if (templateURL.includes('template18')) {
+  currentTemplate = 'template18';
+  document.getElementById("carousel-template18").style.display = "block";
+  document.getElementById("carousel-template10").style.display = "none";
+  document.getElementById("carousel-template11").style.display = "none";
+  document.getElementById("carousel-template17").style.display = "none";
+  document.getElementById("previewFrame").style.display = "none";
+  document.getElementById("previewModal").style.display = "flex";
+  exibirCarrosselTemplate18();
+  return;
+}
+
 
   // Template 17 com vídeo
 if (templateURL.includes('template17')) {
@@ -2339,6 +2422,8 @@ if (!templateName) {
 
                 if (data.template_name === "template17") {
                     window.location.href = "/admin/experiencias";
+                } else if (data.template_name === "template18") {
+                    window.location.href = "/admin/eventos";
                 } else {
                     window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name;
                 }

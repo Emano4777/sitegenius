@@ -740,6 +740,41 @@ def exibir_site_por_subdominio(subdomain, page):
     if template_name == "template17":
         cur.close(); conn.close()
         return redirect(url_for('index_loja', subdomain=subdomain))
+    
+    if template_name == "template18":
+        if page == "eventos":
+            cur.execute("""
+                SELECT id, titulo, descricao, imagem, data, autor, aprovado
+                FROM eventos
+                WHERE comunidade = %s AND aprovado = TRUE
+                ORDER BY data DESC
+            """, (subdomain,))
+            eventos = cur.fetchall()
+            eventos = [
+                (
+                    *linha[:4],
+                    parser.parse(linha[4]) if isinstance(linha[4], str) else linha[4],
+                    *linha[5:]
+                )
+                for linha in eventos
+            ]
+            cur.close(); conn.close()
+            return render_template("template18_eventos.html", sub=subdomain, eventos=eventos)
+
+        elif page == "index":
+            cur.execute("""
+                SELECT id, titulo, descricao, imagem, data, autor, aprovado
+                FROM classificados
+                WHERE comunidade = %s AND aprovado = TRUE
+                ORDER BY data DESC
+            """, (subdomain,))
+            classificados = cur.fetchall()
+            cur.close(); conn.close()
+            return render_template("template18_index.html", sub=subdomain, classificados=classificados)
+
+        else:
+            cur.close(); conn.close()
+            return f"Página '{page}' não encontrada para o template18.", 404
 
     if template_name == "template10":
         try:
@@ -751,7 +786,7 @@ def exibir_site_por_subdominio(subdomain, page):
                 html_renderizado = str(soup).replace("{{sub}}", subdomain)
                 return Response(html_renderizado, mimetype='text/html')
             else:
-                return f"Página '{page}' não encontrada para subdomínio '{subdomain}'.", 404
+                return f"Página '{page}' não encontrada para subdomínio '{subdomain}'.", 404  
 
     # Templates padrão com custom_html
     soup = BeautifulSoup(html, 'html.parser')
@@ -759,10 +794,6 @@ def exibir_site_por_subdominio(subdomain, page):
     html_renderizado = str(soup).replace("{{sub}}", subdomain)
     cur.close(); conn.close()
     return Response(html_renderizado, mimetype='text/html')
-
-
-
-
 
 
 
@@ -1198,7 +1229,24 @@ def index_loja(subdomain):
         print(f"[DEBUG] Experiências encontradas: {len(experiencias)}")
         cur.close(); conn.close()
         return render_template("template17_index.html", experiencias=experiencias, subdomain=subdomain)
+       
 
+    elif template_name == "template18":
+        cur.close(); conn.close()
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, titulo, descricao, imagem, data, autor, aprovado
+            FROM classificados
+            WHERE comunidade = %s AND aprovado = TRUE
+            ORDER BY data DESC
+        """, (subdomain,))
+        classificados = cur.fetchall()
+        cur.close(); conn.close()
+
+        return render_template("template18_index.html", sub=subdomain, classificados=classificados)
 
     cur.close(); conn.close()
     return exibir_site_por_subdominio(subdomain=subdomain, page='index')
