@@ -670,68 +670,133 @@ onmouseout="this.style.transform='scale(1)'"
   Dúvidas? Fale com um especialista
 </a>
 
-    <header>    
-        <div class="container">
-            <h1><i class="fa-solid fa-lightbulb"></i> Site Genius</h1>
+<header>  
+          
+    <div class="container">
+        <h1>
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo" style="height: 35px; vertical-align: middle; margin-right: 10px;">
+            Site Genius
+          </h1>
     
-            <!-- ✅ Navbar Desktop Corrigida -->
-            <nav class="desktop-nav">
-                <ul>
-                    <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
-                    <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
-                    <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+        <!-- ✅ Navbar Desktop Corrigida -->
+        <nav class="desktop-nav">
+            <ul>
+                <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+                <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
+                <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
+               
     
-                    <!-- Ícone do usuário -->
-                    <li class="user-menu">
-                        <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
+                <!-- ✅ Avatar e Dropdown -->
+                <li class="user-menu">
+                    <a href="#" id="user-profile" class="user-link" onclick="toggleUserMenu(event)">
+                        <span id="user-avatar-container">
                             <i class="fas fa-user user-icon"></i>
-                        </a>
-                        <ul class="dropdown-menu" id="user-dropdown">
-                            <li id="user-name" style="display: none; font-weight: bold; padding: 10px;">
-                                Bem-vindo, <span id="user-name-text"></span>
-                            </li>    
-                            <li><a href="/login" id="login-option">Entrar</a></li>
-                            <li><a href="/meu-site" id="meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
-                            <li><a href="#" id="logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </nav>
+                        </span>
+                    </a>
+                    <ul class="dropdown-menu" id="user-dropdown">
+                        <li id="user-name" style="display: none; font-weight: bold; padding: 10px;" class="user-info-line">
+                            <i class="fas fa-user-circle" style="margin-right: 6px; color: #555;"></i>
+                            Bem-vindo, <span id="user-name-text"></span><br>
+                            <small id="user-premium-info" style="color: #666; margin-left: 22px;"></small>
+                          </li>
+                          <li>
+                            <a href="/login" id="login-option" class="menu-link">
+                              <i class="fas fa-sign-in-alt"></i> Entrar
+                            </a>
+                          </li>
+                          
+                        <li>
+                            <a href="/meu-site" id="meus-templates-option" style="display:none;">
+                              <i class="fas fa-layer-group"></i> Meus Templates
+                            </a>
+                          </li>                              
+                          <li>
+                            <a href="/editar-dados" id="editar-dados-option" style="display: none;">
+                              <i class="fas fa-user-cog"></i> Editar Dados
+                            </a>
+                          </li> 
+                          <li id="admin-lojas-option" style="display: none;">
+                            <a href="/admin" class="menu-link">
+                              <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                            </a>
+                          </li>                             
+                          <li id="relatorio-option">
+                            <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                          </li>
+                            <a href="#" id="logout-option" style="display: none;" onclick="logout()" class="logout-link">
+                              <i class="fas fa-sign-out-alt"></i> Sair
+                            </a>
+                          </li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
     
-            <!-- ✅ Botão de menu mobile -->
-            <button class="mobile-menu-btn" onclick="openMobileMenu()">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
+        <!-- ✅ Botão de menu mobile -->
+        <button class="mobile-menu-btn" onclick="openMobileMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
     </div>
+    
+    <!-- ✅ Menu Mobile -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <div class="mobile-menu-content">
             <a href="/"><i class="fas fa-home"></i> Início</a>
             <a href="/templates"><i class="fas fa-th"></i> Templates</a>
-            <a href="/sobre"><i class="fas fa-info-circle"></i> Sobre</a>
-            <a href="/contato"><i class="fas fa-envelope"></i> Contato</a>
+            <a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a>
+            
     
-                    <!-- ✅ Ícone do usuário no menu mobile -->
-<div class="mobile-user-menu">
-    <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
-        <i class="fas fa-user"></i> <span id="mobile-user-name-text">Entrar</span>
-    </a>
-    <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
-        <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
-            Olá, <span id="mobile-username-text"></span>
-        </li>
-        <li><a href="/login" id="mobile-login-option">Entrar</a></li>
-        <li><a href="meu-site" id="mobile-meus-templates-option" style="display:none;">Acessar os meus Templates</a></li>
-        <li><a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()">Sair</a></li>
-    </ul>
-</div>
-      
-                    <button class="close-btn" onclick="closeMobileMenu()">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
-                </div>
+            <!-- ✅ Avatar Mobile -->
+            <div class="mobile-user-menu">
+                <a href="#" id="mobile-user-profile" class="mobile-user-link" onclick="toggleMobileUserMenu(event)">
+                    <span id="mobile-user-avatar-container">
+                        <i class="fas fa-user"></i>
+                    </span>
+                </a>
+                <ul class="mobile-dropdown-menu" id="mobile-user-dropdown">
+                    <li id="mobile-user-name" style="display: none; font-weight: bold; padding: 10px;">
+                        Bem-vindo, <span id="mobile-username-text"></span><br>
+                        <small id="mobile-user-premium-info" style="color: #ddd;"></small>
+                    </li>
+                    <li>
+                        <a href="/login" id="mobile-login-option" class="mobile-menu-link">
+                          <i class="fas fa-sign-in-alt"></i> Entrar
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/meu-site" id="mobile-meus-templates-option" style="display:none;" class="mobile-menu-link">
+                          <i class="fas fa-folder-open"></i> Meus Templates
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/editar-dados" id="mobile-editar-dados-option" style="display: none;" class="mobile-menu-link">
+                          <i class="fas fa-user-cog"></i> Editar Dados
+                        </a>
+                      </li>
+                      <li id="mobile-admin-lojas-option" style="display: none;">
+                        <a href="/admin" class="mobile-menu-link">
+                          <i class="fas fa-store-alt"></i> Administrar Minhas Lojas
+                        </a>
+                      </li>
+                      <li id="mobile-relatorio-option">
+                        <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                      </li>
+
+                      <li>
+                        <a href="#" id="mobile-logout-option" style="display: none;" onclick="logout()" class="mobile-menu-link logout">
+                          <i class="fas fa-sign-out-alt"></i> Sair
+                        </a>
+                      </li>
+                </ul>
             </div>
-    </header>
+    
+            <button class="close-btn" onclick="closeMobileMenu()">
+                <i class="fas fa-times-circle"></i>
+            </button>
+        </div>
+    </div>
+
+</header>
     <main class="premium-info">
         <section class="hero">
             <h2>💎 Vantagens Exclusivas do Plano Premium</h2>
@@ -844,6 +909,207 @@ onmouseout="this.style.transform='scale(1)'"
             </div>
         </section>
         <script src="https://sdk.mercadopago.com/js/v2"></script>
+
+
+        <script>
+            // Funções para abrir e fechar o menu mobile
+function openMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'block';
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'none';
+    }
+
+      // Função para exibir/esconder o menu ao clicar no ícone do usuário
+      function toggleUserMenu(event) {
+    event.preventDefault();
+    let userMenu = document.querySelector('.user-menu');
+    userMenu.classList.toggle('open');
+}
+
+
+    // ✅ Função para exibir/esconder o menu no mobile
+function toggleMobileUserMenu(event) {
+    event.preventDefault();
+    let menu = document.getElementById('mobile-user-dropdown');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+fetch('/check-login')
+    .then(response => response.json())
+    .then(data => {
+        
+        let userNameElement = document.getElementById('user-name');
+        let relatorioOption = document.getElementById('relatorio-option');
+        let mobileRelatorioOption = document.getElementById('mobile-relatorio-option');
+        let userNameText = document.getElementById('user-name-text');
+        let loginOption = document.getElementById('login-option');
+        let logoutOption = document.getElementById('logout-option');
+        let meusTemplatesOption = document.getElementById('meus-templates-option');
+
+        let mobileUserNameElement = document.getElementById('mobile-user-name');
+        let mobileUserNameText = document.getElementById('mobile-username-text');
+        let mobileLoginOption = document.getElementById('mobile-login-option');
+        let mobileLogoutOption = document.getElementById('mobile-logout-option');
+        let mobileUserText = document.getElementById('mobile-user-name-text');
+        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+
+        let editarDadosOption = document.getElementById('editar-dados-option');
+        let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
+
+        if (data.logged_in) {
+
+            if (relatorioOption) relatorioOption.style.display = 'block';
+            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'block';
+
+            if (data.premium_level) {
+                document.getElementById('user-premium-info').textContent = 
+                    data.premium_level === 'free' 
+                        ? 'Plano Gratuito'
+                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+
+                document.getElementById('mobile-user-premium-info').textContent = 
+                    data.premium_level === 'free' 
+                        ? 'Plano Gratuito'
+                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+            }
+
+            loginOption.style.display = 'none';
+            logoutOption.style.display = 'block';
+            meusTemplatesOption.style.display = 'block';
+
+            mobileLoginOption.style.display = 'none';
+            mobileLogoutOption.style.display = 'block';
+            mobileMeusTemplatesOption.style.display = 'block';
+
+            if (data.premium_level && data.premium_level !== 'free') {
+    const adminOption = document.getElementById('admin-lojas-option');
+    const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
+    if (adminOption) adminOption.style.display = 'block';
+    if (mobileAdminOption) mobileAdminOption.style.display = 'block';
+}
+
+            if (data.user_name) {
+                userNameText.textContent = data.user_name;
+
+                // ✅ Desktop Avatar
+                const avatarContainer = document.getElementById('user-avatar-container');
+                avatarContainer.innerHTML = '';
+                if (data.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = 'Avatar';
+                    img.style.width = '28px';
+                    img.style.height = '28px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    avatarContainer.appendChild(img);
+                } else {
+
+
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user user-icon';
+                    avatarContainer.appendChild(icon);
+                }
+
+                // ✅ Mobile Avatar
+                const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
+                mobileAvatarContainer.innerHTML = '';
+                if (data.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = 'Avatar';
+                    img.style.width = '28px';
+                    img.style.height = '28px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    mobileAvatarContainer.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user';
+                    mobileAvatarContainer.appendChild(icon);
+                }
+
+                const mobileSpan = document.createElement('span');
+                mobileSpan.id = 'mobile-user-name-text';
+                mobileSpan.textContent = data.user_name;
+                mobileAvatarContainer.appendChild(mobileSpan);
+
+                userNameElement.style.display = 'block';
+                editarDadosOption.style.display = 'block';
+                mobileEditarDadosOption.style.display = 'block';
+                mobileUserNameText.textContent = data.user_name;
+                mobileUserNameElement.style.display = 'block';
+                mobileUserText.textContent = data.user_name;
+            }
+        } else {
+            if (relatorioOption) relatorioOption.style.display = 'none';
+            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'none';
+
+            loginOption.style.display = 'block';
+            logoutOption.style.display = 'none';
+            meusTemplatesOption.style.display = 'none';
+            userNameElement.style.display = 'none';
+
+            mobileLoginOption.style.display = 'block';
+            mobileLogoutOption.style.display = 'none';
+            mobileMeusTemplatesOption.style.display = 'none';
+            editarDadosOption.style.display = 'none';
+            mobileEditarDadosOption.style.display = 'none';
+            mobileUserNameElement.style.display = 'none';
+            mobileUserText.textContent = "Entrar";
+        }
+    })
+    .catch(error => console.error('Erro ao verificar login:', error));
+
+
+
+// ✅ Função para logout e redirecionamento
+function logout() {
+    fetch('/logout', { method: 'POST' })
+        .then(() => {
+            window.location.href = '/login'; // Redireciona para a página de login
+        });
+}
+
+// ✅ Fecha o dropdown se clicar fora dele (Desktop e Mobile)
+document.addEventListener('click', function(event) {
+    let userMenu = document.querySelector('.user-menu');
+    let userIcon = document.getElementById('user-profile');
+
+    let mobileUserMenu = document.querySelector('.mobile-user-menu');
+    let mobileUserIcon = document.getElementById('mobile-user-profile');
+
+    // Fecha menu desktop
+    if (!userIcon.contains(event.target) && !userMenu.contains(event.target)) {
+        userMenu.classList.remove('open');
+    }
+
+    // Fecha menu mobile
+    if (!mobileUserIcon.contains(event.target) && !mobileUserMenu.contains(event.target)) {
+        mobileUserMenu.classList.remove('open');
+    }
+});
+
+
+
+
+
+    document.getElementById('mobile-logout-option').addEventListener('click', function() {
+        fetch('/logout', { method: 'POST' }).then(() => window.location.reload());
+    });
+
+    // Funções para abrir e fechar o menu mobile
+    function openMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'block';
+    }
+
+    function closeMobileMenu() {
+        document.getElementById('mobileMenuModal').style.display = 'none';
+    }
+
+
+        </script>
         <script>
             
             const mp = new MercadoPago("APP_USR-89864dff-9816-40cb-814e-e9175dc2e68c");
@@ -888,14 +1154,7 @@ function verificarPagamento(servico) {
 }
 
 
-// Funções para abrir e fechar o menu mobile
-function openMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'block';
-    }
 
-    function closeMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'none';
-    }
 
 function pagarPIX(tipo) {
   fetch(`/generate-payment-pix?servico=${tipo}`)

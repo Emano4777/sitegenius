@@ -1143,7 +1143,10 @@ iframe {
                                   </a>
                                 </li>
                                 
-                                <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                                <li id="mobile-relatorio-option">
+                                  <a href="/relatorio-free"><i class="fas fa-chart-line"></i> Visualizar meus relatórios</a>
+                                </li>
+                                
 
                                 <li>
                                   <a href="#" id="mobile-logout-option" style="display:none;" onclick="logout()" class="mobile-link">
@@ -2000,103 +2003,117 @@ if (userId) {
         });
     }
 
-    // Verifica login
     fetch('/check-login')
-        .then(response => response.json())
-        .then(data => {
-            const userNameElement = document.getElementById('user-name');
-        const userNameText = document.getElementById('user-name-text');
-        const loginOption = document.getElementById('login-option');
-        const logoutOption = document.getElementById('logout-option');
-        const meusTemplatesOption = document.getElementById('meus-templates-option');
+    .then(response => response.json())
+    .then(data => {
+        
+        let userNameElement = document.getElementById('user-name');
+        let relatorioOption = document.getElementById('relatorio-option');
+        let mobileRelatorioOption = document.getElementById('mobile-relatorio-option');
+        let userNameText = document.getElementById('user-name-text');
+        let loginOption = document.getElementById('login-option');
+        let logoutOption = document.getElementById('logout-option');
+        let meusTemplatesOption = document.getElementById('meus-templates-option');
+
+        let mobileUserNameElement = document.getElementById('mobile-user-name');
+        let mobileUserNameText = document.getElementById('mobile-username-text');
+        let mobileLoginOption = document.getElementById('mobile-login-option');
+        let mobileLogoutOption = document.getElementById('mobile-logout-option');
+        let mobileUserText = document.getElementById('mobile-user-name-text');
+        let mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
+
         let editarDadosOption = document.getElementById('editar-dados-option');
         let mobileEditarDadosOption = document.getElementById('mobile-editar-dados-option');
 
-        const mobileUserNameElement = document.getElementById('mobile-user-name');
-        const mobileUserNameText = document.getElementById('mobile-username-text');
-        const mobileLoginOption = document.getElementById('mobile-login-option');
-        const mobileLogoutOption = document.getElementById('mobile-logout-option');
-        const mobileUserText = document.getElementById('mobile-user-name-text');
-        const mobileMeusTemplatesOption = document.getElementById('mobile-meus-templates-option');
-
-        const avatarContainer = document.getElementById('user-avatar-container');
-        const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
-
         if (data.logged_in) {
-            if (data.premium_level) {
-                document.getElementById('user-premium-info').textContent =
-                    data.premium_level === 'free' ? 'Plano Gratuito' :
-                    `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
 
-                document.getElementById('mobile-user-premium-info').textContent =
-                    data.premium_level === 'free' ? 'Plano Gratuito' :
-                    `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+            if (relatorioOption) relatorioOption.style.display = 'block';
+            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'block';
+
+            if (data.premium_level) {
+                document.getElementById('user-premium-info').textContent = 
+                    data.premium_level === 'free' 
+                        ? 'Plano Gratuito'
+                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
+
+                document.getElementById('mobile-user-premium-info').textContent = 
+                    data.premium_level === 'free' 
+                        ? 'Plano Gratuito'
+                        : `Plano ${data.premium_level.charAt(0).toUpperCase() + data.premium_level.slice(1)}`;
             }
 
             loginOption.style.display = 'none';
             logoutOption.style.display = 'block';
             meusTemplatesOption.style.display = 'block';
-            editarDadosOption.style.display = 'block';
-            mobileEditarDadosOption.style.display = 'block';
+
             mobileLoginOption.style.display = 'none';
             mobileLogoutOption.style.display = 'block';
             mobileMeusTemplatesOption.style.display = 'block';
 
             if (data.premium_level && data.premium_level !== 'free') {
-  document.getElementById('admin-lojas-option').style.display = 'block';
-  document.getElementById('mobile-admin-lojas-option').style.display = 'block';
+    const adminOption = document.getElementById('admin-lojas-option');
+    const mobileAdminOption = document.getElementById('mobile-admin-lojas-option');
+    if (adminOption) adminOption.style.display = 'block';
+    if (mobileAdminOption) mobileAdminOption.style.display = 'block';
 }
 
-
-
-            // Avatar Desktop
-            avatarContainer.innerHTML = '';
-            if (data.avatar_url) {
-                const img = document.createElement('img');
-                img.src = data.avatar_url;
-                img.alt = 'Avatar';
-                img.style.width = '28px';
-                img.style.height = '28px';
-                img.style.borderRadius = '50%';
-                img.style.objectFit = 'cover';
-                avatarContainer.appendChild(img);
-            } else {
-                const icon = document.createElement('i');
-                icon.className = 'fas fa-user user-icon';
-                avatarContainer.appendChild(icon);
-                editarDadosOption.style.display = 'none';
-                mobileEditarDadosOption.style.display = 'none';
-
-            }
-
-            // Avatar Mobile
-            mobileAvatarContainer.innerHTML = '';
-            if (data.avatar_url) {
-                const img = document.createElement('img');
-                img.src = data.avatar_url;
-                img.alt = 'Avatar';
-                img.style.width = '28px';
-                img.style.height = '28px';
-                img.style.borderRadius = '50%';
-                img.style.objectFit = 'cover';
-                mobileAvatarContainer.appendChild(img);
-            } else {
-                const icon = document.createElement('i');
-                icon.className = 'fas fa-user';
-                mobileAvatarContainer.appendChild(icon);
-            }
-
-            // Nome
             if (data.user_name) {
                 userNameText.textContent = data.user_name;
-                userNameElement.style.display = 'block';
 
+                // ✅ Desktop Avatar
+                const avatarContainer = document.getElementById('user-avatar-container');
+                avatarContainer.innerHTML = '';
+                if (data.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = 'Avatar';
+                    img.style.width = '28px';
+                    img.style.height = '28px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    avatarContainer.appendChild(img);
+                } else {
+
+
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user user-icon';
+                    avatarContainer.appendChild(icon);
+                }
+
+                // ✅ Mobile Avatar
+                const mobileAvatarContainer = document.getElementById('mobile-user-avatar-container');
+                mobileAvatarContainer.innerHTML = '';
+                if (data.avatar_url) {
+                    const img = document.createElement('img');
+                    img.src = data.avatar_url;
+                    img.alt = 'Avatar';
+                    img.style.width = '28px';
+                    img.style.height = '28px';
+                    img.style.borderRadius = '50%';
+                    img.style.objectFit = 'cover';
+                    mobileAvatarContainer.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-user';
+                    mobileAvatarContainer.appendChild(icon);
+                }
+
+                const mobileSpan = document.createElement('span');
+                mobileSpan.id = 'mobile-user-name-text';
+                mobileSpan.textContent = data.user_name;
+                mobileAvatarContainer.appendChild(mobileSpan);
+
+                userNameElement.style.display = 'block';
+                editarDadosOption.style.display = 'block';
+                mobileEditarDadosOption.style.display = 'block';
                 mobileUserNameText.textContent = data.user_name;
                 mobileUserNameElement.style.display = 'block';
                 mobileUserText.textContent = data.user_name;
             }
-
         } else {
+            if (relatorioOption) relatorioOption.style.display = 'none';
+            if (mobileRelatorioOption) mobileRelatorioOption.style.display = 'none';
+
             loginOption.style.display = 'block';
             logoutOption.style.display = 'none';
             meusTemplatesOption.style.display = 'none';
@@ -2105,6 +2122,8 @@ if (userId) {
             mobileLoginOption.style.display = 'block';
             mobileLogoutOption.style.display = 'none';
             mobileMeusTemplatesOption.style.display = 'none';
+            editarDadosOption.style.display = 'none';
+            mobileEditarDadosOption.style.display = 'none';
             mobileUserNameElement.style.display = 'none';
             mobileUserText.textContent = "Entrar";
         }
