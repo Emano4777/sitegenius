@@ -709,8 +709,9 @@ def exibir_site_por_id(template_id, page):
 
 
 
-@app.route('/<subdomain>/<page>')
+@app.route('/<subdomain>/<page>', methods=["GET", "POST"])
 def exibir_site_por_subdominio(subdomain, page):
+
     conn = get_db_connection()
     cur = conn.cursor()
 
@@ -743,6 +744,21 @@ def exibir_site_por_subdominio(subdomain, page):
     
     if template_name == "template18":
         if page == "eventos":
+            if request.method == 'POST':
+                titulo = request.form.get("titulo")
+                descricao = request.form.get("descricao")
+                imagem = request.form.get("imagem")
+
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO eventos (titulo, descricao, imagem, comunidade, data, autor, aprovado)
+                    VALUES (%s, %s, %s, %s, NOW(), %s, FALSE)
+                """, (titulo, descricao, imagem, subdomain, 'anônimo'))
+                conn.commit()
+                cur.close(); conn.close()
+                return '', 200
+
             cur.execute("""
                 SELECT id, titulo, descricao, imagem, data, autor, aprovado
                 FROM eventos
@@ -1190,8 +1206,8 @@ def logout_cliente(subdomain):
     return redirect(f'/{subdomain}/login-cliente')
 
 
-@app.route('/<subdomain>')
-@app.route('/<subdomain>/index')
+@app.route('/<subdomain>', methods=["GET", "POST"])
+@app.route('/<subdomain>/index', methods=["GET", "POST"])
 def index_loja(subdomain):
     print(f"[DEBUG] Subdomínio acessado: {subdomain}")
 
@@ -1232,6 +1248,21 @@ def index_loja(subdomain):
        
 
     elif template_name == "template18":
+        if request.method == 'POST':
+            titulo = request.form.get("titulo")
+            descricao = request.form.get("descricao")
+            imagem = request.form.get("imagem")
+
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO classificados (titulo, descricao, imagem, comunidade, data, autor, aprovado)
+                VALUES (%s, %s, %s, %s, NOW(), %s, FALSE)
+            """, (titulo, descricao, imagem, subdomain, 'anônimo'))
+            conn.commit()
+            cur.close(); conn.close()
+            return '', 200
+
         cur.close(); conn.close()
 
         conn = get_db_connection()
