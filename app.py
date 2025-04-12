@@ -706,7 +706,9 @@ def exibir_site_por_id(template_id, page):
     print(html[:1000])  # imprime os primeiros 1000 caracteres do HTML
 
     return Response(html, mimetype='text/html')
-
+@app.route('/novidades')
+def novidades():
+    return render_template('novidades.html')
 
 
 @app.route('/<subdomain>/<page>', methods=["GET", "POST"])
