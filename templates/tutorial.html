@@ -23,6 +23,28 @@
     opacity: 1 !important;
     pointer-events: all !important;
   }
+
+  .tooltip-chatbot {
+  position: fixed;
+  bottom: 100px;
+  right: 35px;
+  background: white;
+  color: #333;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  max-width: 260px;
+  display: none;
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
     header {
       background: linear-gradient(to right, #1f2937, #374151);
       color: white;
@@ -428,7 +450,6 @@ accordions.forEach(btn => {
 });
 
 
-
   </script>
 <script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
@@ -463,6 +484,37 @@ function enviarMensagemSuporte() {
     });
   };
 </script>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const tooltip = document.getElementById('chatbot-tooltip');
+    let visible = false;
+
+    setInterval(() => {
+      if (!visible) {
+        tooltip.style.display = 'block';
+        visible = true;
+      } else {
+        tooltip.style.display = 'none';
+        visible = false;
+      }
+    }, 5000); // alterna a cada 10 segundos
+
+    // Se clicar no chat do botpress, esconde o tooltip
+    const interval = setInterval(() => {
+      const botBtn = document.querySelector('iframe[title="Botpress Webchat"]');
+      if (botBtn) {
+        botBtn.addEventListener('click', () => {
+          tooltip.style.display = 'none';
+        });
+        clearInterval(interval);
+      }
+    }, 500);
+  });
+</script>
+
+<div id="chatbot-tooltip" class="tooltip-chatbot">
+  👋 Oi! Eu sou o assistente virtual da SiteGenius. Como posso te ajudar?
+</div>
 
 <!-- Botão Flutuante de Suporte -->
 <button id="abrirModalAjuda" style="
