@@ -30,13 +30,13 @@
 #login-text {
     margin-right: 8px;
 }
-
 /* Cabeçalho */
 header {
     background: white;
     color: black;
-    padding: 1px 0;
+    padding: 20px 0;
     position: fixed;
+    z-index: 1000; /* base para o header */
     width: 100%;
     top: 0;
     left: 0;
@@ -559,12 +559,13 @@ footer .container {
         <!-- ✅ Navbar Desktop Corrigida -->
         <nav class="desktop-nav">
             <ul>
-                <li><a href="/"><i class="fas fa-home"></i> Início</a></li>
+
                 <li><a href="/templates"><i class="fas fa-th"></i> Templates</a></li>
                 <li><a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a></li>
                 <li><a href="/novidades"><i class="fas fa-bolt"></i> Novidades</a></li>
                 <li><a href="/preco"><i class="fas fa-gem"></i> Seja Premium</a></li>
-                
+
+               
     
                 <!-- ✅ Avatar e Dropdown -->
                 <li class="user-menu">
@@ -621,12 +622,12 @@ footer .container {
     <!-- ✅ Menu Mobile -->
     <div class="mobile-menu-modal" id="mobileMenuModal">
         <div class="mobile-menu-content">
-            <a href="/"><i class="fas fa-home"></i> Início</a>
             <a href="/templates"><i class="fas fa-th"></i> Templates</a>
             <a href="/tutorial"><i class="fas fa-headset"></i> Central de Ajuda</a>
             <a href="/novidades"><i class="fas fa-bolt"></i> Novidades</a>
             <a href="/preco"><i class="fas fa-gem"></i> Seja Premium</a>
 
+            
     
             <!-- ✅ Avatar Mobile -->
             <div class="mobile-user-menu">
