@@ -19,6 +19,28 @@ body {
     color: #333;
     text-align: center;
 }
+@media (max-width: 480px) {
+  footer .container div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  footer a {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: normal; /* <-- ESSENCIAL pra alinhar com o ícone */
+  text-align: center;
+}
+
+  footer i.fab {
+    font-size: 16px;
+  }
+}
 
 /* Ajuste no botão "Entrar" */
 #login-option {
@@ -1209,6 +1231,19 @@ document.getElementById("form-exp").addEventListener("submit", function(e) {
 });
   </script>
   
-
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
+      <div style="margin-top: 10px;">
+        <a href="https://www.instagram.com/sitegeniuss/" target="_blank" style="margin: 0 10px; color: #E1306C; font-weight: 500; text-decoration: none;">
+          <i class="fab fa-instagram"></i> Siga-nos no Instagram
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61575372832253" target="_blank" style="margin: 0 10px; color: #3b5998; font-weight: 500; text-decoration: none;">
+          <i class="fab fa-facebook"></i> Siga-nos no Facebook
+        </a>
+      </div>
+    </div>
+  </footer>
+  
 </body>
 </html>

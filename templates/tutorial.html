@@ -96,6 +96,19 @@
       padding-left: 10px;
       color: #1f2937;
     }
+    /* Rodapé */
+footer {
+  background: white;
+  color: black;
+  padding: 15px 0;
+  margin-top: 40px;
+}
+
+footer .container {
+  max-width: 1200px;
+  margin: auto;
+  text-align: center;
+}
     nav ul {
       list-style: none;
       padding: 0;
@@ -247,6 +260,28 @@
   }
 }
 
+@media (max-width: 480px) {
+  footer .container div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  footer a {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: normal; /* <-- ESSENCIAL pra alinhar com o ícone */
+  text-align: center;
+}
+
+  footer i.fab {
+    font-size: 16px;
+  }
+}
 
   </style>
 </head>
@@ -578,4 +613,6 @@ align-items: center;
 </div>
 
 </body>
+
+
 </html>

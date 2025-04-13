@@ -39,6 +39,9 @@
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
 }
+body.menu-open {
+  overflow: hidden;
+}
 
 body {
     background-color: #f9f9f9;
@@ -71,6 +74,7 @@ header {
     color: black;
     padding: 20px 0;
     position: fixed;
+    z-index: 1000; /* base para o header */
     width: 100%;
     top: 0;
     left: 0;
@@ -112,15 +116,16 @@ nav ul li a:hover {
     text-decoration: underline;
 }
 
-/* Hero Section */
 .hero {
-    margin-top: 100px;
+    margin-top: 2px;
     padding: 80px 20px;
     background: url('https://source.unsplash.com/1600x900/?technology,website') center/cover no-repeat;
     color: #1E2A38;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    overflow: visible;
+    z-index: 3; /* <-- ADICIONE isso */
+    position: relative; /* <-- ADICIONE isso também */
 }
-
 .hero h2 {
     font-size: 36px;
     font-weight: 600;
@@ -198,12 +203,12 @@ footer .container {
     margin: auto;
     text-align: center;
 }
-/* ✅ Ajuste no menu do usuário */
 .user-menu {
     position: relative;
     display: flex;
     align-items: center;
     cursor: pointer;
+    z-index: 999999 !important;/* forçando a ficar acima de tudo */
 }
 
 /* ✅ Estilização do nome do usuário no dropdown */
@@ -248,8 +253,9 @@ footer .container {
     display: none;
     position: absolute;
     top: 50px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: auto;
+    right: 0;
+    transform: none;
     background: white;
     list-style: none;
     padding: 10px 0;
@@ -259,6 +265,7 @@ footer .container {
     text-align: center;
     opacity: 0; /* garanta que começa invisível */
     transition: opacity 0.3s ease;
+    z-index: 999999 !important;
 }
 
 /* ✅ Melhor visibilidade do texto */
@@ -290,6 +297,7 @@ footer .container {
     display: block;
     opacity: 1;
     transform: translateY(0);
+    z-index: 999999 !important;
 }
 
 /* ✅ Efeito de exibição do dropdown */
@@ -322,7 +330,7 @@ footer .container {
     background: #1E2A38;
     box-shadow: -3px 0px 10px rgba(0, 0, 0, 0.2);
     padding: 20px;
-    z-index: 1000;
+    z-index: 999999 !important;
 }
 
 .mobile-menu-content {
@@ -439,6 +447,7 @@ footer .container {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
     min-width: 180px;
     text-align: center;
+    z-index: 999999 !important;
 }
 
 .mobile-dropdown-menu li {
@@ -501,8 +510,11 @@ footer .container {
 
 .template-carousel {
   padding: 60px 20px;
+  padding-top: calc(100px + 60px);
   background: #fff;
   text-align: center;
+  z-index: 1;
+  position: relative;
 }
 
 .template-caption {
@@ -530,8 +542,11 @@ footer .container {
 }
 .swiper {
   width: 100%;
+  z-index: 1 !important;
   padding-top: 20px;
   padding-bottom: 20px;
+  position: relative;
+  overflow: hidden;
 }
 .swiper-slide {
     display: flex;
@@ -542,7 +557,13 @@ footer .container {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1;
   
+}
+
+.swiper-container-wrapper {
+    position: relative;
+    z-index: 0;
 }
 .swiper-slide img {
   width: 360px;
@@ -634,7 +655,7 @@ footer .container {
   }
 
   .template-carousel {
-    padding: 40px 10px;
+    padding: calc(100px + 40px) 10px 40px;
   }
 }
 
@@ -675,6 +696,31 @@ footer .container {
     padding: 12px 14px;
   }
 }
+@media (max-width: 480px) {
+  footer .container div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  footer a {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: normal; /* <-- ESSENCIAL pra alinhar com o ícone */
+  text-align: center;
+}
+
+  footer i.fab {
+    font-size: 16px;
+  }
+}
+
+
+
 </style>
 </head>
 <body> 
@@ -810,49 +856,53 @@ footer .container {
         </div>
 
     </header>
+    <section class="template-carousel">
+        <div class="container">
+          <h2 class="template-carousel-title">
+            <i class="fas fa-star" style="margin-right: 10px; color: #e68900;"></i>
+            Alguns dos templates gratuitos que temos disponíveis
+          </h2>
+          <p style="font-size: 14px; color: #555; margin-top: 8px;">
+            E isso é só o começo! Temos muito mais na opção <strong>Explorar Templates</strong> logo abaixo. Aproveite, é grátis! 🚀
+          </p>
+          <div class="swiper-container-wrapper">
+            <div class="swiper mySwiper">
+              <div class="swiper-wrapper">
+      
+          <div class="swiper-slide">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150318_zueffu.png" alt="Personal Trainer">
+            <div class="template-caption">Personal Trainer</div>
+          </div>
+          <div class="swiper-slide">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150512_ptf2xv.png" alt="Manicure">
+            <div class="template-caption">Manicure</div>
+          </div>
+          <div class="swiper-slide">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150447_cyrjts.png" alt="Academia">
+            <div class="template-caption">Academia</div>
+          </div>
+          <div class="swiper-slide">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150421_xftfrh.png" alt="Restaurante">
+            <div class="template-caption">Restaurante</div>
+          </div>
+          <div class="swiper-slide">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744568684/Captura_de_tela_2025-04-13_152259_pgqzpl.png" alt="Loja Virtual">
+            <div class="template-caption">Salão de Beleza</div>
+          </div>
+          <div class="swiper-slide">
+            <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744568684/Captura_de_tela_2025-04-13_152423_nrrugw.png" alt="Loja Virtual">
+            <div class="template-caption">Loja de Roupa</div>
+          </div>
+        </div>
+      </div>
+    </div>
+</section>
 
     <section class="hero">
         <div class="container">
 
 
-            <h2 class="template-carousel-title">
-                <i class="fas fa-star" style="margin-right: 10px; color: #e68900;"></i>
-                Alguns dos templates gratuitos que temos disponíveis
-              </h2>
-              <p style="font-size: 14px; color: #555; margin-top: 8px;">
-                E isso é só o começo! Temos muito mais na opção <strong>Explorar Templates</strong> logo abaixo. Aproveite, é grátis! 🚀
-              </p>
-              
-              <div class="swiper mySwiper">
-                <div class="swiper-wrapper">
-                  <div class="swiper-slide">
-                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150318_zueffu.png" alt="Personal Trainer">
-                    <div class="template-caption">Personal Trainer</div>
-                  </div>
-                  <div class="swiper-slide">
-                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150512_ptf2xv.png" alt="Manicure">
-                    <div class="template-caption">Manicure</div>
-                  </div>
-                  <div class="swiper-slide">
-                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150447_cyrjts.png" alt="Academia">
-                    <div class="template-caption">Academia</div>
-                  </div>
-                  <div class="swiper-slide">
-                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150421_xftfrh.png" alt="Restaurante">
-                    <div class="template-caption">Restaurante</div>
-                  </div>
-                  <div class="swiper-slide">
-                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744568684/Captura_de_tela_2025-04-13_152259_pgqzpl.png" alt="Loja Virtual">
-                    <div class="template-caption">Salão de Beleza</div>
-                  </div>
-                  <div class="swiper-slide">
-                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744568684/Captura_de_tela_2025-04-13_152423_nrrugw.png" alt="Loja Virtual">
-                    <div class="template-caption">Loja de Roupa</div>
-                  </div>
-                </div>
-              </div>
-              
-
+          
             <h2>
                 <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo SiteGenius" style="height: 35px; vertical-align: middle; margin-right: 10px;">
                 Crie seu site e aplicativo facilmente!
@@ -916,7 +966,7 @@ footer .container {
             <strong>— Aline, Estética Bela</strong>
           </div>
         </div>
-      </section>s
+      </section>
     {% if not is_premium %}
     <a href="/preco" class="floating-premium-btn">
         <i class="fas fa-gem"></i> Vantagens Premium
@@ -1103,13 +1153,13 @@ document.addEventListener('click', function(event) {
 
     // Funções para abrir e fechar o menu mobile
     function openMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'block';
-    }
-
-    function closeMobileMenu() {
-        document.getElementById('mobileMenuModal').style.display = 'none';
-    }
-
+    document.getElementById('mobileMenuModal').style.display = 'block';
+    document.body.classList.add('menu-open'); // trava o scroll
+}
+function closeMobileMenu() {
+    document.getElementById('mobileMenuModal').style.display = 'none';
+    document.body.classList.remove('menu-open'); // libera o scroll de novo
+}
 
     </script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -1168,10 +1218,20 @@ document.addEventListener('click', function(event) {
     
 <script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
-        </div>
-    </footer>
+<footer>
+    <div class="container">
+      <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
+      <div style="margin-top: 10px;">
+        <a href="https://www.instagram.com/sitegeniuss/" target="_blank" style="margin: 0 10px; color: #E1306C; font-weight: 500; text-decoration: none;">
+          <i class="fab fa-instagram"></i> Siga-nos no Instagram
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61575372832253" target="_blank" style="margin: 0 10px; color: #3b5998; font-weight: 500; text-decoration: none;">
+          <i class="fab fa-facebook"></i> Siga-nos no Facebook
+        </a>
+      </div>
+    </div>
+  </footer>
+  
+  
 </body>
 </html>

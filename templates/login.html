@@ -269,6 +269,29 @@ header h1 {
   }
 }
 
+@media (max-width: 480px) {
+  footer .container div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  footer a {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  line-height: normal; /* <-- ESSENCIAL pra alinhar com o ícone */
+  text-align: center;
+}
+
+  footer i.fab {
+    font-size: 16px;
+  }
+}
+
 
   </style>
 </head>
@@ -349,9 +372,21 @@ header h1 {
 
       <a href="/register" class="register-link">Não tem uma conta? Registre-se</a>
 
-    <div class="footer-text">
-      © 2025 SiteGenius · Todos os direitos reservados
-    </div>
+      <footer>
+        <div class="container">
+          <p>&copy; 2025 Site Genius - Todos os direitos reservados.</p>
+          <div style="margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <a href="https://www.instagram.com/sitegeniuss/" target="_blank" 
+               style="margin: 0 10px; color: #E1306C; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+              <i class="fab fa-instagram" style="font-size: 16px;"></i> Siga-nos no Instagram 
+            </a>
+            <a href="https://www.facebook.com/profile.php?id=61575372832253" target="_blank" 
+               style="margin: 0 10px; color: #3b5998; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+              <i class="fab fa-facebook" style="font-size: 16px;"></i> Siga-nos no Facebook
+            </a>
+          </div>
+        </div>
+      </footer>
   </div>
 </div>
   
