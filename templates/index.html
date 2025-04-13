@@ -11,6 +11,8 @@
 
   gtag('config', 'G-H7B8XFZ5Q6');
 </script>
+    <!-- Swiper CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
 
     <link rel="icon" href="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" type="image/x-icon">
     <script async src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744072344/ChatGPT_Image_7_de_abr._de_2025_21_32_14_rd0uwq.png"
@@ -373,6 +375,24 @@ footer .container {
     cursor: pointer;
     margin-top: 20px;
 }
+
+.testimonials {
+  padding: 60px 20px;
+  background: #fff;
+}
+.testimonial-list {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.testimonial-item {
+  max-width: 350px;
+  background: #f1f1f1;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
 .logout-link,
 #meus-templates-option,
 #editar-dados-option {
@@ -479,7 +499,61 @@ footer .container {
   border-bottom: 1px dashed #ccc;
 }
 
+.template-carousel {
+  padding: 60px 20px;
+  background: #fff;
+  text-align: center;
+}
 
+.template-caption {
+  font-size: 12px;
+  color: #555;
+  margin-top: 8px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.template-carousel-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1E2A38;
+  margin-bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.template-carousel h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+.swiper {
+  width: 100%;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+.swiper-slide {
+    display: flex;
+    flex-direction: column;
+  text-align: center;
+  font-size: 18px;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+}
+.swiper-slide img {
+  width: 360px;
+  height: auto;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+.swiper-slide img:hover {
+  transform: scale(1.03);
+}
 .floating-premium-btn:hover {
     background: #e0b800;
     transform: scale(1.05);
@@ -536,6 +610,70 @@ footer .container {
 
 
 
+}
+
+/* ✅ Ajustes para imagens do Swiper e legendas em telas menores */
+@media (max-width: 768px) {
+  .swiper-slide img {
+    width: 90%; /* reduz um pouco o tamanho */
+  }
+
+  .template-caption {
+    font-size: 11px;
+    padding: 0 10px;
+  }
+}
+
+/* ✅ Ajustes do carrossel de templates */
+@media (max-width: 768px) {
+  .template-carousel-title {
+    font-size: 22px;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .template-carousel {
+    padding: 40px 10px;
+  }
+}
+
+/* ✅ Ajustes do botão flutuante premium */
+@media (max-width: 768px) {
+  .floating-premium-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    bottom: 20px;
+    left: 20px;
+  }
+}
+/* ✅ Responsividade para Testimonials */
+@media (max-width: 768px) {
+  .testimonials {
+    padding: 40px 10px;
+  }
+
+  .testimonial-list {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .testimonial-item {
+    width: 90%;
+    max-width: 100%;
+  }
+}
+
+/* ✅ Responsividade para o tooltip do chatbot */
+@media (max-width: 768px) {
+  .tooltip-chatbot {
+    bottom: 80px;
+    right: 15px;
+    max-width: 220px;
+    font-size: 13px;
+    padding: 12px 14px;
+  }
 }
 </style>
 </head>
@@ -672,8 +810,49 @@ footer .container {
         </div>
 
     </header>
+
     <section class="hero">
         <div class="container">
+
+
+            <h2 class="template-carousel-title">
+                <i class="fas fa-star" style="margin-right: 10px; color: #e68900;"></i>
+                Alguns dos templates gratuitos que temos disponíveis
+              </h2>
+              <p style="font-size: 14px; color: #555; margin-top: 8px;">
+                E isso é só o começo! Temos muito mais na opção <strong>Explorar Templates</strong> logo abaixo. Aproveite, é grátis! 🚀
+              </p>
+              
+              <div class="swiper mySwiper">
+                <div class="swiper-wrapper">
+                  <div class="swiper-slide">
+                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150318_zueffu.png" alt="Personal Trainer">
+                    <div class="template-caption">Personal Trainer</div>
+                  </div>
+                  <div class="swiper-slide">
+                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150512_ptf2xv.png" alt="Manicure">
+                    <div class="template-caption">Manicure</div>
+                  </div>
+                  <div class="swiper-slide">
+                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150447_cyrjts.png" alt="Academia">
+                    <div class="template-caption">Academia</div>
+                  </div>
+                  <div class="swiper-slide">
+                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744567684/Captura_de_tela_2025-04-13_150421_xftfrh.png" alt="Restaurante">
+                    <div class="template-caption">Restaurante</div>
+                  </div>
+                  <div class="swiper-slide">
+                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744568684/Captura_de_tela_2025-04-13_152259_pgqzpl.png" alt="Loja Virtual">
+                    <div class="template-caption">Salão de Beleza</div>
+                  </div>
+                  <div class="swiper-slide">
+                    <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1744568684/Captura_de_tela_2025-04-13_152423_nrrugw.png" alt="Loja Virtual">
+                    <div class="template-caption">Loja de Roupa</div>
+                  </div>
+                </div>
+              </div>
+              
+
             <h2>
                 <img src="https://res.cloudinary.com/dyyrgll7h/image/upload/v1743271953/3ca3896f-3d33-4dd5-86c0-814e030930a6_ap6g4e.png" alt="Logo SiteGenius" style="height: 35px; vertical-align: middle; margin-right: 10px;">
                 Crie seu site e aplicativo facilmente!
@@ -699,6 +878,8 @@ footer .container {
     </section>
     
 
+      
+
     <section class="features">
         <div class="container">
             <h2>Por que escolher o Site Genius?</h2>
@@ -722,6 +903,20 @@ footer .container {
             </div>
         </div>
     </section>
+
+    <section class="testimonials">
+        <h2>O que estão dizendo sobre o SiteGenius?</h2>
+        <div class="testimonial-list">
+          <div class="testimonial-item">
+            <p>"Criei o site e app da minha lanchonete em 15 minutos!"</p>
+            <strong>— João, Lanches João</strong>
+          </div>
+          <div class="testimonial-item">
+            <p>"Economizei uma grana e ficou mais bonito que site feito por agência."</p>
+            <strong>— Aline, Estética Bela</strong>
+          </div>
+        </div>
+      </section>s
     {% if not is_premium %}
     <a href="/preco" class="floating-premium-btn">
         <i class="fas fa-gem"></i> Vantagens Premium
@@ -917,6 +1112,29 @@ document.addEventListener('click', function(event) {
 
 
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+      <script>
+        const swiper = new Swiper(".mySwiper", {
+          slidesPerView: 3,
+          spaceBetween: 30,
+          loop: true,
+          autoplay: {
+            delay: 2000,
+            disableOnInteraction: false,
+          },
+          breakpoints: {
+            0: {
+              slidesPerView: 1,
+            },
+            768: {
+              slidesPerView: 2,
+            },
+            1024: {
+              slidesPerView: 3,
+            }
+          }
+        });
+      </script>
 <script>
     window.addEventListener('DOMContentLoaded', () => {
       const tooltip = document.getElementById('chatbot-tooltip');
@@ -947,7 +1165,7 @@ document.addEventListener('click', function(event) {
     <div id="chatbot-tooltip" class="tooltip-chatbot">
         👋 Oi! Eu sou o assistente virtual da SiteGenius. Como posso te ajudar?
       </div>
-      
+    
 <script src="https://cdn.botpress.cloud/webchat/v2.3/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2025/03/29/20/20250329204551-KC5PPCJ7.js"></script>
     <footer>
