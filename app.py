@@ -328,88 +328,6 @@ def gerar_site():
 
     return jsonify({"html": html_sem_style, "css": style})
 
-@app.route("/template18", methods=["GET", "POST"])
-def classificados():
-    conn = get_db_connection()
-
-    if request.method == "POST":
-        if request.is_json:
-            data = request.get_json()
-            titulo = data.get("titulo")
-            descricao = data.get("descricao")
-            imagem = data.get("imagem")
-        else:
-            titulo = request.form["titulo"]
-            descricao = request.form["descricao"]
-            imagem = request.form.get("imagem")
-
-        autor = session.get("user_name", "Anônimo")
-
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO classificados (titulo, descricao, imagem, comunidade, autor, aprovado)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (titulo, descricao, imagem, "comunidade_padrao", autor, False))
-        conn.commit()
-        cur.close()
-        return "", 200
-
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM classificados WHERE comunidade = %s AND aprovado = TRUE ORDER BY data DESC", ("comunidade_padrao",))
-    classificados = cur.fetchall()
-    cur.close()
-
-    return render_template("template18_index.html", sub="comunidade_padrao", classificados=classificados)
-
-@app.route("/template18/eventos", methods=["GET", "POST"])
-def eventos():
-    conn = get_db_connection()
-
-    if request.method == "POST": 
-        if request.is_json:
-            data = request.get_json()
-            titulo = data.get("titulo")
-            descricao = data.get("descricao")
-            imagem = data.get("imagem")
-        else:
-            titulo = request.form["titulo"]
-            descricao = request.form["descricao"]
-            imagem = request.form.get("imagem")
-
-        autor = session.get("user_name", "Anônimo")
-
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO eventos (titulo, descricao, imagem, comunidade, autor, aprovado)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (titulo, descricao, imagem, "comunidade_padrao", autor, False))
-        conn.commit()
-        cur.close()
-        return "", 200
-
-    cur = conn.cursor()
-    cur.execute("""
-    SELECT id, titulo, descricao, imagem, data, autor, aprovado 
-    FROM eventos 
-    WHERE comunidade = %s AND aprovado = TRUE 
-    ORDER BY data DESC
-""", ("comunidade_padrao",))
-
-    eventos = cur.fetchall()
-    cur.close()
-
-    eventos = [
-        (
-            *linha[:4],
-            parser.parse(linha[4]) if isinstance(linha[4], str) else linha[4],
-            *linha[5:]
-        )
-        for linha in eventos
-    ]
-
-
-    return render_template("template18_eventos.html", sub="comunidade_padrao", eventos=eventos)
-
 
 
 @app.route("/admin/classificados")
@@ -419,7 +337,13 @@ def admin_classificados():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, titulo, descricao, imagem, data, autor, aprovado FROM classificados ORDER BY data DESC")
+    cur.execute("""
+        SELECT c.id, c.titulo, c.descricao, c.imagem, c.data, c.autor, c.aprovado
+        FROM classificados c
+        JOIN user_templates ut ON ut.subdomain = c.comunidade
+        WHERE ut.user_id = %s
+        ORDER BY c.data DESC
+    """, (session["user_id"],))
     classificados = cur.fetchall()
     cur.close()
 
@@ -433,7 +357,13 @@ def admin_eventos():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT id, titulo, descricao, imagem, data, autor, aprovado FROM eventos ORDER BY data DESC")
+    cur.execute("""
+    SELECT e.id, e.titulo, e.descricao, e.imagem, e.data, e.autor, e.aprovado
+    FROM eventos e
+    JOIN user_templates ut ON ut.subdomain = e.comunidade
+    WHERE ut.user_id = %s
+    ORDER BY e.data DESC
+""", (session["user_id"],))
     eventos = cur.fetchall()
     cur.close()
 
@@ -732,7 +662,8 @@ def exibir_site_por_subdominio(subdomain, page):
         cur.close(); conn.close()
 
         # Redireciona pro index que já trata o template17 com dono_id corretamente
-        if dono and dono[1] == "template17":
+    
+        if dono and dono[1] in ["template17", "template19"]:
             return redirect(url_for('index_loja', subdomain=subdomain))
 
         return "Página não encontrada", 404
@@ -740,7 +671,7 @@ def exibir_site_por_subdominio(subdomain, page):
     html, user_id, template_name, template_id = resultado
 
     # Se for template17, redireciona para o index que já faz tudo corretamente com dono_id
-    if template_name == "template17":
+    if template_name in ["template17", "template19"]:
         cur.close(); conn.close()
         return redirect(url_for('index_loja', subdomain=subdomain))
     
@@ -1281,8 +1212,28 @@ def index_loja(subdomain):
 
         return render_template("template18_index.html", sub=subdomain, classificados=classificados)
 
-    cur.close(); conn.close()
-    return exibir_site_por_subdominio(subdomain=subdomain, page='index')
+
+    elif template_name == "template19":
+        cur.execute("""
+            SELECT nome, email, voo, problema, imagem, data_envio
+            FROM reclamacoes_voo
+            WHERE user_id = %s
+            ORDER BY data_envio DESC
+        """, (dono_id,))
+        reclamacoes = cur.fetchall()
+        cur.close(); conn.close()
+
+        return render_template("template19_index.html", subdomain=subdomain, reclamacoes=[
+            {
+                "nome": r[0],
+                "email": r[1],
+                "voo": r[2],
+                "problema": r[3],
+                "imagem": r[4],
+                "data_envio": r[5]
+            }
+            for r in reclamacoes
+        ])
 
 
 
@@ -2811,6 +2762,88 @@ def ajuda_suporte():
     except Exception as e:
         print("Erro ao enviar e-mail:", e)
         return "Erro ao enviar suporte", 500
+
+@app.route("/<subdomain>/enviar-reclamacao", methods=["POST"])
+def enviar_reclamacao(subdomain):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT user_id FROM user_templates WHERE subdomain = %s LIMIT 1", (subdomain,))
+    dono = cur.fetchone()
+
+    if not dono:
+        cur.close(); conn.close()
+        return "Loja não encontrada", 404
+
+    user_id = dono[0]
+
+    nome = request.form.get("nome")
+    email = request.form.get("email")
+    voo = request.form.get("voo")
+    problema = request.form.get("problema")
+    imagem = request.form.get("imagem")
+    whatsapp = request.form.get("whatsapp")
+
+    # Envia e-mail
+    corpo_email = f"Nova Reclamação de Voo:\n\nNome: {nome}\nE-mail: {email}\nNúmero do Voo: {voo}\nProblema: {problema}"
+    msg = MIMEText(corpo_email)
+    msg["Subject"] = "Reclamação de Voo"
+    msg["From"] = "emano4775@gmail.com"
+    msg["To"] = "emano4775@gmail.com"
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login("emano4775@gmail.com", "xgyq bidt ftpb fyfy")
+            server.send_message(msg)
+    except Exception as e:
+        print("[ERRO] Email:", e)
+
+    # Insere no banco
+    cur.execute("""
+        INSERT INTO reclamacoes_voo (nome, email, whatsapp, voo, problema, imagem, data_envio, user_id)
+        VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
+    """, (nome, email, whatsapp, voo, problema, imagem, user_id))
+    conn.commit()
+    cur.close(); conn.close()
+
+    return redirect(f"/{subdomain}/index")
+
+
+
+@app.route("/admin/reclamacoes")
+def admin_reclamacoes():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/login")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, nome, email, whatsapp, voo, problema, imagem, data_envio
+        FROM reclamacoes_voo
+        WHERE user_id = %s
+        ORDER BY data_envio DESC
+    """, (user_id,))
+    reclamacoes = cur.fetchall()
+    reclamacoes = [
+    (*r[:7], parser.parse(r[7]) if isinstance(r[7], str) else r[7])
+    for r in reclamacoes
+    ]
+    cur.close()
+    conn.close()
+
+    return render_template("admin_reclamacoes.html", reclamacoes=reclamacoes)
+
+@app.route("/admin/reclamacoes/deletar/<int:id>", methods=["POST"])
+def deletar_reclamacao(id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM reclamacoes_voo WHERE id = %s", (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect("/admin/reclamacoes")
+
+
 
 
 @app.route('/check-login')

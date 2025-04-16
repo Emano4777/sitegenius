@@ -1,0 +1,167 @@
+<!-- salve como templates/reclame_voo.html se for usar com Flask -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal de Reclamações</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 40px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background-color: #ff4d4d;
+      border: none;
+      color: white;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #e60000;
+    }
+  </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav style="background-color: #005792; padding: 15px 30px; color: white; position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 20px; font-weight: bold;"><i class="fas fa-bullhorn"></i> Portal de Reclamações</div>
+        <a href="/" style="color: white; text-decoration: none; font-size: 16px;">Início</a>
+      </nav>
+    
+      <!-- Hero -->
+      <section style="background: url('https://res.cloudinary.com/dizfq460q/image/upload/v1744831015/aviao-eletrico_zyilex.webp') center/cover no-repeat; height: 280px; display: flex; align-items: center; justify-content: center; text-align: center; color: white;">
+        <h1 style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; font-size: 32px;"><i class="fas fa-bullhorn"></i> Envie sua Reclamação</h1>
+      </section>
+    
+      <!-- Container Principal -->
+      <div class="container">
+        <h2 style="text-align:center; margin-bottom: 25px;">Preencha o formulário abaixo para registrar sua reclamação</h2>
+    
+        <form method="POST" action="/{{ subdomain }}/enviar-reclamacao">
+            <label for="nome">Seu nome</label>
+            <input type="text" id="nome" name="nome" required />
+          
+            <label for="email">Seu e-mail</label>
+            <input type="email" id="email" name="email" required />
+          
+            <label for="whatsapp">WhatsApp ou Telefone</label>
+            <input type="text" id="whatsapp" name="whatsapp" placeholder="(xx) xxxxx-xxxx" required />
+          
+            <label for="voo">Referência do problema (Ex: Nº do voo, pedido ou serviço)</label>
+            <input type="text" id="voo" name="voo" required />
+          
+            <label for="problema">Descreva o problema</label>
+            <textarea id="problema" name="problema" rows="5" required></textarea>
+          
+            <label>Imagem do problema (opcional):</label>
+            <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem_reclamacao', 'image')">
+            <input type="hidden" name="imagem" id="imagem_reclamacao">
+            <div class="preview" id="preview-imagem_reclamacao" style="margin: 10px 0;"></div>
+          
+            <button type="submit">📣 Enviar Reclamação</button>
+          </form>
+    
+        <hr style="margin: 50px 0 30px;">
+    
+        <h3 style="text-align:center;"><i class="fas fa-list-alt"></i> Reclamações Recentes</h3>
+    
+        {% for r in reclamacoes %}
+        <div style="background:#fff; border:1px solid #ddd; padding:20px; margin:20px 0; border-radius:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+          <div style="display:flex; justify-content:space-between; flex-wrap:wrap;">
+            <div>
+              <strong style="font-size: 1.1em;">{{ r.nome }}</strong><br>
+              <span style="font-size: 0.9em; color: #888;">{{ r.email }}</span>
+            </div>
+            <span style="font-size: 0.85em; color: #666;">
+                {{ r[7].strftime('%d/%m/%Y %H:%M') if r[7] is not string else r[7] }}
+              </span>
+              
+          </div>
+          <p style="margin-top: 12px;"><strong>Referência:</strong> {{ r.voo }}</p>
+          <p style="color:#333;">{{ r.problema }}</p>
+          {% if r.imagem %}
+            <img src="{{ r.imagem }}" alt="Imagem do problema" style="max-width:100%; border-radius:8px; margin-top: 10px;">
+          {% endif %}
+        </div>
+      
+        {% endfor %}
+      </div>
+
+    
+      <script src="https://kit.fontawesome.com/a2e8a0fa1f.js" crossorigin="anonymous"></script>
+      <script>
+        async function uploadParaCloudinary(inputFile, campoHidden, tipo = 'auto') {
+          const file = inputFile.files[0];
+          if (!file) return;
+      
+          try {
+            const resposta = await fetch("/gerar-assinatura-cloudinary");
+            const dados = await resposta.json();
+      
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("api_key", dados.api_key);
+            formData.append("timestamp", dados.timestamp);
+            formData.append("signature", dados.signature);
+            formData.append("folder", "experiencias_sitegenius");
+
+      
+            const url = `https://api.cloudinary.com/v1_1/${dados.cloud_name}/${tipo}/upload`;
+      
+            const response = await fetch(url, {
+              method: "POST",
+              body: formData
+            });
+      
+            const data = await response.json();
+      
+            if (data.secure_url) {
+              document.getElementById(campoHidden).value = data.secure_url;
+              const previewDiv = document.getElementById("preview-" + campoHidden);
+              previewDiv.innerHTML = `<img src="${data.secure_url}" style="max-width:100%; border-radius:8px;">`;
+            } else {
+              alert("Erro ao enviar para o Cloudinary.");
+            }
+          } catch (error) {
+            alert("Falha ao enviar imagem.");
+          }
+        }
+      </script>
+</body>
+</html>

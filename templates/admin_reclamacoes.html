@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Reclamações de Voo</title>
+  <style>
+    body { font-family: Arial; margin: 2rem; }
+    .card { background: #f4f4f4; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; }
+    form { display: inline; }
+    button { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    .responder { background: #3498db; }
+  </style>
+</head>
+<body>
+  <h1>📋 Reclamações Recebidas</h1>
+  {% for r in reclamacoes %}
+    <div class="card">
+      <p><strong>Nome:</strong> {{ r[1] }}</p>
+      <p><strong>Email:</strong> {{ r[2] }}</p>
+      <p><strong>Voo:</strong> {{ r[3] }}</p>
+      <p><strong>Problema:</strong> {{ r[4] }}</p>
+      {% if r[5] %}
+    <img src="{{ r[5] }}" alt="Imagem do problema" style="max-width:100%; margin-top:10px; border-radius:8px;">
+    {% endif %}
+
+    <p><em>Enviado em: {{ r[6] }}</em></p>
+
+      <form method="post" action="/admin/reclamacoes/deletar/{{ r[0] }}" onsubmit="return confirm('Deseja deletar essa reclamação?');">
+        <button>🗑️ Deletar</button>
+      </form>
+
+      <a class="responder" href="mailto:{{ r[2] }}?subject=Resposta sobre sua reclamação de voo" style="text-decoration:none;">
+        <button class="responder">✉️ Responder</button>
+      </a>
+    </div>
+  {% endfor %}
+</body>
+</html>
