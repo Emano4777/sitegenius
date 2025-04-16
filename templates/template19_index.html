@@ -4,57 +4,199 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <title>Portal de Reclamações</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      padding: 40px;
-    }
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  margin: 0;
+}
 
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    }
+.carousel-wrapper {
+  overflow: hidden;
+  width: 100%;
+  margin: 20px auto 0;
+  position: relative;
+}
 
-    h2 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
 
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
+.carousel-track {
+  display: flex;
+  animation: scroll-carousel 30s linear infinite;
+}
+@keyframes scroll-carousel {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.carousel-item {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  padding: 15px;
+  min-width: 280px;
+  max-width: 300px;
+  display: inline-block;
+}
 
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
 
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background-color: #ff4d4d;
-      border: none;
-      color: white;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.6em;
+}
 
-    button:hover {
-      background-color: #e60000;
-    }
+label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+  font-size: 0.95em;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+
+.carousel-wrapper:hover .carousel-track {
+  animation-play-state: paused;
+}
+
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background-color: #ff4d4d;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e60000;
+}
+main {
+  padding: 40px 20px;
+}
+/* ✅ Responsivo para telas menores */
+@media (max-width: 480px) {
+  body {
+    padding: 20px;
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  h2 {
+    font-size: 1.4em;
+  }
+
+  label {
+    font-size: 0.9em;
+  }
+
+  button {
+    font-size: 15px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-item {
+    min-width: 90% !important;
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .carousel-track {
+    gap: 10px;
+  }
+
+  input, textarea, select {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .carousel-wrapper {
+    margin: 10px 0;
+  }
+
+  .container {
+    margin: 0 10px;
+  }
+
+  button {
+    padding: 10px;
+    font-size: 14px;
+    width: 100%;
+  }
+
+  #detalhes-template19 {
+    padding: 12px;
+    font-size: 13.5px;
+  }
+
+  .carousel-item form {
+    margin-top: 10px;
+  }
+
+  .carousel-item form input,
+  .carousel-item form textarea,
+  .carousel-item form select {
+    font-size: 13px;
+    padding: 6px;
+  }
+
+  .carousel-item form button {
+    font-size: 13px;
+    padding: 8px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+  }
+
+  .carousel-item form button:hover {
+    background-color: #0056b3;
+  }
+
+  nav {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  nav a {
+    font-size: 15px;
+  }
+
+  section h1 {
+    font-size: 22px !important;
+    padding: 15px;
+  }
+}
+
+
   </style>
 </head>
 <body>
@@ -74,94 +216,153 @@
         <h2 style="text-align:center; margin-bottom: 25px;">Preencha o formulário abaixo para registrar sua reclamação</h2>
     
         <form method="POST" action="/{{ subdomain }}/enviar-reclamacao">
-            <label for="nome">Seu nome</label>
-            <input type="text" id="nome" name="nome" required />
+          <label for="nome"><i class="fas fa-user"></i> Seu nome</label>
+          <input type="text" id="nome" name="nome" placeholder="Ex: João Silva" required />
+        
+          <label for="email"><i class="fas fa-envelope"></i> Seu e-mail</label>
+          <input type="email" id="email" name="email" placeholder="Ex: joao@email.com" required />
+        
+          <label for="whatsapp"><i class="fab fa-whatsapp"></i> WhatsApp ou Telefone</label>
+            <input type="tel" id="whatsapp" name="whatsapp"
+        placeholder="(11) 91234-5678"
+        pattern="\(?\d{2}\)?\s?\d{4,5}-\d{4}"
+        title="Formato esperado: (11) 91234-5678"
+        required />
           
-            <label for="email">Seu e-mail</label>
-            <input type="email" id="email" name="email" required />
+          <label for="voo"><i class="fas fa-plane-departure"></i> Referência do problema</label>
+          <input type="text" id="voo" name="voo" placeholder="Ex: Voo 4569 / Pedido #1234" required />
+        
+          <label for="problema"><i class="fas fa-exclamation-triangle"></i> Descreva o problema</label>
+          <textarea id="problema" name="problema" rows="5" placeholder="Conte com detalhes o que aconteceu..." required></textarea>
+        
+          <button type="submit"><i class="fas fa-paper-plane"></i> Enviar Reclamação</button>
+          <div id="popup-confirmacao" style="display:none; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center;">
+            <i class="fas fa-check-circle"></i> Sua reclamação foi enviada com sucesso!
+          </div>
           
-            <label for="whatsapp">WhatsApp ou Telefone</label>
-            <input type="text" id="whatsapp" name="whatsapp" placeholder="(xx) xxxxx-xxxx" required />
-          
-            <label for="voo">Referência do problema (Ex: Nº do voo, pedido ou serviço)</label>
-            <input type="text" id="voo" name="voo" required />
-          
-            <label for="problema">Descreva o problema</label>
-            <textarea id="problema" name="problema" rows="5" required></textarea>
-          
-            <label>Imagem do problema (opcional):</label>
-            <input type="file" accept="image/*" onchange="uploadParaCloudinary(this, 'imagem_reclamacao', 'image')">
-            <input type="hidden" name="imagem" id="imagem_reclamacao">
-            <div class="preview" id="preview-imagem_reclamacao" style="margin: 10px 0;"></div>
-          
-            <button type="submit">📣 Enviar Reclamação</button>
-          </form>
+        </form>
     
         <hr style="margin: 50px 0 30px;">
     
         <h3 style="text-align:center;"><i class="fas fa-list-alt"></i> Reclamações Recentes</h3>
     
-        {% for r in reclamacoes %}
-        <div style="background:#fff; border:1px solid #ddd; padding:20px; margin:20px 0; border-radius:10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-          <div style="display:flex; justify-content:space-between; flex-wrap:wrap;">
-            <div>
-              <strong style="font-size: 1.1em;">{{ r.nome }}</strong><br>
-              <span style="font-size: 0.9em; color: #888;">{{ r.email }}</span>
+        <div class="carousel-wrapper">
+          <div class="carousel-track">
+            {% for r in reclamacoes %}
+            <div class="carousel-item">
+              <strong>{{ r.nome }}</strong><br>
+              <span style="font-size: 0.9em; color: #888;">{{ r.email }}</span><br>
+              <small style="color:#666;">{{ r.data_envio.strftime('%d/%m/%Y %H:%M') if r.data_envio is not string else r.data_envio }}</small>
+              <p style="margin-top: 10px;"><strong>Referência:</strong> {{ r.voo }}</p>
+              <p style="color:#333;">{{ r.problema }}</p>
+            
+              {% if r.media_avaliacao %}
+                <p style="font-size: 0.9em; color: #f39c12;"><i class="fas fa-star"></i> Avaliação média: {{ r.media_avaliacao }} / 5</p>
+              {% endif %}
+            
+              {% if r.comentarios %}
+              <div style="margin-top: 12px; padding: 10px; background: #f5f8fa; border-radius: 8px; border: 1px solid #ccc;">
+                <p style="margin-bottom: 8px; font-weight: bold; font-size: 0.95em; color: #005792;">
+                  <i class="fas fa-comments"></i> Comentários:
+                </p>
+                <ul style="list-style: none; padding-left: 0; margin: 0; max-height: 130px; overflow-y: auto;">
+                  {% for c in r.comentarios %}
+                  <li style="margin-bottom: 8px; padding: 6px 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 5px;">
+                    <span style="font-size: 0.85em; color: #555;"><i class="fas fa-user"></i> <strong>{{ c.nome }}</strong></span><br>
+                    <span style="font-size: 0.9em; color: #333;"><i class="fas fa-comment-dots" style="margin-right: 5px;"></i>{{ c.comentario }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            
+                        <!-- Comentário -->
+            <form method="POST" action="/comentar/{{ r.id }}" style="margin-top: 12px;">
+              <input type="text" name="nome" placeholder="Seu nome" required style="width: 100%; margin-bottom: 5px; padding: 8px; font-size: 0.9em;" />
+              <textarea name="comentario" rows="2" placeholder="Deixe um comentário..." required style="width: 100%; padding: 8px; font-size: 0.9em;"></textarea>
+              <button type="submit" style="margin-top: 6px; width: 100%; padding: 8px; font-size: 0.9em; background-color: #007bff; border: none; color: white; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-paper-plane"></i> Comentar
+              </button>
+            </form>
+            
+              <!-- Avaliação -->
+              <form method="POST" action="/avaliar/{{ r.id }}" style="margin-top: 10px;">
+                <label for="nota" style="font-size: 0.9em;"><i class="fas fa-star"></i> Avaliação:</label>
+                <select name="nota" id="nota" required style="width: 100%; padding: 6px; font-size: 0.9em; margin-top: 4px;">
+                  <option value="">Selecione</option>
+                  <option value="1">1 - Péssimo</option>
+                  <option value="2">2 - Ruim</option>
+                  <option value="3">3 - Médio</option>
+                  <option value="4">4 - Bom</option>
+                  <option value="5">5 - Excelente</option>
+                </select>
+                <button type="submit" style="margin-top: 6px; width: 100%; padding: 8px; font-size: 0.9em; background-color: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">
+                  <i class="fas fa-thumbs-up"></i> Avaliar
+                </button>
+              </form>
             </div>
-            <span style="font-size: 0.85em; color: #666;">
-                {{ r[7].strftime('%d/%m/%Y %H:%M') if r[7] is not string else r[7] }}
-              </span>
-              
+            {% endfor %}
           </div>
-          <p style="margin-top: 12px;"><strong>Referência:</strong> {{ r.voo }}</p>
-          <p style="color:#333;">{{ r.problema }}</p>
-          {% if r.imagem %}
-            <img src="{{ r.imagem }}" alt="Imagem do problema" style="max-width:100%; border-radius:8px; margin-top: 10px;">
-          {% endif %}
+          </div>
         </div>
-      
-        {% endfor %}
-      </div>
-
+      </div> 
     
       <script src="https://kit.fontawesome.com/a2e8a0fa1f.js" crossorigin="anonymous"></script>
-      <script>
-        async function uploadParaCloudinary(inputFile, campoHidden, tipo = 'auto') {
-          const file = inputFile.files[0];
-          if (!file) return;
-      
-          try {
-            const resposta = await fetch("/gerar-assinatura-cloudinary");
-            const dados = await resposta.json();
-      
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("api_key", dados.api_key);
-            formData.append("timestamp", dados.timestamp);
-            formData.append("signature", dados.signature);
-            formData.append("folder", "experiencias_sitegenius");
 
-      
-            const url = `https://api.cloudinary.com/v1_1/${dados.cloud_name}/${tipo}/upload`;
-      
-            const response = await fetch(url, {
-              method: "POST",
-              body: formData
-            });
-      
-            const data = await response.json();
-      
-            if (data.secure_url) {
-              document.getElementById(campoHidden).value = data.secure_url;
-              const previewDiv = document.getElementById("preview-" + campoHidden);
-              previewDiv.innerHTML = `<img src="${data.secure_url}" style="max-width:100%; border-radius:8px;">`;
-            } else {
-              alert("Erro ao enviar para o Cloudinary.");
-            }
-          } catch (error) {
-            alert("Falha ao enviar imagem.");
-          }
-        }
+
+      <footer style="background: #005792; color: white; padding: 25px 20px; text-align: center; margin-top: 60px; width: 100%;">
+        <div style="max-width: 1200px; margin: auto;">
+          <p style="margin-bottom: 10px;">
+            <i class="fas fa-shield-alt"></i> Este é um canal seguro e confidencial para registrar suas reclamações.
+          </p>
+          <p style="font-size: 0.9em;">
+            <i class="fas fa-code"></i> Desenvolvido por <strong>Site Genius</strong> • 
+          </p>
+          <div style="margin-top: 15px;">
+            <a href="/" style="color: white; margin: 0 10px;"><i class="fas fa-home"></i> Início</a>
+            <a href="mailto:support@poupatech.com" style="color: white; margin: 0 10px;"><i class="fas fa-envelope"></i> Suporte</a>
+            <a href="https://wa.me/5511999999999" target="_blank" style="color: white; margin: 0 10px;"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          </div>
+        </div>
+      </footer>
+      <script>
+        document.querySelector("form").addEventListener("submit", function (e) {
+          e.preventDefault(); // impede envio imediato
+          const popup = document.getElementById("popup-confirmacao");
+          popup.style.display = "block";
+          
+          // simula envio após 1 segundo
+          setTimeout(() => {
+            this.submit();
+          }, 1000);
+        });
       </script>
+     <script>
+     window.addEventListener('load', () => {
+  const track = document.querySelector('.carousel-track');
+
+  let scrollAmount = 0;
+  const scrollStep = 1;
+  const scrollSpeed = 20;
+
+  function autoScroll() {
+    if (scrollAmount >= track.scrollWidth - track.clientWidth) {
+      scrollAmount = 0;
+      track.scrollLeft = 0;
+    } else {
+      scrollAmount += scrollStep;
+      track.scrollLeft += scrollStep;
+    }
+  }
+
+  let startScroll = setInterval(autoScroll, scrollSpeed);
+
+  track.addEventListener('mouseenter', () => clearInterval(startScroll));
+  track.addEventListener('mouseleave', () => {
+    startScroll = setInterval(autoScroll, scrollSpeed);
+  });
+});
+    
+    </script>
 </body>
 </html>

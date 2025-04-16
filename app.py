@@ -1215,25 +1215,41 @@ def index_loja(subdomain):
 
     elif template_name == "template19":
         cur.execute("""
-            SELECT nome, email, voo, problema, imagem, data_envio
+            SELECT id, nome, email, voo, problema, whatsapp, data_envio
             FROM reclamacoes_voo
             WHERE user_id = %s
             ORDER BY data_envio DESC
         """, (dono_id,))
         reclamacoes = cur.fetchall()
+
+        # Comentários
+        cur.execute("SELECT reclamacao_id, nome, comentario FROM comentarios ORDER BY data_envio ASC")
+        comentarios_raw = cur.fetchall()
+        comentarios = {}
+        for r_id, nome, texto in comentarios_raw:
+            comentarios.setdefault(r_id, []).append({'nome': nome, 'comentario': texto})
+
+        # Avaliações
+        cur.execute("SELECT reclamacao_id, ROUND(AVG(nota), 1) FROM avaliacoes GROUP BY reclamacao_id")
+        avaliacoes_raw = dict(cur.fetchall())
+
         cur.close(); conn.close()
 
         return render_template("template19_index.html", subdomain=subdomain, reclamacoes=[
             {
-                "nome": r[0],
-                "email": r[1],
-                "voo": r[2],
-                "problema": r[3],
-                "imagem": r[4],
-                "data_envio": r[5]
+                "id": r[0],
+                "nome": r[1],
+                "email": r[2],
+                "voo": r[3],
+                "problema": r[4],
+                "whatsapp": r[5],
+                "data_envio": r[6],
+                "comentarios": comentarios.get(r[0], []),
+                "media_avaliacao": avaliacoes_raw.get(r[0])
             }
             for r in reclamacoes
         ])
+
 
 
 
@@ -2780,7 +2796,7 @@ def enviar_reclamacao(subdomain):
     email = request.form.get("email")
     voo = request.form.get("voo")
     problema = request.form.get("problema")
-    imagem = request.form.get("imagem")
+    imagem = None
     whatsapp = request.form.get("whatsapp")
 
     # Envia e-mail
@@ -2799,14 +2815,43 @@ def enviar_reclamacao(subdomain):
 
     # Insere no banco
     cur.execute("""
-        INSERT INTO reclamacoes_voo (nome, email, whatsapp, voo, problema, imagem, data_envio, user_id)
-        VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
-    """, (nome, email, whatsapp, voo, problema, imagem, user_id))
+    INSERT INTO reclamacoes_voo (nome, email, whatsapp, voo, problema, imagem, data_envio, user_id)
+    VALUES (%s, %s, %s, %s, %s, %s, NOW(), %s)
+""", (nome, email, whatsapp, voo, problema, imagem, user_id))
     conn.commit()
     cur.close(); conn.close()
 
     return redirect(f"/{subdomain}/index")
 
+@app.route('/comentar/<int:reclamacao_id>', methods=['POST'])
+def comentar(reclamacao_id):
+    conn = get_db_connection()
+    nome = request.form['nome']
+    comentario = request.form['comentario']
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO comentarios (reclamacao_id, nome, comentario)
+        VALUES (%s, %s, %s)
+    """, (reclamacao_id, nome, comentario))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(request.referrer)
+
+
+@app.route('/avaliar/<int:reclamacao_id>', methods=['POST'])
+def avaliar(reclamacao_id):
+    conn = get_db_connection()
+    nota = int(request.form['nota'])
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO avaliacoes (reclamacao_id, nota)
+        VALUES (%s, %s)
+    """, (reclamacao_id, nota))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(request.referrer)
 
 
 @app.route("/admin/reclamacoes")
@@ -2837,11 +2882,17 @@ def admin_reclamacoes():
 def deletar_reclamacao(id):
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Deleta comentários e avaliações antes de deletar a reclamação
+    cur.execute("DELETE FROM comentarios WHERE reclamacao_id = %s", (id,))
+    cur.execute("DELETE FROM avaliacoes WHERE reclamacao_id = %s", (id,))
     cur.execute("DELETE FROM reclamacoes_voo WHERE id = %s", (id,))
+
     conn.commit()
     cur.close()
     conn.close()
     return redirect("/admin/reclamacoes")
+
 
 
 
