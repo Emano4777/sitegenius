@@ -885,7 +885,12 @@ iframe {
   }
 }
 
-
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -60%); }
+  10% { opacity: 1; transform: translate(-50%, -50%); }
+  90% { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -60%); }
+}
 .modal-content .btn {
   background-color: #ffca28;
   color: black;
@@ -899,7 +904,16 @@ iframe {
 .modal-content .btn:hover {
   background-color: #ffc107;
 }
-
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 .close {
   position: absolute;
   top: 10px;
@@ -2536,46 +2550,68 @@ function closePreview() {
 function downloadTemplate() {
     let templateName = currentTemplate;
 
-if (!templateName) {
-    let src = document.getElementById("previewFrame").src;
-    const match = src.match(/\/template-preview\/(template\d+)\//);
-    if (!match || match.length < 2) {
-        alert("Não foi possível identificar o template.");
-        return;
+    if (!templateName) {
+        let src = document.getElementById("previewFrame").src;
+        const match = src.match(/\/template-preview\/(template\d+)\//);
+        if (!match || match.length < 2) {
+            alert("Não foi possível identificar o template.");
+            return;
+        }
+        templateName = match[1];
+        currentTemplate = templateName;
     }
-    templateName = match[1];
-    currentTemplate = templateName; // 🔁 Atualiza pra uso posterior
-}
-
 
     console.log("Usando template:", templateName);
 
     fetch('/verificar-premium/' + templateName, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
-            if (!data.pode_usar) {
+          console.log("🔍 Resultado da verificação:", data);
+
+            if (data.pode_usar === false) {
                 alert("Para usar/ver com mais detalhes este template, confira nossos planos premium! Somos um dos mais baratos do Brasil. 😄");
                 window.location.href = '/preco';
+              } else if (data.pode_usar == "confirmar") {
+               const modal = document.getElementById("modal-confirmacao");
+                modal.style.display = "flex";
+                document.getElementById("confirmar-uso").onclick = () => {
+    const modal = document.getElementById("modal-confirmacao");
+    modal.style.display = "none";
+
+    // Adiciona um pequeno delay pra evitar falhas
+    setTimeout(() => {
+        usarTemplate(templateName);
+    }, 200);
+};
             } else {
                 usarTemplate(templateName);
             }
         });
-        function usarTemplate(templateName) {
+}
+
+// 🔻 Função separada aqui fora 👇
+function usarTemplate(templateName) {
     fetch('/usar-template/' + templateName, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("Template vinculado com sucesso!");
+                const toast = document.getElementById("toast-sucesso");
+                toast.style.display = "block";
 
-                if (data.template_name === "template17") {
-                    window.location.href = "/admin/experiencias";
-                } else if (data.template_name === "template18") {
-                    window.location.href = "/admin/eventos";
-                } else if (data.template_name === "template19") {
-                    window.location.href = "/admin/reclamacoes";
-                } else {
-                    window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name;
-                }
+                setTimeout(() => {
+                    toast.style.display = "none";
+
+                    if (data.template_name === "template17") {
+                        window.location.href = "/admin/experiencias";
+                    } else if (data.template_name === "template18") {
+                        window.location.href = "/admin/eventos";
+                    } else if (data.template_name === "template19") {
+                        window.location.href = "/admin/reclamacoes";
+                    } else {
+                        window.location.href = '/editar-template/' + data.template_id + '/' + data.page_name;
+                    }
+                }, 4200);
+
             } else {
                 alert(data.message || "Erro ao vincular template");
             }
@@ -2584,7 +2620,8 @@ if (!templateName) {
             console.error("Erro ao usar o template:", error);
             alert("Erro inesperado ao tentar usar o template.");
         });
-}}
+}
+
 
 
 function buyPremium() {
@@ -2693,5 +2730,84 @@ document.addEventListener('click', function(event) {
     </form>
   </div>
 </div>
+
+<div id="toast-sucesso" style="
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #28a745;
+  color: white;
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  font-size: 17px;
+  font-weight: 500;
+  z-index: 9999;
+  text-align: center;
+  animation: fadeInOut 4s ease-in-out;
+">
+  <i class="fas fa-check-circle" style="margin-right: 10px;"></i>
+  Seu site foi criado com sucesso! Bora editá-lo?
+</div>
+
+<div id="modal-confirmacao" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+  justify-content: center;
+  align-items: center;
+">
+  <div style="
+    background: #fff;
+    padding: 25px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    animation: slideIn 0.3s ease-out;
+  ">
+    <p style="font-size: 18px; color: #333; margin-bottom: 25px;">
+      <i class="fas fa-user-lock" style="color: #f39c12; font-size: 22px; margin-right: 10px;"></i>
+      <strong>Usuário gratuito:</strong><br>
+      Você só pode usar um template. Deseja usar este?
+    </p>
+
+    <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+      <button id="confirmar-uso" style="
+        padding: 10px 20px;
+        background: #28a745;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background 0.2s ease;
+      ">
+        <i class="fas fa-check-circle"></i> Sim, quero usar
+      </button>
+
+      <button onclick="document.getElementById('modal-confirmacao').style.display='none'" style="
+        padding: 10px 20px;
+        background: #ccc;
+        color: #333;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      ">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

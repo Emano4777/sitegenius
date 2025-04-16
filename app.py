@@ -4088,14 +4088,28 @@ def verificar_premium(template_name):
 
     user_level = user_info[0]
 
-    # Lógica de liberação
-    if template_level == 'free':
-        return jsonify({"pode_usar": True})
+    # Lógica para usuários gratuitos usando template gratuito
+    if template_level == 'free' and user_level == 'free':
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM user_templates WHERE user_id = %s", (user_id,))
+        ja_usou = cur.fetchone()[0]
+        cur.close()
+        conn.close()
 
+        if ja_usou == 0:
+            return jsonify({"pode_usar": "confirmar"})  # Mostrar modal de confirmação
+        else:
+            return jsonify({"pode_usar": False})  # Já usou o único permitido
+
+    # 🔥 ADICIONA ESSE TRECHO DE VOLTA:
+    # Se o usuário for premium (não free), pode usar qualquer template
     if user_level != 'free':
         return jsonify({"pode_usar": True})
 
+    # Usuário free tentando usar template premium
     return jsonify({"pode_usar": False})
+
 
 
     
