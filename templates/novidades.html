@@ -448,9 +448,10 @@ footer .container {
 .carousel-wrapper:hover .carousel-track {
   animation-play-state: paused;
 }
-@keyframes scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+.carousel-track {
+  display: flex;
+  gap: 30px;
+  width: max-content;
 }
 
 .carousel-item {
@@ -611,14 +612,14 @@ main {
     border-radius: 8px;
   }
 
-  .carousel-track {
-    gap: 10px; /* Menor espaçamento entre itens */
-  }
-
   .carousel-item {
-    flex: 0 0 240px; /* Largura menor para caber */
+    flex: 0 0 85vw; /* usa viewport pra encaixar direitinho */
     padding: 12px;
     min-height: auto;
+  }
+
+  .carousel-track {
+    gap: 15px;
   }
 
   .carousel-item .icon {
@@ -1061,6 +1062,8 @@ document.addEventListener('click', function(event) {
   window.addEventListener('DOMContentLoaded', () => {
     const track = document.getElementById('carouselTrack');
     const items = Array.from(track.children);
+
+    track.scrollLeft = 0;
     items.forEach(item => {
       const clone = item.cloneNode(true);
       track.appendChild(clone);
