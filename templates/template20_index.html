@@ -1,0 +1,536 @@
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
+  
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #f0f3ff; /* azul clarinho */
+}
+
+.produto {
+  background: #eae6ff; /* lilás clarinho */
+  border-radius: 14px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease;
+}
+
+.produto:hover {
+  transform: scale(1.03);
+}
+
+header {
+  font-family: 'Poppins', sans-serif;
+}
+
+section h2 {
+  color: #4a3fa1; /* roxo mais forte */
+}
+
+#icone-carrinho {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #4a3fa1;
+  color: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.6rem;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.carrinho-flutuante {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  background: #fff;
+  border: 2px solid #4a3fa1;
+  border-radius: 14px;
+  width: 300px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.carrinho-topo {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.carrinho-itens {
+  margin-top: 0.5rem;
+  text-align: left;
+  font-size: 0.9rem;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 160px;
+}
+
+.btn-esvaziar {
+  margin-top: 10px;
+  padding: 6px 12px;
+  background: #ddd;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-whatsapp {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #25d366;
+  color: white;
+  text-align: center;
+  border-radius: 0 0 12px 12px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Botão "Adicionar ao Carrinho" */
+.btn-carrinho {
+  margin-top: 1rem;
+  padding: 10px 20px;
+  background: #4a3fa1;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-carrinho:hover {
+  background: #372b7a;
+}
+
+/* Botão "➖" para minimizar carrinho */
+.btn-minimizar {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #4a3fa1;
+  transition: transform 0.2s ease;
+}
+
+.btn-minimizar:hover {
+  transform: scale(1.2);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+footer {
+  background: #2c2046;
+  color: white;
+}
+
+footer a:hover {
+  color: #d3c2ff;
+  transform: scale(1.2);
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+    font-size: 14px;
+  }
+  
+  .produto {
+    padding: 0.8rem;
+    font-size: 0.95rem;
+    border-radius: 10px;
+  }
+
+  .produto:hover {
+    transform: scale(1.02);
+  }
+
+  header h1 {
+    font-size: 2rem;
+  }
+  header h2, header h3, section h2 {
+    font-size: 1.5rem;
+  }
+  
+  #icone-carrinho {
+    right: 10px;
+    bottom: 10px;
+    width: 45px;
+    height: 45px;
+    font-size: 1.4rem;
+  }
+  
+  .carrinho-flutuante {
+    width: 90%;
+    right: 5%;
+    bottom: 80px;
+    max-height: 350px;
+    border-radius: 10px;
+  }
+  
+  .carrinho-topo {
+    padding: 0.8rem;
+  }
+  
+  .carrinho-itens {
+    font-size: 0.85rem;
+    max-height: 140px;
+  }
+  
+  .btn-carrinho {
+    padding: 8px 16px;
+    font-size: 0.95rem;
+  }
+  
+  .btn-esvaziar {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .btn-whatsapp {
+    padding: 10px;
+    font-size: 0.95rem;
+  }
+  
+  .btn-minimizar {
+    font-size: 1rem;
+  }
+  
+  footer {
+    font-size: 0.9rem;
+    padding: 1rem 10px;
+  }
+}
+
+  </style>
+  
+
+  <header style="background-image: url('https://res.cloudinary.com/dizfq460q/image/upload/v1744891541/images_9_ajcwze.jpg'); background-size:cover; background-position:center; color:white; text-align:center; padding:5rem 2rem;">
+    <div style="background-color: rgba(0,0,0,0.5); display: inline-block; padding: 1rem 2rem; border-radius: 10px;">
+        <h1>Escola de Música Harmonia</h1>
+        <p>Aprenda, evolua e encante com o poder da música 🎶🎼</p>
+    </div>      
+</header>
+  
+<section style="padding:3rem 1rem; max-width:1000px; margin:auto; text-align:center;">
+    <h2 style="color:#b36b00;">🎵 Aulas de Música</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:1.5rem; margin-top:2rem;">
+  
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744893811/tenha-um-repertorio-variado-em-aulas-de-musicajpg-20230504105610.jpg-jpg_g7ncfe.webp" style="width:100%; border-radius:10px;">
+        <h3>Aula de Violão</h3>
+        <p>Aprenda os acordes, ritmos e técnicas para tocar suas músicas favoritas.</p>
+
+        <select id="opcao-hidratacao" style="margin:10px 0; padding:6px; border-radius:5px;">
+            <option value="">Escolha o nível</option>
+            <option value="Iniciante">Iniciante</option>
+            <option value="Intermediário">Intermediário</option>
+            <option value="Avançado">Avançado</option>
+        </select>
+        <button class="btn-carrinho" onclick="adicionarCarrinho('Aula de Violão', document.getElementById('opcao-hidratacao').value)">Agendar Aula</button>
+      </div>
+  
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744893817/Curso-de-canto_tdazmw.jpg" style="width:100%; border-radius:10px;">
+        <h3>Aula de Canto</h3>
+        <p>Melhore sua afinação, respiração e desenvolva seu potencial vocal com nossos professores.</p>
+        <select id="opcao-escova" style="margin:10px 0; padding:6px; border-radius:5px;">
+            <option value="">Escolha o foco</option>
+            <option value="Técnica Vocal">Técnica Vocal</option>
+            <option value="Afinação e Respiração">Afinação e Respiração</option>
+            <option value="Repertório Popular">Repertório Popular</option>
+
+        </select>
+        <button class="btn-carrinho" onclick="adicionarCarrinho('Aula de Canto', document.getElementById('opcao-escova').value)">Agendar Aula</button>
+
+      </div>
+  
+      <div class="produto">
+        <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744893820/images_10_jfgpoj.jpg" style="width:100%; border-radius:10px;">
+        <h3>Aula de Teclado</h3>
+        <p>Domine escalas, acordes e toque músicas modernas e clássicas com facilidade.</p>
+        <select id="opcao-manicure" style="margin:10px 0; padding:6px; border-radius:5px;">
+            <option value="">Escolha o estilo</option>
+            <option value="Clássico">Clássico</option>
+            <option value="Popular">Popular</option>
+            <option value="Improvisação">Improvisação</option>            
+        </select>
+        <button class="btn-carrinho" onclick="adicionarCarrinho('Aula de Teclado', document.getElementById('opcao-manicure').value)">Agendar Aula</button>
+      </div>
+  
+    </div>
+  </section>
+  
+  <section style="background:#e8e6ff; padding:2rem; text-align:center;">
+    <h2 style="color:#4a3fa1;">🎶 Destaque da Semana</h2>
+    <p><strong>Aula de Violão + Canto</strong> por apenas <span style="color:#d1007d;">R$ 79,90</span>!</p>
+    <button class="btn-carrinho" onclick="adicionarCarrinho('Combo Aula de Violão + Canto', 'Destaque da semana')">Quero Agendar</button>
+  </section>
+
+<section style="background:#f3eaff; padding:3rem 1rem; text-align:center;">
+  <h2 style="color:#4a3fa1;">🎤 O que nossos alunos dizem</h2>
+  <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">
+    “Sempre quis aprender violão e aqui foi o lugar perfeito! Aulas práticas e professores incríveis.”<br><strong>— João V.</strong>
+  </blockquote>
+  <blockquote style="font-style:italic; max-width:600px; margin:20px auto;">
+    “Melhorei muito minha voz nas aulas de canto. Recomendo para todos que amam música!”<br><strong>— Camila R.</strong>
+  </blockquote>    
+</section>
+  
+<section style="background:#e6f0ff; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#4a3fa1;">🎸 Instrumentos que usamos</h2>
+    <p style="max-width:700px; margin:auto; font-size:1rem;">
+      Utilizamos instrumentos de qualidade como <strong>Yamaha</strong>, <strong>Tagima</strong>, <strong>Casio</strong> e <strong>Roland</strong> para proporcionar a melhor experiência musical.
+    </p>
+  </section>
+  
+
+  <section style="background:#f0e6ff; padding:3rem 1rem; text-align:center;">
+    <h2 style="color:#4a3fa1;">📸 Nosso trabalho</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; max-width: 900px; margin: auto;">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744891242/images_8_kfts4o.jpg" style="width:100%; border-radius: 10px;">
+      <img src="https://res.cloudinary.com/dizfq460q/image/upload/v1744891242/0d7a1257_yevzoz.webp" style="width:100%; border-radius: 10px;">
+    </div>
+  </section>
+  
+
+  <section style="background: #e6e0ff; padding: 3rem 1rem; text-align: center;">
+    <h2 style="color: #4a3fa1;">📍 Onde estamos</h2>
+    <p>Rua das Rosas, 123 – Centro, São José do Rio Preto – SP</p>
+    <iframe src="https://www.google.com/maps/embed?pb=!1m18..." width="100%" height="300" style="border:0; border-radius: 10px; max-width: 700px; margin-top: 1rem;" allowfullscreen="" loading="lazy"></iframe>
+  </section>
+
+
+  <div class="carrinho-flutuante" id="carrinho">
+    <div class="carrinho-topo">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h4>🛒 Seu Carrinho</h4>
+        <button onclick="toggleCarrinho()" class="btn-minimizar">➖</button>
+
+      </div>
+  
+      <div class="carrinho-itens" id="carrinho-itens">
+        <p>Nenhum item ainda.</p>
+      </div>
+      <textarea id="obs" placeholder="Observações (ex: sem açúcar, entrega às 15h)" style="margin-top:10px; width:100%; padding:6px; border-radius:5px;"></textarea>
+
+  
+      <button onclick="esvaziarCarrinho()" class="btn-esvaziar">
+        <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> Esvaziar Carrinho
+      </button>
+    </div>
+  
+    <a id="btn-whats" class="btn-whatsapp" href="#" target="_blank">
+        <i class="fab fa-whatsapp" style="margin-right: 6px;"></i> Agendar pelo WhatsApp
+      </a>
+      
+  </div>
+<div id="icone-carrinho" onclick="toggleCarrinho()" style="
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#4a3fa1;
+  color:white;
+  padding:15px;
+  border-radius:50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  font-size:24px;
+  cursor:pointer;
+  z-index:10001;
+">
+  🛒
+  <span id="contador-carrinho" style="
+    position:absolute;
+    top:0;
+    right:0;
+    transform: translate(40%, -40%);
+    background:#d1007d;
+    color:white;
+    border-radius:50%;
+    width:20px;
+    height:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:bold;
+    z-index:10002;
+  ">0</span>
+</div>
+
+
+  <script>
+    document.querySelectorAll('.btn-whatsapp').forEach(btn => {
+      btn.addEventListener('click', function () {
+        fetch('/registrar-clique', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: this.dataset.template,
+            acao: 'whatsapp'
+          })
+        });
+      });
+    });
+    </script>
+    
+  <script>
+    let carrinho = [];
+    let carrinhoVisivel = true;
+  
+    function adicionarCarrinho(servico, tipo) {
+  if (!tipo) {
+    alert('✨ Por favor, selecione o tipo de procedimento antes de continuar com o agendamento.');
+    return;
+  }
+
+  const item = `💆‍♀️ ${servico} — Opção: ${tipo}`;
+  console.log('💖 Procedimento adicionado para agendamento:', item);
+  carrinho.push(item);
+  mostrarMensagemCarrinho();
+  atualizarCarrinho();
+}
+
+
+function atualizarCarrinho() {
+  const container = document.getElementById('carrinho-itens');
+  const btn = document.getElementById('btn-whats');
+  const obs = document.getElementById('obs').value || "";
+
+  const mensagem = encodeURIComponent(
+    "Olá! Gostaria de agendar os seguintes procedimentos estéticos:\n\n" +
+    carrinho.map(item => `• ${item}`).join('\n') +
+    (obs ? `\n\n💬 Observações: ${obs}` : "")
+  );
+
+  if (carrinho.length === 0) {
+    container.innerHTML = "<p>Nenhum procedimento selecionado ainda 💖</p>";
+    btn.href = "#";
+    return;
+  }
+
+  const lista = carrinho.map(item => `• ${item}`).join('<br>');
+  container.innerHTML = lista;
+
+  btn.href = "https://wa.me/5511999999999?text=" + mensagem;
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+}
+
+
+function esvaziarCarrinho() {
+  carrinho = [];
+  document.getElementById('obs').value = '';
+  atualizarCarrinho();
+  document.getElementById('contador-carrinho').innerText = carrinho.length;
+  alert("🧼 Carrinho de agendamento de procedimentos foi limpo com sucesso!");
+}
+
+  
+    function toggleCarrinho() {
+  const carrinhoDiv = document.getElementById('carrinho');
+  const icone = document.getElementById('icone-carrinho');
+
+  if (carrinhoVisivel) {
+    carrinhoDiv.style.display = 'none';
+    icone.style.display = 'flex';  // mostrar o ícone redondo
+  } else {
+    carrinhoDiv.style.display = 'block';
+    icone.style.display = 'none';  // esconder o ícone redondo
+  }
+
+  carrinhoVisivel = !carrinhoVisivel;
+}
+
+function mostrarMensagemCarrinho() {
+  const msg = document.getElementById('mensagem-carrinho');
+  msg.style.display = 'block';
+  msg.style.animation = 'slideUpFade 0.5s ease';
+
+  setTimeout(() => {
+    msg.style.opacity = '0';
+    msg.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+      msg.style.display = 'none';
+      msg.style.opacity = '';
+      msg.style.transform = '';
+    }, 300);
+  }, 2000);
+}
+
+
+document.getElementById('carrinho').style.display = 'none';
+document.getElementById('icone-carrinho').style.display = 'flex';
+carrinhoVisivel = false;
+
+carrinhoVisivel = true;
+  </script>
+    <a href="https://wa.me/5511999999999" target="_blank" style="
+    position:fixed; bottom:80px; left:20px;
+    background:#25d366; color:#fff;
+    padding:12px 20px; border-radius:30px;
+    font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    z-index:9999; text-decoration:none;
+    animation: pulse 1.6s infinite;
+  ">
+    💬 Fale conosco
+  </a>
+
+  <div id="mensagem-carrinho" style="
+  display:none;
+  position:fixed;
+  bottom:100px;
+  right:20px;
+  background:#4caf50;
+  color:white;
+  padding:10px 20px;
+  border-radius:10px;
+  font-weight:bold;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+  z-index:10001;
+  animation: slideUpFade 0.5s ease forwards;
+">
+  ✅ Item adicionado ao carrinho!
+</div>
+  
+  <footer style="background:#222; color:white; text-align:center; padding:2rem;">
+    <p>
+        <a href="https://instagram.com/studioestetica" target="_blank" style="color:#3a2c3f; font-size:1.8rem;">
+          <i class="fab fa-instagram"></i>
+        </a>
+      </p>      
+      <p>© 2025 Studio Estética - Unhas e Bem-Estar</p>
+  </footer>
+  
