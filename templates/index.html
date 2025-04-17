@@ -631,29 +631,23 @@ overflow-y: auto;
         width: 90%;
     }
 
-    iframe[title="Botpress Webchat"] {
-  position: fixed !important;
-  bottom: 0 !important;
-  right: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  max-height: 100vh !important;
-  max-width: 100vw !important;
-  z-index: 2147483647 !important;
-  border: none !important;
-}
+
 
 }
 
-iframe[title="Botpress Webchat"] {
-  max-width: 100vw !important;
-  max-height: 100vh !important;
-  width: 100% !important;
-  height: auto !important;
-  bottom: 0 !important;
-  right: 0 !important;
-  z-index: 999999 !important;
-  border: none !important;
+
+@media (max-width: 768px) {
+  iframe[title="Botpress Webchat"] {
+    position: fixed !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    max-width: 100vw !important;
+    z-index: 2147483647 !important;
+    border: none !important;
+  }
 }
 
 
