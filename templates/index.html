@@ -536,7 +536,9 @@ footer .container {
   justify-content: center;
   gap: 10px;
 }
-
+iframe[title="Botpress Webchat"] {
+  min-height: 100vh !important;
+}
 .template-carousel h2 {
   font-size: 28px;
   margin-bottom: 20px;
@@ -1228,6 +1230,10 @@ function closeMobileMenu() {
       iframe.style.right = "0";
       iframe.style.width = "100vw";
       iframe.style.height = "100vh";
+      iframe.style.minHeight = "100vh";
+
+      iframe.style.minHeight = "100vh"; // <- forçando altura mínima
+
       iframe.style.zIndex = "2147483647";
       iframe.style.border = "none";
       iframe.style.maxHeight = "100vh";
@@ -1247,7 +1253,8 @@ function closeMobileMenu() {
         iframe.style.bottom = '0';
         iframe.style.right = '0';
         iframe.style.width = '100vw';
-        iframe.style.height = '100vh';
+        iframe.style.height = "100vh";
+        iframe.style.minHeight = "100vh";
         iframe.style.zIndex = '2147483647'; // maior possível
         iframe.style.border = 'none';
         iframe.style.maxHeight = '100vh';
