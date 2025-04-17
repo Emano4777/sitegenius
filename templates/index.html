@@ -40,7 +40,8 @@
     font-family: 'Poppins', sans-serif;
 }
 body.menu-open {
-  overflow: hidden;
+  overflow-x: hidden;
+overflow-y: auto;
 }
 
 body {
@@ -1232,6 +1233,26 @@ function closeMobileMenu() {
       }, 500);
     });
   </script>
+
+<script>
+  window.addEventListener('load', () => {
+    const interval = setInterval(() => {
+      const iframe = document.querySelector('iframe[title="Botpress Webchat"]');
+      if (iframe) {
+        iframe.style.position = 'fixed';
+        iframe.style.bottom = '0';
+        iframe.style.right = '0';
+        iframe.style.width = '100vw';
+        iframe.style.height = '100vh';
+        iframe.style.zIndex = '2147483647'; // maior possível
+        iframe.style.border = 'none';
+        iframe.style.maxHeight = '100vh';
+        iframe.style.maxWidth = '100vw';
+        clearInterval(interval);
+      }
+    }, 500);
+  });
+</script>
     <div id="chatbot-tooltip" class="tooltip-chatbot">
         👋 Oi! Eu sou o assistente virtual da SiteGenius. Como posso te ajudar?
       </div>
