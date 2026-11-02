@@ -46,7 +46,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
-app.secret_key = 'minha-chave-segura'
+app.secret_key = os.getenv("FLASK_SECRET_KEY") or 'minha-chave-segura'
+from studio import init_app as init_studio
+init_studio(app)
 CORS(app, supports_credentials=True)
 
 load_dotenv()

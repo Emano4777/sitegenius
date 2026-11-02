@@ -14,3 +14,4 @@ email-validator
 efipay
 pyOpenSSL
 openai
+Pillow>=10.1
