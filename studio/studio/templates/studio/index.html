@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="sg-csrf" content="{{ csrf_token }}">
+  <title>SiteGenius Studio</title>
+  <link rel="stylesheet" href="{{ url_for('studio.static', filename='studio.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn only-mobile" id="btn-menu" aria-label="Conversas"></button>
+    <a class="brand" href="/studio/"><span class="brand-mark">SG</span> SiteGenius <b>Studio</b></a>
+    <div class="user-menu" id="user-menu">
+      <button class="user-btn" id="user-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+        <span class="avatar" id="user-avatar">…</span>
+        <span class="user-btn-text"><b id="user-name"></b><small id="user-usage" class="muted"></small></span>
+      </button>
+      <div class="menu" id="user-dropdown" role="menu" hidden>
+        <div class="menu-head">
+          <b id="menu-name"></b>
+          <span class="muted small" id="menu-email"></span>
+        </div>
+        <div class="menu-usage" id="menu-usage"></div>
+        <a class="menu-item" id="menu-admin" href="/studio/admin" role="menuitem" hidden></a>
+        <button class="menu-item" id="menu-password" type="button" role="menuitem"></button>
+        <button class="menu-item danger" id="btn-logout" type="button" role="menuitem"></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout" id="layout" data-view="chat" data-mode="free">
+    <aside class="sidebar" id="sidebar">
+      <button class="btn btn-primary btn-block" id="btn-new" type="button"></button>
+      <button class="btn btn-ghost btn-block" id="btn-gallery" type="button"></button>
+      <h2 class="side-title">Histórico</h2>
+      <nav id="conversation-list" class="conv-list" aria-label="Conversas"></nav>
+    </aside>
+
+    <main class="chat" aria-live="polite">
+      <section class="gallery" id="gallery" hidden>
+        <div class="gallery-head">
+          <div>
+            <h2>Galeria</h2>
+            <p class="muted small" id="gallery-count"></p>
+          </div>
+          <button class="btn btn-small btn-ghost" id="btn-gallery-close" type="button"></button>
+        </div>
+        <div class="gallery-grid" id="gallery-grid"></div>
+      </section>
+
+      <div class="messages" id="messages">
+        <div class="empty-state" id="empty-state">
+          <h1>O que vamos criar?</h1>
+          <p>Descreva a imagem como falaria com um designer. Anexe uma foto para usar como base. Eu pergunto só se faltar algo essencial.</p>
+          <div class="examples" id="examples">
+            <button type="button" class="chip-btn">Astronauta numa floresta, luz cinematográfica, formato story</button>
+            <button type="button" class="chip-btn">Foto de produto de um perfume sobre mármore, luz suave</button>
+            <button type="button" class="chip-btn">Sala de estar moderna para anúncio imobiliário, fim de tarde</button>
+            <button type="button" class="chip-btn">Logotipo minimalista de uma cafeteria chamada “Grão”</button>
+            <button type="button" class="chip-btn">Encarte de hortifruti com Tomate kg 6,99</button>
+          </div>
+        </div>
+      </div>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <p class="busy-note" id="busy-note" role="status" hidden></p>
+        <div class="pending-attachments" id="pending-attachments"></div>
+        <div class="options-row" id="options-row">
+          <label class="opt">Formato
+            <select id="opt-aspect"><option value="">Automático</option></select></label>
+          <label class="opt">Estilo
+            <select id="opt-style"></select></label>
+          <div class="seg" role="radiogroup" aria-label="Qualidade">
+            <button type="button" class="seg-btn active" data-quality="qualidade" title="Mais detalhes na imagem">Qualidade</button>
+            <button type="button" class="seg-btn" data-quality="rapido" title="Fica pronta mais depressa">Rápido</button>
+          </div>
+          <label class="opt" id="opt-fidelity-wrap" hidden>Seguir a foto
+            <select id="opt-fidelity">
+              <option value="baixa">pouco</option>
+              <option value="media" selected>médio</option>
+              <option value="alta">muito</option>
+            </select></label>
+          <span class="hint" id="estimate"></span>
+        </div>
+        <div class="composer-row">
+          <label class="icon-btn" title="Anexar imagem de referência" id="attach-label">
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden multiple>
+          </label>
+          <select id="attach-kind" class="attach-kind ad-only" aria-label="Tipo do anexo">
+            <option value="reference">Referência</option>
+            <option value="logo">Logo</option>
+            <option value="product">Foto de produto</option>
+          </select>
+          <textarea id="input" rows="1" maxlength="4000" placeholder="Descreva a imagem…" aria-label="Mensagem"></textarea>
+          <button class="btn btn-primary" id="btn-send" type="submit"></button>
+        </div>
+      </form>
+    </main>
+
+    <section class="panel ad-only" id="panel" aria-label="Briefing do encarte">
+      <div class="panel-head">
+        <h2>Briefing do encarte</h2>
+        <span class="save-state" id="save-state"></span>
+      </div>
+      <div id="briefing-empty" class="muted">Abra ou crie uma conversa.</div>
+      <form id="briefing-form" class="briefing" hidden>
+        <div class="grid-2">
+          <label>Formato<select name="formato" id="f-formato"></select></label>
+          <label>Título<input name="titulo" maxlength="60"></label>
+          <label>Loja<input name="loja" maxlength="60"></label>
+          <label>Validade<input name="validade" maxlength="40" placeholder="01/11 a 05/11"></label>
+        </div>
+        <label>Tema<input name="tema" maxlength="60" placeholder="hortifruti, natal, black friday…"></label>
+        <label>Cenário (só o fundo, sem texto)<textarea name="cenario" rows="2" maxlength="300"></textarea></label>
+        <label>Observação no rodapé<input name="observacoes" maxlength="300"></label>
+
+        <div class="logo-row">
+          <span>Logo</span>
+          <div class="thumb" id="logo-thumb"></div>
+          <label class="btn btn-small">Enviar logo<input type="file" id="logo-input" accept="image/png,image/jpeg,image/webp" hidden></label>
+        </div>
+
+        <div class="products-head">
+          <h3>Produtos</h3>
+          <button type="button" class="btn btn-small" id="btn-add-product">+ Produto</button>
+        </div>
+        <div id="products" class="products"></div>
+        <ul id="pendencias" class="pendencias"></ul>
+
+        <button type="button" class="btn btn-primary btn-block" id="btn-generate" disabled>Gerar encarte</button>
+        <p class="hint" id="generate-hint"></p>
+      </form>
+
+      <h3 class="jobs-title">Encartes gerados</h3>
+      <div id="jobs" class="jobs"></div>
+    </section>
+  </div>
+
+  <nav class="tabbar only-mobile ad-only" aria-label="Seções">
+    <button data-view="chat" class="active">Chat</button>
+    <button data-view="panel">Briefing</button>
+  </nav>
+
+  <dialog id="photo-dialog" class="dialog">
+    <form method="dialog" class="dialog-head">
+      <h2>Foto do produto</h2>
+      <button class="icon-btn" aria-label="Fechar">✕</button>
+    </form>
+    <div class="search-row">
+      <input id="photo-query" placeholder="EAN (código de barras) ou nome do produto" maxlength="80">
+      <button class="btn btn-primary" id="btn-photo-search" type="button">Buscar</button>
+      <label class="btn">Enviar foto<input type="file" id="photo-upload" accept="image/jpeg,image/png,image/webp" hidden></label>
+    </div>
+    <p class="hint">Fotos de bancos abertos de produtos. O crédito da foto aparece no rodapé do encarte. Confira se a foto corresponde ao produto vendido.</p>
+    <div id="photo-results" class="photo-results"></div>
+  </dialog>
+
+  <dialog id="viewer" class="viewer" aria-label="Imagem ampliada">
+    <form method="dialog"><button class="icon-btn viewer-close" aria-label="Fechar">✕</button></form>
+    <img id="viewer-img" alt="Imagem gerada">
+    <p class="viewer-prompt" id="viewer-prompt"></p>
+  </dialog>
+
+  <dialog id="password-dialog" class="dialog dialog-sm">
+    <form id="password-form" class="stack" novalidate>
+      <h2 id="password-title">Trocar senha</h2>
+      <p class="muted small" id="password-hint">Use pelo menos 10 caracteres. As sessões em outros aparelhos serão encerradas.</p>
+      <label class="field">Senha atual<input name="atual" type="password" autocomplete="current-password" required maxlength="128"></label>
+      <label class="field">Nova senha<input name="nova" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label>
+      <label class="field">Repita a nova senha<input name="repete" type="password" autocomplete="new-password" required minlength="10" maxlength="128"></label>
+      <p class="form-error" id="password-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" type="button" id="password-cancel">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Salvar nova senha</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="{{ url_for('studio.static', filename='ui.js') }}"></script>
+  <script src="{{ url_for('studio.static', filename='studio.js') }}"></script>
+</body>
+</html>
