@@ -29,10 +29,10 @@ Copy-Item studio studio_backup_v23 -Recurse
 |---|---|
 | `studio\surfaces.py` | `a5f868c79274fe40` |
 | `studio\typography.py` | `4cf017bb5198319e` |
-| `studio\textplan.py` | `c6fc7413809aec38` |
-| `studio\edits.py` | `98b1d07221152047` |
-| `studio\creative.py` | `7e05d27f327205fa` |
-| `studio\routes.py` | `9bacf53a67d8de39` |
+| `studio\textplan.py` | `f2692028630775cc` |
+| `studio\edits.py` | `c553cb65b15954e6` |
+| `studio\creative.py` | `d9b2855801573390` |
+| `studio\routes.py` | `2fcac867cedb507f` |
 
 O agente só usa os três primeiros; os outros vão junto para manter a pasta `studio\` igual à do site.
 Conferência do hash no Acer:

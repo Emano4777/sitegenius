@@ -275,7 +275,7 @@
       : "Descreva a imagem… (ou peça um ajuste da última)";
   }
 
-  const CREATIVE = ["free_image", "text_edit"];  // criações livres (texto ajustado na mesma arte incluso)
+  const CREATIVE = ["free_image", "text_edit", "reference_edit", "reference_read"];  // criações livres (texto ajustado na mesma arte incluso)
 
   async function refresh(scroll) {
     if (!state.conversationId) return;

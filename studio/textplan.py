@@ -367,6 +367,138 @@ def extract_blocks(message):
     return blocks[:MAX_BLOCKS]
 
 
+def _skeleton(text):
+    """Letras/números minúsculos sem acento, com o índice de cada um no texto original."""
+    chars, index = [], []
+    for i, ch in enumerate(text):
+        base = unicodedata.normalize("NFD", ch)[0].lower()
+        if base.isalnum():
+            chars.append(base)
+            index.append(i)
+    return "".join(chars), index
+
+
+def find_literal(candidate, message):
+    """Trecho da mensagem que é o mesmo texto do candidato a menos de maiúsculas, acentos, espaços e pontuação.
+
+    Ex.: modelo devolve "Jefferson Tecnologia", cliente escreveu "Jefferson tecnologia" -> "Jefferson tecnologia".
+    Devolve a grafia exata do cliente (ou None). Nunca devolve texto que o cliente não escreveu."""
+    message = _nfc(message)
+    want, _ = _skeleton(_nfc(candidate))
+    have, index = _skeleton(message)
+    if len(want) < 2:
+        return None
+    pos = have.find(want)
+    if pos < 0:
+        return None
+    start, end = index[pos], index[pos + len(want) - 1] + 1
+    # Inclui pontuação colada no fim só se o candidato também a tiver (ex.: "Promoção!").
+    tail = _nfc(candidate).rstrip()[-1:] if _nfc(candidate) else ""
+    if tail and not tail.isalnum() and end < len(message) and message[end] == tail:
+        end += 1
+    return message[start:end].strip()
+
+
+def _edit_distance(a, b):
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
+
+def _stylized(word):
+    """Grafia escolhida pelo cliente (marca): maiúsculas no meio, tudo maiúsculo, letras e números misturados."""
+    letters = [c for c in word if c.isalpha()]
+    return (len(letters) > 1 and (any(c.isupper() for c in letters[1:]) or word.isupper())) or \
+        (any(c.isdigit() for c in word) and any(c.isalpha() for c in word))
+
+
+def polish_from_model(candidate, message):
+    """Versão do modelo para um texto do cliente, se for uma melhoria SEGURA de escrita; senão None.
+
+    Aceita: caixa, acentos, pontuação e espaços; erro de digitação pequeno em palavra comum (minúscula) longa.
+    Nunca aceita: números diferentes (preço, telefone), outra quantidade de palavras, mudança em palavra de grafia
+    estilizada ("EmanoTec", "iPhone") ou em texto que o cliente escreveu entre aspas, nem trocar uma palavra por
+    outra diferente. Devolve (texto_final, trecho_do_cliente)."""
+    cand = _nfc(candidate)
+    message = _nfc(message)
+    if not cand:
+        return None
+    words_c = cand.split()
+    msg_words = message.split()
+    n = len(words_c)
+    digits_c = re.sub(r"\D", "", cand)
+    quoted = [_nfc(q) for q in _QUOTES.findall(message) for q in q if q]
+    same = find_literal(cand, message)  # mesmas letras, só espaços/hífens/pontuação/caixa diferentes
+    if same and re.sub(r"\D", "", same) == digits_c:
+        if any(_stylized(w) for w in same.split()) or any(_skeleton(same)[0] in _skeleton(q)[0] for q in quoted):
+            return same, same
+        return cand, same
+    for i in range(0, max(0, len(msg_words) - n) + 1):
+        span_words = msg_words[i:i + n]
+        span = " ".join(span_words)
+        clean = [re.sub(r"^[\"“”«»'(]+|[\"“”«»'),.;:!?]+$", "", w) for w in span_words]
+        if re.sub(r"\D", "", " ".join(clean)) != digits_c:
+            continue
+        ok, polished = True, []
+        for client, model in zip(clean, words_c):
+            sk_c, sk_m = _skeleton(client)[0], _skeleton(model)[0]
+            if not sk_c:
+                ok = False
+                break
+            if _stylized(client) and sk_c == sk_m:
+                polished.append(client)  # grafia de marca: respeita a do cliente
+                continue
+            if sk_c == sk_m:
+                polished.append(model)  # mesma palavra, forma melhorada
+                continue
+            typo = (client[:1].islower() and len(sk_c) >= 5 and not _stylized(client)
+                    and _edit_distance(sk_c, sk_m) <= (1 if len(sk_c) < 9 else 2) and sk_c[0] == sk_m[0])
+            if not typo:
+                ok = False
+                break
+            polished.append(model)
+        if not ok:
+            continue
+        literal = " ".join(clean)
+        if any(_skeleton(literal)[0] in _skeleton(q)[0] for q in quoted):
+            return literal, literal  # entre aspas: exatamente como o cliente escreveu
+        return " ".join(polished), literal
+    return None
+
+
+_SMALL_WORDS = {"de", "da", "do", "das", "dos", "e", "é", "em", "na", "no", "nas", "nos", "para", "pra", "por", "com",
+                "a", "o", "as", "os", "ao", "aos", "à", "às", "um", "uma", "&"}
+
+
+def quoted_in(text, message):
+    """O cliente escreveu esse texto entre aspas (grafia exata)?"""
+    want = _skeleton(_nfc(text))[0]
+    return any(want and want in _skeleton(_nfc(q))[0] for pair in _QUOTES.findall(message or "") for q in pair if q)
+
+
+def professional_case(text, role, message=""):
+    """Acabamento de apresentação para títulos e nomes: só a caixa das letras muda, nunca as letras.
+
+    - nome ("Jefferson tecnologia": começa com maiúscula e tem palavras minúsculas) -> "Jefferson Tecnologia";
+    - frase toda minúscula ("tecnologia é aqui") -> "Tecnologia é aqui".
+    Não mexe em texto entre aspas, grafia estilizada ("EmanoTec", "iPhone", "TREINE"), outros papéis ou textos longos."""
+    if role not in ("titulo", "marca") or not text or quoted_in(text, message):
+        return text
+    words = text.split()
+    if len(words) > 7 or any(_stylized(w) for w in words) or any(c.isdigit() for c in text):
+        return text
+    if text == text.lower():
+        return text[:1].upper() + text[1:]
+    if words[0][:1].isupper():
+        return " ".join(w if (i and w.lower() in _SMALL_WORDS) or not w[:1].isalpha() else w[:1].upper() + w[1:]
+                        for i, w in enumerate(words))
+    return text
+
+
 def _present(text, message):
     """O texto aparece literalmente no pedido? (espaços normalizados; acentos e maiúsculas contam).
 
@@ -388,7 +520,10 @@ def merge_model_blocks(blocks, model_blocks, message):
         if not isinstance(item, dict):
             continue
         text = _nfc(item.get("texto"))[:MAX_TEXT]
-        if not text or not _present(text, message):
+        if text and not _present(text, message):
+            polished = polish_from_model(text, message)
+            text = polished[0] if polished else ""  # melhoria segura de escrita; nada inventado
+        if not text:
             continue
         role = item.get("papel") if item.get("papel") in ROLES else None
         position = item.get("posicao") if item.get("posicao") in POSITIONS else None
@@ -471,7 +606,8 @@ def plan_from_request(message, model_blocks=None, creative_style=None, model_sty
         effect = model_effect
     return {
         "versao": 1,
-        "blocos": [{"texto": b["texto"][:MAX_TEXT], "papel": b["papel"], "posicao": b["posicao"],
+        "blocos": [{"texto": professional_case(b["texto"][:MAX_TEXT], b["papel"], message), "papel": b["papel"],
+                    "posicao": b["posicao"],
                     **({"destaque": True} if b["papel"] == "preco" and _EMPHASIS.search(message or "") else {})}
                    for b in blocks],
         "estilo": style,
@@ -497,7 +633,8 @@ def validate_plan(plan, sources):
             continue
         text = _nfc(b.get("texto"))[:MAX_TEXT]
         # "confirmado": texto aprovado pelo usuário numa pergunta (marcado só pelo servidor).
-        if text and (b.get("confirmado") is True or any(_present(text, s) for s in sources)):
+        if text and (b.get("confirmado") is True or any(_present(text, s) or polish_from_model(text, s)
+                                                         or find_literal(text, s) for s in sources)):
             blocks.append({"texto": text, "papel": b.get("papel") if b.get("papel") in ROLES else "texto",
                            "posicao": b.get("posicao") if b.get("posicao") in POSITIONS else "auto",
                            **({"confirmado": True} if b.get("confirmado") is True else {}),

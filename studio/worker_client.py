@@ -54,8 +54,11 @@ class WorkerClient:
         resp.raise_for_status()
         return resp
 
-    def claim(self):
-        resp = self._json("POST", "/claim", {})
+    def claim(self, capabilities=None, only=None):
+        body = {"capacidades": list(capabilities or [])}
+        if only:
+            body["somente"] = list(only)  # executor dedicado (ex.: só edição direta de imagens enviadas)
+        resp = self._json("POST", "/claim", body)
         return None if resp.status_code == 204 else resp.json()["job"]
 
     def progress(self, job_id, progress, message, timings=None, info=None):
@@ -82,6 +85,12 @@ class WorkerClient:
         payload = {"arte": base64.b64encode(art_bytes).decode(), "final": base64.b64encode(final_bytes).decode(),
                    "relatorio": report}
         return self._json("POST", f"/jobs/{job_id}/complete-composed", payload).json()
+
+    def extracted(self, job_id, dados, fotos, report):
+        """Redesign: dados lidos da arte do cliente + recortes das fotos originais (JPEG)."""
+        payload = {"dados": dados, "fotos": [base64.b64encode(f).decode() if f else None for f in fotos],
+                   "relatorio": report}
+        return self._json("POST", f"/jobs/{job_id}/extracted", payload).json()
 
     def complete_json(self, job_id, payload):
         return self._json("POST", f"/jobs/{job_id}/complete", payload).json()

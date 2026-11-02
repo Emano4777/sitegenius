@@ -51,25 +51,36 @@ Regras obrigatórias:
 - "cenario" descreve somente o fundo/ambiente, em inglês, sem texto, sem logos, sem produtos.
 - Se houver imagens de referência, descreva o estilo delas em "cenario" (cores, luz, clima). Não copie marcas.
 - formato: um de feed_4x5, quadrado, story, a4.
+- Preços podem vir sem centavos ("45 reais", "é 55", "de 15 para 10"): converta para "45,00", "55,00", "15,00"/"10,00".
+- Condição por quantidade ("leve 2 paga 45", "1 só é 55"): use "preco" = preço de 1 unidade e explique a condição em
+  "observacoes" exatamente como o cliente disse. Se não der para saber se o valor é por unidade ou total, pergunte só isso.
+- "ean" só se o cliente digitou o código de barras. Nunca invente código.
+- Loja, validade, título e cenário são OPCIONAIS. Se o cliente disse que não tem validade ou mandou usar a criatividade,
+  NÃO pergunte de novo: decida o visual você mesmo. Pergunte só o que for indispensável (produto ou preço faltando).
+- Fotos: o Studio busca fotos na internet quando o cliente pede. Nunca diga que não pode buscar imagens.
+- Antes de perguntar algo, confira o "Briefing atual": não peça o que já está preenchido.
 Responda SOMENTE com JSON no formato:
 {"resposta": "mensagem curta ao usuário", "briefing": {"formato": "", "loja": "", "titulo": "", "tema": "", "cenario": "", "validade": "", "observacoes": "", "produtos": [{"nome": "", "ean": "", "preco": "", "preco_de": "", "unidade": ""}]}}"""
 
 
 CREATIVE_PROMPT = """Você é o diretor de arte do SiteGenius Studio. Fale em português do Brasil, curto e simpático.
 Transforme o pedido do usuário em um prompt para o gerador de imagens (Z-Image Turbo).
-Responda SOMENTE com JSON neste formato:
+Responda SOMENTE com JSON compacto. Campos possíveis (OMITA os vazios, falsos ou não usados — quanto mais curto, melhor):
 {"acao": "gerar", "resposta": "", "pergunta": "", "prompt_visual": "", "estilo": "", "proporcao": "",
  "editar_anterior": false, "uso_referencia": "base", "descricao_referencias": "",
  "textos": [{"texto": "", "papel": "", "posicao": ""}], "estilo_texto": "", "efeito_texto": "",
  "tipo_pedido": "nova", "ajuste": {"cena": false, "textos": false, "intensidade": "",
  "operacoes_texto": [{"acao": "", "alvo": "", "papel": "", "texto": "", "posicao": "", "valor": "", "todos": false}]}}
+Ex. de criação nova sem textos: {"acao":"gerar","resposta":"Vou criar um farol ao entardecer!","prompt_visual":"...",
+"estilo":"foto","tipo_pedido":"nova"}
 Regras:
 - acao "encarte" só se o usuário pedir encarte/panfleto/tabloide com VÁRIOS produtos e preços. Anúncio, post,
   banner ou arte de UM produto com preço é acao "gerar" (o preço vai em "textos" com papel "preco").
 - acao "perguntar" SOMENTE se não for possível saber o assunto principal da imagem. Nunca pergunte estilo,
   formato, cores ou detalhes: escolha você. Em "pergunta", uma pergunta curta e concreta.
-- acao "gerar": "prompt_visual" em INGLÊS, 40 a 120 palavras: assunto, ação, ambiente, composição,
-  enquadramento, luz, lente/estilo e paleta. Seja específico e visual.
+- acao "gerar": "prompt_visual" em INGLÊS, 25 a 60 palavras, denso e específico: assunto, ação, ambiente,
+  composição, luz, estilo e paleta. Sem frases de enchimento ("the scene should evoke…", "8k", "high detail").
+- "resposta": no máximo 15 palavras.
 - Não invente marcas, logotipos, preços, telefones ou endereços.
 - TEXTOS: o gerador de imagens NÃO escreve letras; o Studio aplica os textos depois, com fontes reais.
   Em "textos", liste cada texto que o usuário quer na arte, copiado EXATAMENTE como ele escreveu (mesma grafia,
@@ -199,7 +210,18 @@ class Ollama:
         }
         if self.num_thread:
             payload["options"]["num_thread"] = self.num_thread
-        return self._post("/api/chat", payload, self.timeout)["message"]["content"]
+        # Com imagem, a análise visual na CPU leva mais: tempo maior (a imagem já chega reduzida a 768 px).
+        has_images = any(m.get("images") for m in messages)
+        timeout = max(self.timeout, int(os.getenv("SG_VISION_TIMEOUT", "240"))) if has_images else self.timeout
+        data = self._post("/api/chat", payload, timeout)
+        ns = 1e9
+        # Métricas reais do Ollama (só log): carga do modelo, leitura do prompt e geração.
+        log.info("métricas: carga=%.1fs prompt=%d tok em %.1fs (%.0f tok/s) geração=%d tok em %.1fs (%.1f tok/s)%s",
+                 data.get("load_duration", 0) / ns, data.get("prompt_eval_count", 0), data.get("prompt_eval_duration", 0) / ns,
+                 data.get("prompt_eval_count", 0) / max(1e-9, data.get("prompt_eval_duration", 0) / ns),
+                 data.get("eval_count", 0), data.get("eval_duration", 0) / ns,
+                 data.get("eval_count", 0) / max(1e-9, data.get("eval_duration", 0) / ns), " (com imagem)" if has_images else "")
+        return data["message"]["content"]
 
 
 def build_messages(payload, images_b64):
@@ -257,7 +279,7 @@ def process(site, ollama, job, vision):
     images = []
     if vision:
         for asset_id in (payload.get("image_asset_ids") or [])[:3]:
-            images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}", raw=True)).decode())
+            images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}/preview", raw=True)).decode())
     started = time.time()
     content = ollama.chat(build_messages(payload, images))
     log.info("inferência em %.1fs (%d imagem(ns))", time.time() - started, len(images))
@@ -276,7 +298,7 @@ def process_creative(site, ollama, job, vision):
     images = []
     if vision:
         for asset_id in (payload.get("image_asset_ids") or [])[:2]:
-            images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}", raw=True)).decode())
+            images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}/preview", raw=True)).decode())
     started = time.time()
     content = ollama.chat(build_creative_messages(payload, images, vision), temperature=0.3, num_predict=900)
     log.info("criação: inferência em %.1fs (%d imagem(ns))", time.time() - started, len(images))

@@ -8,6 +8,8 @@ Tipos de tarefa:
     txt2img, ou img2img quando há referência/imagem anterior: a imagem vai para o
     ComfyUI (/upload/image) e entra no workflow por LoadImage -> VAEEncode com denoise < 1.
   * ad_composite (v1/v2): cenário no ComfyUI + encarte montado por studio/compose.py.
+  * v2.5: edição direta de imagens enviadas pelo cliente (studio/refedit.py: troca preço/telefone na própria
+    imagem, sem gerar nada novo). Só pega essas tarefas se a leitura visual e o OpenCV estiverem disponíveis.
   * v2.3: com textos pedidos, aplica a tipografia aqui (studio/typography.py: superfícies, validação) e confere
     com leitura visual local (studio/ocr.py, RapidOCR na CPU, opcional). SG_AGENT_COMPOSE=0 deixa para o servidor;
     SG_OCR=0 desliga a leitura visual.
@@ -710,8 +712,66 @@ def process_ad(client, job, comfy, history):
     log.info("tarefa %s concluída (asset %s)", job_id[:8], result.get("asset_id", "")[:8])
 
 
+def reference_edit_ready():
+    """v2.5: edição direta de imagens enviadas (precisa da leitura visual local e do OpenCV)."""
+    try:
+        import cv2  # noqa: F401, PLC0415
+
+        from studio import ocr  # noqa: PLC0415
+
+        return ocr.engine() is not None
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def process_reference_edit(client, job):
+    """Troca dados (preço, telefone) direto na imagem do cliente, sem gerar nada novo, e entrega em 4:5."""
+    from studio import refedit  # noqa: PLC0415
+
+    job_id, payload = job["id"], job["payload"]
+    report = make_reporter(client, job_id)
+    started = time.time()
+    report(10, "Lendo a imagem enviada", None, {"etapa": "download"})
+    original = client.asset(payload["asset_ids"][0])
+    report(40, "Trocando os dados na imagem", None, {"etapa": "texto"})
+    final, result = refedit.edit(original, payload.get("trocas") or [], to_instagram=payload.get("instagram", True))
+    timings = {"texto_s": time.time() - started, "total_worker_s": time.time() - started}
+    if final is None:
+        client.fail(job_id, "edição direta: " + "; ".join(t.get("motivo", "falhou") for t in result.get("trocas") or [])
+                    or result.get("motivo", "falhou"))
+        return
+    report(97, "Enviando a imagem", timings, {"etapa": "send"})
+    client.complete_composed(job_id, _art_jpeg(original), final, {"ok": result["ok"], "edicao_direta": result})
+    log.info("tarefa %s: edição direta em %.1fs (%s)", job_id[:8], time.time() - started,
+             json.dumps([(t.get("antigo"), t.get("novo"), t.get("ok")) for t in result.get("trocas") or []],
+                        ensure_ascii=False))
+
+
+def process_reference_read(client, job):
+    """Redesign: lê produtos, preços e recorta as fotos originais da arte do cliente (nada é gerado)."""
+    from studio import refedit  # noqa: PLC0415
+
+    job_id, payload = job["id"], job["payload"]
+    report = make_reporter(client, job_id)
+    started = time.time()
+    report(10, "Lendo a arte enviada", None, {"etapa": "download"})
+    original = client.asset(payload["asset_ids"][0])
+    report(40, "Lendo produtos e preços", None, {"etapa": "texto"})
+    result, rep = refedit.extract_flyer(original)
+    if result is None:
+        client.fail(job_id, "leitura da arte: " + rep.get("motivo", "falhou"))
+        return
+    client.extracted(job_id, result["dados"], result["fotos"], rep)
+    log.info("tarefa %s: leitura da arte em %.1fs (%d produto(s), %d foto(s))", job_id[:8], time.time() - started,
+             rep.get("produtos", 0), rep.get("com_foto", 0))
+
+
 def process(client, job, comfy, history=None):
     history = history or LocalTimings()
+    if job["payload"].get("gen_type") == "reference_edit":
+        return process_reference_edit(client, job)
+    if job["payload"].get("gen_type") == "reference_read":
+        return process_reference_read(client, job)
     if job["payload"].get("gen_type") == "free_image":
         return process_free_image(client, job, comfy, history)
     return process_ad(client, job, comfy, history)
@@ -864,16 +924,20 @@ def main(argv=None):
                 log.info("websocket-client instalado: progresso por etapa/passo ativo.")
             except ImportError:
                 log.warning("websocket-client ausente: rode 'pip install websocket-client' para progresso por passo.")
+        log.info("Edição direta de imagens enviadas (v2.5): %s",
+                 "ativa" if reference_edit_ready() else "indisponível (instale rapidocr-onnxruntime)")
         log.info("Configuração OK (nenhuma tarefa buscada).")
         return 0
 
     history = LocalTimings()
     poll = int(os.getenv("SG_POLL_SECONDS", "10"))
+    capabilities = ["reference_edit"] if reference_edit_ready() else []
+    log.info("capacidades: %s", ", ".join(capabilities) or "padrão")
     log.info("agente iniciado; buscando tarefas em %s a cada %ss (modelo mantido entre tarefas)", os.environ["SG_BASE_URL"], poll)
     while True:
         job = None
         try:
-            job = client.claim()
+            job = client.claim(capabilities)
             if job:
                 process(client, job, comfy, history)
         except JobCanceled:

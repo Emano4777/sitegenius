@@ -80,15 +80,29 @@ def format_brl(cents):
     return f"R$ {reais:,}".replace(",", ".") + f",{centavos:02d}"
 
 
+# Preço sem centavos em linguagem natural: "45 reais", "R$ 45", "por 10", "é 55", "de 15 para 10", "paga 45".
+WORD_PRICE_RE = re.compile(
+    r"(?:r\$\s*|\b(?:por|para|pra|paga|pago|pagar|pagando|[eé]|sai(?:\s+a)?|custa|custando|de|s[oó]|apenas|vale)\s+)"
+    r"(\d{1,5}(?:[.,]\d{1,2})?)(?![\d.,]\d)|(\d{1,5}(?:[.,]\d{1,2})?)\s*(?:reais|real)\b", re.I)
+
+
 def grounded_prices(user_texts):
-    """Todos os preços que o usuário realmente digitou, em centavos."""
+    """Todos os preços que o usuário realmente digitou, em centavos (com ou sem centavos)."""
     found = set()
     for text in user_texts:
         for match in PRICE_RE.finditer(text or ""):
             cents = price_to_cents(match.group(1))
             if cents:
                 found.add(cents)
+        for match in WORD_PRICE_RE.finditer(text or ""):
+            cents = price_to_cents(match.group(1) or match.group(2))
+            if cents:
+                found.add(cents)
     return found
+
+
+def typed_digits(user_texts):
+    return " ".join(re.sub(r"\D", " ", t or "") for t in user_texts)
 
 
 def empty_briefing():
@@ -260,6 +274,8 @@ def normalize_briefing(data, user_texts=None, owned_asset_ids=None, trust_prices
             continue
         ean = re.sub(r"\D", "", str(raw.get("ean") or ""))
         ean = ean if len(ean) in (8, 12, 13, 14) else ""
+        if ean and not trust_prices and ean not in typed_digits(user_texts or []).split():
+            ean = ""  # código de barras só se o cliente digitou (ou escolheu no painel): nunca inventado
         cents = price_to_cents(raw.get("preco"))
         de_cents = price_to_cents(raw.get("preco_de"))
         if not trust_prices:

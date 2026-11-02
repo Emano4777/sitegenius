@@ -5,7 +5,7 @@ import random
 
 from PIL import Image, ImageDraw, ImageFilter
 
-from studio import creative, ocr, surfaces, textplan, typography
+from studio import creative, edits, ocr, surfaces, textplan, typography
 from studio.db import get_conn
 from tests.test_creative import render_all, send
 from tests.test_studio_api import new_conversation
@@ -315,7 +315,8 @@ def test_production_bug_capital_t_and_realistic_background(tmp_path):
     assert p["render_mode"] == "txt2img" and p["spec"]["style"] == "foto"  # cenário novo, não img2img fraco
     assert "photorealistic" in p["prompt"]
     reply = data["mensagens"][-1]["texto"]
-    assert "“tecnologia é aqui” → “Tecnologia é aqui”" in reply and "fundo totalmente novo" in reply
+    # Com o acabamento, o título já nasceu "Tecnologia é aqui" na criação; o pedido de T maiúsculo já está atendido.
+    assert "fundo totalmente novo" in reply and "Não consegui" not in reply
     render_all(worker, tmp_path)
     data = user.get(f"/studio/api/conversations/{conv}").get_json()
     # O gerador de teste devolve sempre a mesma imagem: a conferência visual precisa perceber e avisar (não fingir).
@@ -344,3 +345,281 @@ def test_text_only_requests_never_regenerate(user, render_worker, tmp_path):
             plan = json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job["id"],))["payload"])
         assert textplan.plan_texts(plan["spec"]["text_plan"]) == [expected], text
 
+
+
+# ------------------------------------------------------------ substituição de textos (defeito "Jefferson", 02/11/2026)
+
+
+OLD_PLAN = {"versao": 1, "blocos": [{"texto": "tecnologia é aqui", "papel": "titulo", "posicao": "centro"}],
+            "estilo": "futurista", "efeito": "brilho", "cor": None, "superficie": None, "destaque": None, "pendentes": []}
+VERY_OLD_PLAN = {"blocos": [{"texto": "tecnologia é aqui", "papel": "titulo", "posicao": "centro"}]}  # sem campos novos
+
+
+def test_jefferson_real_model_answer_keeps_client_spelling():
+    """Dados reais: o modelo trocou a caixa ("Jefferson Tecnologia") e a validação descartava a troca."""
+    real = {"acao": "ajustar", "tipo_pedido": "ajuste", "ajuste": {"cena": True, "textos": True, "intensidade": "grande",
+            "operacoes_texto": [{"acao": "trocar", "alvo": "tecnologia é aqui", "papel": "titulo",
+                                 "texto": "Jefferson Tecnologia"}]}}
+    msg = "só muda o texto pra Jefferson tecnologia  e troca o fundo por algo melhor mais realista"
+    for plan in (OLD_PLAN, VERY_OLD_PLAN):
+        d = edits.plan_adjustment({"text_plan": plan}, msg, real, [])
+        assert textplan.plan_texts(d["plan"]) == ["Jefferson Tecnologia"] and not d["faltando"]  # escrita melhorada
+        assert d["cena"] == "total"
+        acao, reply, spec = creative.adjustment_outcome(d, {"text_plan": plan, "prompt_visual": "x"}, "art1",
+                                                         "abstract tech", real, {}, msg, [])
+        assert acao == "gerar" and spec["render_mode"] == "txt2img" and "Não consegui" not in reply
+        assert textplan.plan_texts(spec["text_plan"]) == ["Jefferson Tecnologia"]
+
+
+def test_safe_writing_polish_never_invents():
+    polish = textplan.polish_from_model
+    assert polish("Jefferson Tecnologia", "muda pra Jefferson tecnologia")[0] == "Jefferson Tecnologia"
+    assert polish("Tecnologia", "escreve tecnolgia no topo")[0] == "Tecnologia"  # erro de digitação
+    assert polish("Café Aroma", "placa com cafe aroma")[0] == "Café Aroma"  # acento
+    assert polish("Seja Bem-vindo", "frase seja bem vindo")[0] == "Seja Bem-vindo"
+    assert polish("Emano Tech", "muda pra Emano Tec") is None  # nome/marca não é "corrigido"
+    assert polish("Emanotec", "muda pra EmanoTec")[0] == "EmanoTec"  # grafia estilizada respeitada
+    assert polish("Pizzaria Bella", "logo da pizzaria bela") is None  # troca de palavra
+    assert polish("R$ 59,90", "preço 49,90") is None  # números nunca mudam
+    assert polish("Drogaria Popular Ltda", "muda o nome para drogaria popular") is None  # nada acrescentado
+    assert polish("Promoção de Verão!", 'arte com "promoção de verão"')[0] == "promoção de verão"  # aspas: exato
+
+
+def test_find_literal_uses_client_spelling_only():
+    assert textplan.find_literal("Jefferson Tecnologia", "muda pra Jefferson tecnologia agora") == "Jefferson tecnologia"
+    assert textplan.find_literal("Café Aroma", "quero cafe aroma na placa") == "cafe aroma"
+    assert textplan.find_literal("Loja Nova", "quero outra coisa") is None
+
+
+MULTI = {"text_plan": {"versao": 1, "estilo": "moderno", "efeito": "auto", "cor": None, "blocos": [
+    {"texto": "Farmácia Bem", "papel": "titulo", "posicao": "topo"},
+    {"texto": "Entrega grátis", "papel": "subtitulo", "posicao": "rodape"},
+    {"texto": "R$ 19,90", "papel": "preco", "posicao": "rodape"}]}}
+
+
+def test_replacements_without_repeating_previous_text():
+    cases = {"muda o nome para Drogaria Popular": ["Drogaria Popular", "Entrega grátis", "R$ 19,90"],
+             "troca o preço por 24,90": ["Farmácia Bem", "Entrega grátis", "R$ 24,90"],
+             "só altera o título para Promoção Especial": ["Promoção Especial", "Entrega grátis", "R$ 19,90"],
+             "muda a frase para Entrega em 1 hora": ["Farmácia Bem", "Entrega em 1 hora", "R$ 19,90"]}
+    for msg, expected in cases.items():
+        d = edits.plan_adjustment(MULTI, msg, {}, [])
+        assert textplan.plan_texts(d["plan"]) == expected, msg
+        assert d["cena"] is None, msg  # só texto: mesma arte
+
+
+def test_ambiguous_replacement_asks_instead_of_guessing():
+    d = edits.plan_adjustment(MULTI, "muda o texto pra Promoção Especial", {}, [])
+    assert textplan.plan_texts(d["plan"]) == textplan.plan_texts(MULTI["text_plan"]) and d["ambiguo"]
+    acao, reply, _ = creative.adjustment_outcome(d, MULTI, "art1", "", {}, {}, "muda o texto pra Promoção Especial", [])
+    assert acao == "perguntar" and "Qual texto" in reply and "Farmácia Bem" in reply
+
+
+def test_add_versus_replace():
+    model = {"ajuste": {"cena": False, "textos": True, "operacoes_texto": [
+        {"acao": "adicionar", "texto": "Aberto 24h", "papel": "subtitulo"}]}}
+    d = edits.plan_adjustment(MULTI, "adiciona também Aberto 24h", model, [])
+    assert textplan.plan_texts(d["plan"]) == ["Farmácia Bem", "Entrega grátis", "R$ 19,90", "Aberto 24h"]
+
+
+def test_single_block_replacement_without_naming_old_text(user, render_worker, tmp_path):
+    conv = new_conversation(user)
+    send(user, conv, 'arte com "tecnologia é aqui" no centro')
+    render_all(render_worker, tmp_path)
+    data = send(user, conv, "agora troca o texto para Emano Tec")
+    job = data["jobs"][0]
+    assert job["tipo"] == "text_edit" and render_worker.claim() is None  # só texto: sem gerar de novo
+    with user.client.application.app_context():
+        plan = json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job["id"],))["payload"])
+    assert textplan.plan_texts(plan["spec"]["text_plan"]) == ["Emano Tec"]
+    reply = data["mensagens"][-1]["texto"]
+    assert "“tecnologia é aqui” → “Emano Tec”" in reply and "Não consegui" not in reply
+
+
+def test_reply_never_contradicts_itself(user, render_worker, tmp_path):
+    conv = new_conversation(user)
+    send(user, conv, 'arte com "tecnologia é aqui" no centro')
+    render_all(render_worker, tmp_path)
+    send(user, conv, "muda o texto pra Jefferson tecnologia e troca o fundo por algo mais realista")
+    render_all(render_worker, tmp_path)
+    text = user.get(f"/studio/api/conversations/{conv}").get_json()["mensagens"][-1]["texto"]
+    assert "Jefferson Tecnologia" in text and "Não consegui" not in text  # acabamento profissional
+    assert not ("Atenção" in text and "os textos estão como você pediu" in text)
+
+
+# ------------------------------------------------------------ anexos: a imagem enviada tem prioridade (02/11/2026)
+
+MSG_ALUGUEL = ("agora cria uma arte legal para eu divulgar no instagram aproveitando essa arte que ja desolvi em anexo "
+               "porém altera o valor do aluguel da imagem para 1000 reais")
+
+
+def test_reference_changes_from_real_message():
+    assert creative.reference_changes(MSG_ALUGUEL) == [{"tipo": "preco", "novo": "R$ 1.000"}]
+    assert creative.reference_changes("troca o preço dessa imagem para 1.299,90") == [{"tipo": "preco", "novo": "R$ 1.299,90"}]
+    assert creative.reference_changes("muda o whatsapp da arte para (11) 98888-7777") == [
+        {"tipo": "telefone", "novo": "(11) 98888-7777"}]
+    assert creative.reference_changes("deixa o texto maior") == []
+
+
+def _jefferson_then_attachment(user, render_worker, tmp_path, refedit_online):
+    from tests.test_studio_api import upload
+    from tests.conftest import image_bytes
+    conv = new_conversation(user)
+    send(user, conv, 'arte tecnológica com "Jefferson Tecnologia" no centro')
+    render_all(render_worker, tmp_path)
+    if refedit_online:
+        render_worker.claim(["reference_edit"])  # agente v2.5 anuncia a capacidade (fila vazia aqui)
+    ref = upload(user, kind="reference", data=image_bytes("JPEG", (560, 700))).get_json()["asset"]["id"]
+    data = send(user, conv, MSG_ALUGUEL, anexos=[ref])
+    return conv, ref, data
+
+
+def test_attachment_is_used_not_previous_art(user, render_worker, tmp_path):
+    conv, ref, data = _jefferson_then_attachment(user, render_worker, tmp_path, refedit_online=True)
+    job = data["jobs"][0]
+    assert job["tipo"] == "reference_edit"
+    with user.client.application.app_context():
+        payload = json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job["id"],))["payload"])
+    assert payload["asset_ids"] == [ref] and payload["trocas"] == [{"tipo": "preco", "novo": "R$ 1.000"}]
+    assert "Jefferson" not in json.dumps(payload, ensure_ascii=False)  # nada herdado do projeto anterior
+    reply = data["mensagens"][-1]["texto"]
+    assert "imagem que você enviou" in reply and "R$ 1.000" in reply and "Instagram" in reply
+    # Worker antigo (sem a capacidade) não pega essa tarefa; o v2.5 pega.
+    assert render_worker.claim() is None
+    claimed = render_worker.claim(["reference_edit"])
+    assert claimed and claimed["payload"]["gen_type"] == "reference_edit"
+
+
+def test_attachment_without_capable_worker_is_honest(user, render_worker, tmp_path):
+    conv, ref, data = _jefferson_then_attachment(user, render_worker, tmp_path, refedit_online=False)
+    assert not [j for j in data["jobs"] if j["tipo"] == "reference_edit"]
+    reply = data["mensagens"][-1]["texto"]
+    assert "não consigo alterar textos diretamente" in reply and "Jefferson" not in reply
+
+
+def test_attachment_never_inherits_previous_art_in_model_or_rules():
+    prev = {"prompt_visual": "tech", "text_plan": {"versao": 1, "blocos": [
+        {"texto": "Jefferson Tecnologia", "papel": "titulo", "posicao": "centro"}], "estilo": "futurista"}}
+    model = {"acao": "gerar", "tipo_pedido": "ajuste", "editar_anterior": True, "prompt_visual": "real estate ad",
+             "ajuste": {"cena": True, "textos": True}, "uso_referencia": "base"}
+    acao, _, spec = creative.normalize_model_answer(model, "cria uma arte para instagram com essa foto", {}, prev,
+                                                    "old_art", ["ref1"], [])
+    assert spec["init_asset_id"] == "ref1" and "Jefferson" not in json.dumps(spec, ensure_ascii=False)
+    acao, _, spec = creative.rules_interpretation("agora cria uma arte com essa foto", {}, prev, "old_art", ["ref1"],
+                                                  None, [])
+    assert spec["init_asset_id"] == "ref1" and "Jefferson" not in json.dumps(spec, ensure_ascii=False)
+
+
+def test_agent_reference_edit_without_ocr_fails_honestly(user, render_worker, tmp_path, monkeypatch):
+    from workers import acer_agent
+    conv, ref, data = _jefferson_then_attachment(user, render_worker, tmp_path, refedit_online=True)
+    job = render_worker.claim(["reference_edit"])
+    from studio import refedit
+    monkeypatch.setattr(refedit.ocr, "engine", lambda: None)
+    acer_agent.process(render_worker, job, None, acer_agent.LocalTimings(str(tmp_path / "t.json")))
+    text = user.get(f"/studio/api/conversations/{conv}").get_json()["mensagens"][-1]["texto"]
+    assert "Não consegui fazer essa troca" in text
+
+
+def test_refedit_real_ocr_when_available():
+    import pytest
+    pytest.importorskip("rapidocr_onnxruntime")
+    pytest.importorskip("cv2")
+    from studio import refedit
+    img = Image.new("RGB", (800, 1000), (245, 241, 232))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle((60, 700, 560, 840), 20, fill=(232, 120, 20))
+    draw.text((90, 800), "R$ 1.500", font=typography.get_font("poppins", 800, 70), fill=(255, 255, 255), anchor="ls")
+    out, report = refedit.edit(png(img), [{"tipo": "preco", "novo": "R$ 1.000"}])
+    assert report["ok"] and out
+
+
+def test_dedicated_runner_only_gets_reference_edits(user, render_worker, tmp_path):
+    conv = new_conversation(user)
+    send(user, conv, "um farol ao entardecer")  # tarefa comum na fila
+    assert render_worker.claim(["reference_edit"], only=["reference_edit"]) is None
+    assert render_worker.claim()["payload"]["gen_type"] == "free_image"
+
+
+# ------------------------------------------------------------ redesign comercial, briefing e busca de fotos
+
+
+def test_commercial_redesign_never_regenerates_products(user):
+    from tests.test_studio_api import upload
+    conv = new_conversation(user)
+    ref = upload(user, kind="reference").get_json()["asset"]["id"]
+    for msg in ["Consegue melhorar essa imagem deixando ela mais moderna e melhor distribuída? Em um layout mais atual.",
+                "Consegue melhorar essa imagem deixando ela mais atual e com um layout mais moderno mantendo as "
+                "informações de preço e produto e tudo mais que tem na foto?"]:
+        data = send(user, conv, msg, anexos=[ref])
+        assert not [j for j in data["jobs"] if j["tipo"] == "free_image"], msg  # nenhuma geração img2img
+        assert "não redesenho os produtos" in data["mensagens"][-1]["texto"]
+    assert data["conversa"]["modo"] == "ad"
+
+
+def test_prices_without_cents_are_grounded_and_ean_not_invented():
+    from studio import briefing as bf
+    msg = ("Cria uma promoção pra mim de produtos de ofertas pode ser tipo um jornal de ofertas leite de promoção "
+           "comprada por quantidade levando 2 paga 45 reais e 1 só é 55 e tbm promoção só no preço no caso da toalha "
+           "umedecida sai de 14,99 para 9,99 e tbm o lenço de 15 para 10 reais pode usar sua criatividade")
+    model = {"loja": "Drogarias Poupaqui", "formato": "story", "produtos": [
+        {"nome": "Leite", "ean": "7891000065440", "preco": "55,00"},
+        {"nome": "Toalha umedecida", "preco": "9,99", "preco_de": "14,99"},
+        {"nome": "Lenço", "preco": "10,00", "preco_de": "15,00"}]}
+    out = bf.normalize_briefing(model, [msg])
+    prices = {p["nome"]: (p["preco"], p["preco_de"], p["ean"]) for p in out["produtos"]}
+    assert prices == {"Leite": ("R$ 55,00", "", ""), "Toalha umedecida": ("R$ 9,99", "R$ 14,99", ""),
+                      "Lenço": ("R$ 10,00", "R$ 15,00", "")}
+    assert not [p for p in out["pendencias"] if "preço" in p]  # não pede de novo o que foi informado
+
+
+def test_internet_photo_search_validates_match(monkeypatch):
+    from studio import products
+    leite = {"nome": "Leite Integral Italac 1L", "marca": "Italac", "image_url": "https://images.openfoodfacts.org/x.jpg",
+             "license": "CC BY-SA 3.0", "attribution": "Open Food Facts contributors"}
+    celular = {**leite, "nome": "Smartphone X", "marca": "Y"}
+    moca = {**leite, "nome": "Leite moça", "marca": "Nestlé"}
+    monkeypatch.setattr(products, "search_name", lambda q, http=None, limit=12: [celular, moca, leite])
+    chosen, options = products.find_photo({"nome": "Leite"})  # genérico: não escolhe sozinho (leite moça ≠ leite)
+    assert chosen is None and [o["nome"] for o in options] == ["Leite moça", "Leite Integral Italac 1L"]
+    chosen, _ = products.find_photo({"nome": "Leite Integral Italac"})
+    assert chosen["nome"] == "Leite Integral Italac 1L"
+    monkeypatch.setattr(products, "search_name", lambda q, http=None, limit=12: [celular])
+    assert products.find_photo({"nome": "Toalha umedecida"}) == (None, [])  # nada que corresponda: não usa
+    assert products.wants_internet_photos("Pega da internet a foto")
+
+
+def test_redesign_extract_fills_panel_with_real_data(user, render_worker, tmp_path):
+    """Redesign: o Acer lê a arte e o painel recebe os produtos/preços/fotos originais (nada gerado por IA)."""
+    import base64
+    from tests.test_studio_api import upload
+    from tests.conftest import image_bytes
+    conv = new_conversation(user)
+    render_worker.claim(["reference_edit"])  # agente v2.5 online
+    ref = upload(user, kind="reference").get_json()["asset"]["id"]
+    data = send(user, conv, "Consegue melhorar essa imagem deixando ela mais atual mantendo as informações de preço e produto",
+                anexos=[ref])
+    job = render_worker.claim(["reference_edit"])
+    assert job["payload"]["gen_type"] == "reference_read" and job["payload"]["asset_ids"] == [ref]
+    crop = image_bytes("JPEG", (120, 180))
+    render_worker.extracted(job["id"], {"titulo": "Ofertas da Semana", "loja": "Mercado Bom Preço", "produtos": [
+        {"nome": "Leite Integral Italac 1L", "preco": "4,99", "preco_de": "", "conferir": []},
+        {"nome": "Arroz Tio João 5kg", "preco": "27,90", "preco_de": "31,00", "conferir": ["preco_de"]}]},
+        [crop, crop], {"ok": True})
+    data = user.get(f"/studio/api/conversations/{conv}").get_json()
+    produtos = data["briefing"]["produtos"]
+    assert [(p["nome"], p["preco"], p["preco_de"], bool(p["asset_id"])) for p in produtos] == [
+        ("Leite Integral Italac 1L", "R$ 4,99", "", True), ("Arroz Tio João 5kg", "R$ 27,90", "", True)]  # incerto: vazio
+    assert data["conversa"]["modo"] == "ad" and data["briefing"]["loja"] == "Mercado Bom Preço"
+    text = data["mensagens"][-1]["texto"]
+    assert "Li a sua arte" in text and "Arroz Tio João 5kg: preço antigo (riscado) — li “R$ 31,00”, confirme o valor" in text
+    assert not [j for j in data["jobs"] if j["tipo"] == "free_image"]
+
+
+def test_job_type_names_fit_database_column():
+    """gen_type é VARCHAR(16) no Postgres (o SQLite dos testes não reclama)."""
+    import re as _re
+    from pathlib import Path
+    src = Path("studio/routes.py").read_text(encoding="utf-8")
+    names = set(_re.findall(r"'(free_image|text_edit|reference_\w+|ad_composite)'", src))
+    assert names and all(len(n) <= 16 for n in names), names

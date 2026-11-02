@@ -393,6 +393,10 @@ def rules_interpretation(text, options, previous_spec, previous_result_id, refer
     acao: "gerar" | "perguntar" | "encarte".
     """
     options = options or {}
+    if reference_ids and not PREVIOUS_ART.search(text or ""):
+        previous_result_id, previous_spec = None, None  # a imagem anexada é a base do pedido
+    if wants_commercial_redesign(text, reference_ids):
+        return "encarte", REDESIGN_REPLY, None
     intent = classify(text, bool(previous_result_id), conversation_mode)
     if intent == "ad_composite":
         return "encarte", "", None
@@ -489,6 +493,10 @@ def adjustment_outcome(decision, previous_spec, previous_result_id, prompt_visua
     previous_spec = previous_spec or {}
     record = {"texto": clean(text, 600), "cena": decision["cena"], "esperado": decision["esperado"],
               "realista": decision["realista"], "arte_anterior": previous_result_id}
+    if decision.get("ambiguo"):
+        names = "”, “".join(textplan.plan_texts(previous_spec.get("text_plan")))
+        return ("perguntar", f"Qual texto você quer trocar por “{decision['ambiguo'][0]}”? A arte tem: “{names}”.",
+                {**previous_spec})
     if decision["reclamacao"] and previous_spec.get("pedido_ajuste"):
         record["texto"] = previous_spec["pedido_ajuste"].get("texto") or record["texto"]
     if not decision["cena"]:
@@ -542,6 +550,73 @@ def retry_last_adjustment(previous_spec, text, previous_result_id, user_texts, o
     return acao, intro + resposta.replace("Certo! Vou fazer agora. ", "").replace("Pronto! ", ""), spec
 
 
+PREVIOUS_ART = re.compile(r"(arte|imagem|vers[aã]o|foto) (anterior|de antes|que voc[eê] (fez|criou|gerou))|"
+                          r"(na|da|com a) (mesma|[uú]ltima) (arte|imagem)", re.IGNORECASE)
+_REF_CHANGE = re.compile(
+    r"\b(?:altera|altere|alterar|muda|mude|mudar|troca|troque|trocar|substitui|substitua|corrige|corrija|atualiza|"
+    r"atualize|coloca|coloque|p[oõ]e|ponha|deixa|deixe)\b[^.!?\n]{0,60}?\b(?P<what>valor|pre[cç]o|aluguel|venda|"
+    r"telefone|whats\w*|contato|n[uú]mero)\b[^.!?\n]{0,40}?\b(?:para|pra|por|como)\s+(?P<value>(?:[^.!?\n,;]|[.,](?=\d))+)",
+    re.IGNORECASE)
+
+
+def reference_changes(text):
+    """Trocas pedidas numa imagem enviada pelo cliente ("altera o valor do aluguel da imagem para 1000 reais").
+
+    Devolve a lista de trocas (literal do cliente; preço só com os algarismos digitados) ou []."""
+    changes = []
+    for m in _REF_CHANGE.finditer(text or ""):
+        what, value = _norm(m.group("what")), m.group("value").strip()
+        if re.match(r"(valor|preco|aluguel|venda)", what):
+            num = re.search(r"\d[\d.]*(?:,\d{2})?\s*(mil|milh[aã]o|milh[oõ]es)?", value)
+            if not num:
+                continue
+            raw = num.group(0)
+            if num.group(1):
+                novo = textplan.format_price(raw)
+            else:
+                from .refedit import price_text  # noqa: PLC0415 — sem numpy/cv2 na importação
+
+                novo = price_text(raw.replace(".", ""))
+            changes.append({"tipo": "preco", "novo": novo})
+        else:
+            phone = re.search(r"\(?\d{2}\)?\s?\d{4,5}-?\d{4}", value)
+            if phone:
+                changes.append({"tipo": "telefone", "novo": phone.group(0)})
+    return changes
+
+
+REDESIGN = re.compile(r"melhor\w*|moderniz\w*|mais (atual|moderna?|bonit\w*|profissional|limp\w*)|layout|"
+                      r"redistribu\w*|reorganiz\w*|repagin\w*|refa[zç]\w* (essa|esta|a|minha) (arte|imagem)|redesenh\w*|"
+                      r"nova vers[aã]o (dessa|desta|da minha)", re.IGNORECASE)
+COMMERCIAL = re.compile(r"pre[cç]os?|produtos?|ofertas?|encarte|tabloide|panfleto|promo\w*|r\$|\d,\d{2}|"
+                        r"mant(?:end|enh|er)\w*|informa[cç]\w*|loja|farm[aá]cia|mercado", re.IGNORECASE)
+COMMERCIAL_SEEN = re.compile(r"pre[cç]|price|r\$|produto|product|oferta|offer|encarte|flyer|promo|desconto|discount",
+                             re.IGNORECASE)
+
+
+def wants_commercial_redesign(text, reference_ids, description=""):
+    """Modernizar uma arte comercial anexada (produtos, preços, marcas): nunca regenerar por IA (trocaria os
+    produtos). O redesign é feito com os dados e fotos reais, no fluxo de encarte."""
+    design_piece = re.search(r"layout|distribu\w*|organiz\w*|arte|encarte|panfleto|post|an[uú]ncio|cartaz|"
+                             r"banner|flyer|diagrama\w*", text or "", re.IGNORECASE)
+    return bool(reference_ids) and bool(REDESIGN.search(text or "")) and bool(
+        COMMERCIAL.search(text or "") or design_piece or COMMERCIAL_SEEN.search(description or ""))
+
+
+REDESIGN_REPLY = (
+    "Para modernizar a sua arte mantendo exatamente os produtos, as fotos e os preços, eu não redesenho os produtos "
+    "por IA (isso trocaria as embalagens). Vou montar um encarte novo, com layout atual, usando as informações reais. "
+    "Me confirme os produtos e preços da imagem (ex.: “Leite 55,00; Toalha umedecida de 14,99 por 9,99”) e envie as "
+    "fotos dos produtos — ou peça “busca as fotos na internet”. Se você só quer trocar um dado na própria imagem "
+    "(um preço, um telefone), é só me dizer qual."
+)
+
+
+def wants_reference_edit(text, reference_ids):
+    """O cliente quer trabalhar SOBRE a imagem anexada (trocar dados dela), não gerar uma imagem nova."""
+    return bool(reference_ids) and bool(reference_changes(text))
+
+
 def _same_scene(a, b):
     """A descrição da cena é (quase) a mesma? Compara as palavras, sem pontuação."""
     wa, wb = set(re.findall(r"[a-z]{3,}", _norm(a))), set(re.findall(r"[a-z]{3,}", _norm(b)))
@@ -580,6 +655,10 @@ def normalize_model_answer(data, text, options, previous_spec, previous_result_i
 
     # O modelo interpreta a intenção: criação nova ou ajuste (cena, textos ou os dois). O servidor valida, aplica e
     # confere cada mudança pedida antes de responder.
+    if reference_ids and not PREVIOUS_ART.search(text or ""):
+        previous_result_id, previous_spec = None, None  # imagem anexada = nova base; nada da arte anterior é herdado
+    if wants_commercial_redesign(text, reference_ids, data.get("descricao_referencias") or ""):
+        return "encarte", REDESIGN_REPLY, None
     adj = edits.model_adjustment(data) if previous_result_id and previous_spec else None
     if adj is not None or (previous_result_id and previous_spec and edits.COMPLAINT.search(text or "")):
         decision = edits.plan_adjustment(previous_spec, text, data, list(user_texts))

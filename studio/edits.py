@@ -174,14 +174,16 @@ def apply_operations(previous_plan, ops, message):
         position = op.get("posicao") if op.get("posicao") in textplan.POSITIONS else None
         targets_ = find(op) or (blocks if op.get("todos") is True else [])
         if action in ("trocar", "adicionar"):
-            formatting = op.get("formato") or op.get("origem") == "maiusculas"
+            formatting = op.get("formato") or op.get("polido") or op.get("origem") in ("maiusculas", "mensagem")
             if not literal or not (formatting or textplan._present(literal, message)):
                 continue  # o modelo não pode inventar texto (só mudar a forma do texto que o cliente escreveu)
             if action == "trocar" and targets_:
-                targets_[0]["texto"] = literal
+                targets_[0]["texto"] = literal  # substitui no mesmo bloco: posição, papel e estilo preservados
                 targets_[0].pop("confirmado", None)
                 if position:
                     targets_[0]["posicao"] = position
+            elif action == "trocar":
+                continue  # sem saber qual texto trocar: não adiciona por engano (pergunta ao cliente)
             else:
                 blocks.append({"texto": literal, "papel": role or "texto", "posicao": position or "auto"})
         elif action == "remover":
@@ -280,6 +282,66 @@ def _target_block(blocks, message, word=None):
     roles = targets(message)
     hit = [b for b in blocks if b["papel"] in roles]
     return hit[0] if hit else (blocks[0] if len(blocks) == 1 else None)
+
+
+def _resolve_target(blocks, op, message):
+    """Bloco a alterar: o citado pelo modelo (mesmo com outra grafia), o do papel citado, ou o único texto."""
+    alvo = textplan._nfc(op.get("alvo") or "")
+    if alvo:
+        exact = [b for b in blocks if b["texto"] == alvo] or [b for b in blocks if _same_letters(b["texto"], alvo)]
+        if exact:
+            return exact[0]
+    role = op.get("papel")
+    same_role = [b for b in blocks if role and (b["papel"] == role or (role == "titulo" and b["papel"] == "marca"))]
+    if len(same_role) == 1:
+        return same_role[0]
+    mentioned = targets(message)
+    by_mention = [b for b in blocks if b["papel"] in mentioned]
+    if len(by_mention) == 1:
+        return by_mention[0]
+    if len(blocks) == 1:
+        return blocks[0]
+    return None
+
+
+_REPLACE = re.compile(
+    r"\b(?:muda|mude|mudar|troca|troque|trocar|altera|altere|alterar|substitui|substitua|corrige|corrija|deixa|deixe|"
+    r"coloca|coloque|p[oõ]e|ponha|escreve|escreva|bota|bote)\s+(?:s[oó]\s+|apenas\s+|agora\s+)?(?:o|a)?\s*"
+    r"(?P<what>texto|nome|t[ií]tulo|frase|slogan|subt[ií]tulo|pre[cç]o|valor|chamada|bot[aã]o|telefone|marca)"
+    r"(?:\s+(?:principal|de cima|de baixo))?\s+(?:para|pra|por|como|com)\s+(?:o\s+|a\s+)?(?P<value>.+?)"
+    r"(?=\s*(?:[,;.!?\n]|\s+e\s+(?:troca|troque|muda|mude|coloca|coloque|deixa|deixe|faz|fa[cç]a|bota|p[oõ]e|"
+    r"tira|remove|aumenta|diminui|o\s+fundo|a\s+cor)|$))", re.IGNORECASE)
+_WHAT_ROLE = {"texto": None, "nome": "titulo", "titulo": "titulo", "marca": "titulo", "frase": "subtitulo",
+              "slogan": "subtitulo", "subtitulo": "subtitulo", "preco": "preco", "valor": "preco", "chamada": "cta",
+              "botao": "cta", "telefone": "contato"}
+
+
+def replace_ops(message, blocks):
+    """"muda o texto pra X", "troca o preço por 49,90": substituição com o texto literal da mensagem.
+
+    Rede de segurança determinística (o modelo continua sendo a fonte principal da interpretação)."""
+    ops = []
+    for m in _REPLACE.finditer(message or ""):
+        value = textplan._nfc(re.sub(r"[\"“”']", "", m.group("value"))).strip(" .:-")
+        role = _WHAT_ROLE.get(_fold(m.group("what")))
+        if role == "preco":
+            price = textplan._PRICE_RE.search(value) or textplan._PRICE_BIG.search(value)
+            if not price:
+                continue
+            value = textplan.format_price(next(g for g in price.groups() if g))
+        if not value or len(value) > textplan.MAX_TEXT:
+            continue
+        target = _resolve_target(blocks, {"papel": role}, message)
+        if role == "titulo" and value == value.lower() and not any(c.isdigit() for c in value):
+            # Título/nome todo em minúsculas: inicial maiúscula em cada palavra (exceto conectivos).
+            small = {"de", "da", "do", "das", "dos", "e", "em", "para", "pra", "com", "a", "o", "as", "os"}
+            value = " ".join(w if (k and w in small) else w[:1].upper() + w[1:] for k, w in enumerate(value.split()))
+        op = {"acao": "trocar", "alvo": target["texto"] if target else None, "texto": value, "papel": role,
+              "origem": "mensagem"}
+        if target is None and len(blocks) > 1:
+            op["ambiguo"] = True
+        ops.append(op)
+    return ops
 
 
 def case_ops(message, blocks):
@@ -444,21 +506,41 @@ def plan_adjustment(previous_spec, message, model_data, user_texts):
     blocks = previous_plan.get("blocos") or []
     # Troca cujo novo texto só muda maiúsculas/acentos do texto atual é legítima: o conteúdo continua do cliente.
     for op in ops:
-        if op["acao"] == "trocar" and op.get("texto") and not textplan._present(op["texto"], message):
-            target = next((b for b in blocks if b["texto"] == op.get("alvo")), None) or \
-                next((b for b in blocks if _same_letters(b["texto"], op.get("texto"))), None)
-            if target and _same_letters(target["texto"], op["texto"]):
-                op["alvo"], op["formato"] = target["texto"], True
-            elif op.get("alvo") not in [b["texto"] for b in blocks]:
-                op["alvo"] = None
+        if op["acao"] in ("trocar", "adicionar") and op.get("texto") and not textplan._present(op["texto"], message):
+            target = _resolve_target(blocks, op, message)
+            polished = textplan.polish_from_model(op["texto"], message)
+            if polished:
+                op["texto"], op["polido"] = polished[0], True  # escrita melhorada do texto do cliente
+            elif target and _same_letters(target["texto"], op["texto"]):
+                op["alvo"], op["formato"] = target["texto"], True  # só a forma do texto atual (ex.: T maiúsculo)
+        if op["acao"] in ("trocar", "remover", "aumentar", "diminuir", "mover"):
+            target = _resolve_target(blocks, op, message)
+            op["alvo"] = target["texto"] if target else (op.get("alvo") if op.get("alvo") in [b["texto"] for b in blocks]
+                                                         else None)
+            if op["acao"] == "trocar" and not op["alvo"] and len(blocks) > 1:
+                op["ambiguo"] = True
+    for derived in replace_ops(message, blocks):
+        if not any(o["acao"] == "trocar" and o.get("alvo") == derived["alvo"] and o.get("texto") for o in ops):
+            ops = [o for o in ops if not (o["acao"] == "trocar" and o.get("alvo") == derived["alvo"])] + [derived]
     for derived in case_ops(message, blocks):
         ops = [o for o in ops if not (o["acao"] == "trocar" and o.get("alvo") == derived["alvo"])] + [derived]
     plan = apply_operations(previous_plan, ops, message) if ops else revise_plan(previous_plan, message)
-    approved = [o["texto"] for o in ops if o.get("formato") or o.get("origem")]
+    # Acabamento: títulos e nomes novos/trocados com capitalização profissional (só a caixa muda).
+    previous_texts = set(_texts(previous_plan))
+    asked_case = bool(re.search(r"maiuscul|minuscul|caixa alta|caixa baixa|capitaliz", _fold(message)))
+    for b in plan.get("blocos") or []:
+        if b["texto"] not in previous_texts and not asked_case:  # pedido explícito de caixa sempre vence
+            b["texto"] = textplan.professional_case(b["texto"], b["papel"], message)
+    for op in ops:  # a conferência espera a versão com acabamento
+        if op.get("texto") and op.get("origem") != "maiusculas" and not asked_case:
+            op["texto"] = textplan.professional_case(op["texto"], op.get("papel") or "titulo", message)                 if op.get("papel") in (None, "titulo", "marca") else op["texto"]
+    approved = [o["texto"] for o in ops if o.get("formato") or o.get("origem") or o.get("polido")]
+
     sources = list(user_texts) + [message] + _texts(previous_plan) + approved
     plan = textplan.validate_plan(plan, sources) or {**previous_plan, "blocos": []}
-    expected = expectations(ops)
+    expected = expectations([o for o in ops if not o.get("ambiguo")])
     _, missing = verify(previous_plan, plan, expected)
+    ambiguous = [o["texto"] for o in ops if o.get("ambiguo") and o.get("texto")]
     done = plan_diff(previous_plan, plan)  # só o que mudou de fato
     model_scene = adj.get("cena") is True
     explicit_scene = bool(SCENE_TOTAL.search(message or "") or SCENE_WORDS.search(message or "")
@@ -472,6 +554,7 @@ def plan_adjustment(previous_spec, message, model_data, user_texts):
     if level and not model_scene and not explicit_scene and not complaint:
         level = None
     return {"plan": plan, "esperado": expected, "feitas": done, "faltando": missing, "cena": level,
+            "ambiguo": ambiguous,
             "realista": bool(REALISTIC.search(message or "")), "reclamacao": complaint}
 
 

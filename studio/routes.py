@@ -1,5 +1,6 @@
 """Rotas do SiteGenius Studio (usuário em /studio, workers em /studio/worker)."""
 import hashlib
+import io
 import hmac
 import os
 import re
@@ -27,7 +28,7 @@ from . import storage
 from . import textplan
 from . import typography
 from .db import dumps, get_conn, loads, new_id, now
-from .products import lookup_ean, search_name
+from .products import find_photo, lookup_ean, search_name, wants_internet_photos
 from .security import (
     ImageRejected,
     UnsafeUrl,
@@ -339,7 +340,10 @@ WORKER_ONLINE_S = 45
 
 
 def workers_online(kind):
-    ids = [wid for wid, w in cfg().workers.items() if w["kind"] == kind]
+    if kind == "refedit":  # capacidade anunciada pelo agente do Acer v2.5 ao buscar tarefas
+        ids = [f"{wid}:refedit" for wid, w in cfg().workers.items() if w["kind"] == "render"]
+    else:
+        ids = [wid for wid, w in cfg().workers.items() if w["kind"] == kind]
     if not ids:
         return False
     marks = ",".join("?" for _ in ids)
@@ -684,6 +688,19 @@ def api_send_message(conversation_id):
     previous = loads(conv["briefing"]) or bf.normalize_briefing({})
     previous = apply_attachments(previous, attachments)
     assistant_id = new_id()
+    images = [a["id"] for a in attachments if a["kind"] in ("reference", "product", "logo")]
+    if creative.wants_commercial_redesign(texto, images):
+        interpret_with_rules(conv["id"], texto, previous, assistant_id, insert=True, note=creative.REDESIGN_REPLY)
+        return jsonify({"ok": True}), 201
+    if wants_internet_photos(texto) and previous.get("produtos"):
+        # "Pega da internet a foto": busca de verdade (bases abertas), conferindo se o resultado é o produto.
+        reply = fetch_product_photos(conv, previous)
+        if len(texto.split()) <= 8:  # só o pedido de fotos
+            add_message(conv["id"], "assistant", reply, message_id=assistant_id)
+            return jsonify({"ok": True}), 201
+        add_message(conv["id"], "assistant", reply)  # e segue para registrar o resto da mensagem (loja, formato…)
+        previous = loads(get_conn().one("SELECT briefing FROM sg_conversations WHERE id = ?", (conv["id"],))["briefing"])
+        assistant_id = new_id()
 
     if interpreter_available():
         history = conn.all(
@@ -708,6 +725,52 @@ def api_send_message(conversation_id):
     else:
         interpret_with_rules(conv["id"], texto, previous, assistant_id, insert=True)
     return jsonify({"ok": True}), 201
+
+
+def fetch_product_photos(conv, briefing):
+    """Busca fotos para os produtos sem foto e responde exatamente o que achou e o que não achou."""
+    found, missing, choices = [], [], []
+    for product in briefing.get("produtos") or []:
+        if product.get("asset_id"):
+            continue
+        cand, options = None, []
+        try:
+            cand, options = find_photo(product)
+        except Exception:  # noqa: BLE001 — falha da base externa não trava a conversa
+            current_app.logger.exception("busca de foto falhou")
+        if not cand and options:
+            choices.append(f"{product['nome']}: " + " / ".join(o["nome"] or "?" for o in options))
+            continue
+        if not cand:
+            missing.append(product["nome"])
+            continue
+        try:
+            raw = safe_download(cand["image_url"], cfg().max_upload_bytes * 2)
+            image, mime, width, height = sanitize_image(raw, cfg().max_upload_bytes * 2, cfg().max_image_pixels,
+                                                        cfg().max_image_side)
+        except (UnsafeUrl, ImageRejected):
+            missing.append(product["nome"])
+            continue
+        product["asset_id"] = store_asset(g.user_id, "product", image, mime, width, height, cand["image_url"],
+                                          cand["license"], cand["attribution"])
+        found.append(f"{product['nome']} → {cand['nome'] or 'produto'}{' (' + cand['marca'] + ')' if cand.get('marca') else ''}")
+    texts = user_texts(conv["id"])
+    owned = owned_asset_ids(g.user_id, briefing_asset_ids(briefing))
+    normalized = bf.normalize_briefing(briefing, texts, owned)
+    save_briefing(conv["id"], normalized)
+    parts = []
+    if found:
+        parts.append("Encontrei fotos em bases abertas de produtos (Open Food Facts/Open Beauty Facts, licença CC BY-SA): "
+                     + "; ".join(found) + ". Confira no painel se são os produtos certos.")
+    if choices:
+        parts.append("O nome é genérico, então não escolhi sozinho para não errar o produto. Opções que encontrei — "
+                     + "; ".join(choices) + ". Me diga qual é (ou a marca) e eu coloco a foto.")
+    if missing:
+        parts.append("Não encontrei foto confiável para: " + ", ".join(missing)
+                     + ". Envie a foto (ou o código de barras) desses itens e eu coloco no encarte.")
+    if not parts:
+        parts.append("Todos os produtos já têm foto.")
+    return " ".join(parts)
 
 
 def interpret_with_rules(conversation_id, texto, previous, assistant_id, insert, note=""):
@@ -909,6 +972,58 @@ def is_text_only_edit(texto, previous_spec):
     return kind["texto"] and not kind["cena"]
 
 
+def enqueue_reference_read(conv, user_id, texto, reference_id):
+    """Redesign: o Acer lê a arte (OCR + recorte das fotos originais) e devolve os dados para o painel."""
+    if not workers_online("refedit"):
+        return None, None
+    asset = get_conn().one("SELECT id FROM sg_assets WHERE id = ? AND user_id = ?", (reference_id, user_id))
+    if not asset:
+        return None, None
+    payload = {"version": 2, "gen_type": "reference_read", "asset_ids": [reference_id],
+               "spec": {"gen_type": "reference_read", "prompt_original": creative.clean(texto, 2000)}}
+    job_id, ts = new_id(), now()
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, payload, status_message, schema_version, gen_type, "
+        "prompt_original, reference_ids, render_mode, created_at, updated_at) "
+        "VALUES (?, ?, ?, 'render', 'queued', ?, 'Na fila do gerador', 2, 'reference_read', ?, ?, 'leitura', ?, ?)",
+        (job_id, user_id, conv["id"], dumps(payload), creative.clean(texto, 2000), dumps([reference_id]), ts, ts),
+    )
+    get_conn().run("UPDATE sg_conversations SET mode = 'ad' WHERE id = ?", (conv["id"],))
+    return ("Para modernizar sem trocar nenhum produto, vou ler a sua arte (produtos, preços e as fotos originais) e "
+            "montar uma versão com layout atual usando exatamente essas informações. Em instantes os dados aparecem "
+            "no painel para você conferir."), job_id
+
+
+def enqueue_reference_edit(conv, user_id, texto, reference_id):
+    """Edição direta da imagem enviada: só o que foi pedido muda; fotos, logotipo e contatos ficam como estão."""
+    changes = creative.reference_changes(texto)
+    problem = render_quota_problem(user_id)
+    if problem:
+        return problem, None
+    asset = get_conn().one("SELECT id FROM sg_assets WHERE id = ? AND user_id = ?", (reference_id, user_id))
+    if not asset:
+        return "Não consegui abrir a imagem que você enviou. Pode anexá-la de novo?", None
+    if not workers_online("refedit"):
+        return ("Recebi sua imagem, mas agora não consigo alterar textos diretamente dentro dela. Se quiser, "
+                "crio uma arte nova inspirada nela — é só me dizer o que manter."), None
+    spec = {"version": 2, "gen_type": "reference_edit", "prompt_original": creative.clean(texto, 2000),
+            "trocas": changes, "reference_ids": [reference_id], "aspect_ratio": "4:5", "style": "auto"}
+    payload = {"version": 2, "gen_type": "reference_edit", "asset_ids": [reference_id], "trocas": changes,
+               "instagram": True, "spec": spec}
+    job_id, ts = new_id(), now()
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, payload, status_message, schema_version, gen_type, "
+        "prompt_original, prompt_visual, style, aspect_ratio, reference_ids, render_mode, created_at, updated_at) "
+        "VALUES (?, ?, ?, 'render', 'queued', ?, 'Na fila do gerador', 2, 'reference_edit', ?, '', 'auto', '4:5', ?, "
+        "'edicao', ?, ?)",
+        (job_id, user_id, conv["id"], dumps(payload), spec["prompt_original"], dumps([reference_id]), ts, ts),
+    )
+    save_spec(conv["id"], {**spec, "job_id": job_id})
+    what = "; ".join(f"{'aluguel/preço' if c['tipo'] == 'preco' else 'telefone'} para {c['novo']}" for c in changes)
+    return (f"Certo! Vou trabalhar na imagem que você enviou: troco {what} e deixo no formato do Instagram, "
+            "mantendo as fotos e os demais dados como estão."), job_id
+
+
 def text_edit_job(conv, user_id, texto, previous_spec, plan=None, record=None):
     """Reaplica os textos sobre a arte anterior, sem passar pelo gerador. Devolve job_id ou None."""
     row = last_result_row(conv["id"])
@@ -1073,8 +1188,9 @@ def apply_creative_decision(conv, acao, resposta, spec, message_id, insert, text
     if acao == "encarte":
         get_conn().run("UPDATE sg_conversations SET mode = 'ad' WHERE id = ?", (conv["id"],))
         previous = loads(conv["briefing"]) or bf.normalize_briefing({})
-        interpret_with_rules(conv["id"], texto, previous, message_id, insert=insert,
-                             note="Entendi que é um encarte com produtos e preços: preencha e confira o briefing ao lado.")
+        note = resposta if resposta == creative.REDESIGN_REPLY else \
+            "Entendi que é um encarte com produtos e preços: preencha e confira o briefing ao lado."
+        interpret_with_rules(conv["id"], texto, previous, message_id, insert=insert, note=note)
         return None
     if acao == "ajustar_texto":
         # Ajuste só de texto (interpretado pelo modelo): mesma arte, textos refeitos na hora.
@@ -1109,6 +1225,19 @@ def creative_message(conv, texto, attachments, options, previous_result):
     previous_spec = loads(conv.get("spec"), None)
     references = [a["id"] for a in attachments if a["kind"] in ("reference", "product", "logo")]
     assistant_id = new_id()
+    if creative.wants_commercial_redesign(texto, references):
+        # Redesign de arte comercial: nunca por geração (trocaria os produtos). Lê produtos, preços e fotos da arte
+        # (Acer) e monta o encarte com os dados reais; sem o leitor disponível, pede os dados ao cliente.
+        reply, job_id = enqueue_reference_read(conv, g.user_id, texto, references[0])
+        if job_id:
+            add_message(conv["id"], "assistant", reply, message_id=assistant_id, job_id=job_id)
+        else:
+            apply_creative_decision(conv, "encarte", creative.REDESIGN_REPLY, None, assistant_id, True, texto)
+        return jsonify({"ok": True}), 201
+    if creative.wants_reference_edit(texto, references):
+        reply, job_id = enqueue_reference_edit(conv, g.user_id, texto, references[0])
+        add_message(conv["id"], "assistant", reply, message_id=assistant_id, job_id=job_id)
+        return jsonify({"ok": True}), 201
     if previous_result and previous_spec and previous_spec.get("pedido_ajuste") and edits.COMPLAINT.search(texto) \
             and not references:
         retried = creative.retry_last_adjustment(previous_spec, texto, previous_result, conversation_texts(conv["id"]),
@@ -1691,6 +1820,10 @@ def worker_job(job_id):
 def worker_claim():
     conn = get_conn()
     kind, ts = g.worker["kind"], now()
+    body = request.get_json(silent=True) or {}
+    capable = "reference_edit" in (body.get("capacidades") or [])
+    if capable:
+        touch_worker(f"{g.worker_id}:refedit", "refedit")
     conn.run(
         "UPDATE sg_jobs SET status = 'failed', error = 'excedeu tentativas', updated_at = ? "
         "WHERE kind = ? AND status IN ('claimed', 'running') AND lease_until < ? AND attempts >= ?",
@@ -1702,7 +1835,10 @@ def worker_claim():
         (ts, kind, ts),
     )
     candidates = conn.all(
-        "SELECT id FROM sg_jobs WHERE kind = ? AND status = 'queued' ORDER BY created_at LIMIT 5", (kind,)
+        "SELECT id FROM sg_jobs WHERE kind = ? AND status = 'queued' AND (gen_type IS NULL OR gen_type NOT IN "
+        "('reference_edit', 'reference_read') OR ? = 1) AND (? = 0 OR gen_type IN ('reference_edit', 'reference_read')) "
+        "ORDER BY created_at LIMIT 5",
+        (kind, 1 if capable else 0, 1 if set(body.get("somente") or []) & {"reference_edit", "reference_read"} else 0)
     )
     for candidate in candidates:
         claimed = conn.run(
@@ -1772,9 +1908,28 @@ def worker_benchmarks():
     return jsonify({"ok": True, "aceitas": accepted})
 
 
+@bp.get("/worker/assets/<asset_id>/preview")
+@worker_required
+def worker_asset_preview(asset_id):
+    """Mesma regra de acesso de worker_asset, em tamanho reduzido (lado maior 768 px) para a análise visual."""
+    resp = _worker_asset_response(asset_id)
+    from PIL import Image  # noqa: PLC0415
+
+    img = Image.open(io.BytesIO(resp.get_data())).convert("RGB")
+    img.thumbnail((768, 768), Image.LANCZOS)
+    out = io.BytesIO()
+    img.save(out, "JPEG", quality=88)
+    return Response(out.getvalue(), mimetype="image/jpeg")
+
+
 @bp.get("/worker/assets/<asset_id>")
 @worker_required
 def worker_asset(asset_id):
+    return _worker_asset_response(asset_id)
+
+
+def _worker_asset_response(asset_id):
+    """Imagem de uma tarefa em andamento deste worker (só os anexos da própria tarefa)."""
     asset_id = valid_id(asset_id)
     jobs = get_conn().all(
         "SELECT payload, user_id FROM sg_jobs WHERE worker_id = ? AND status IN ('claimed', 'running')", (g.worker_id,)
@@ -1843,6 +1998,9 @@ def worker_complete(job_id):
     conversation_id = payload["conversation_id"]
     previous = payload.get("previous_briefing") or {}
     proposed = merge_previous_assets(data.get("briefing") if isinstance(data.get("briefing"), dict) else {}, previous)
+    # Uma só fonte de verdade: o que o cliente já informou (painel/conversa) nunca some porque o modelo esqueceu.
+    last_user = next((m["content"] for m in reversed(payload.get("history") or []) if m["role"] == "user"), "")
+    proposed = keep_known_products(proposed, bf.interpret_rules(last_user, previous))
     texts = user_texts(conversation_id) + confirmed_prices(previous)
     ids = briefing_asset_ids(proposed)
     owned = set()
@@ -1851,6 +2009,10 @@ def worker_complete(job_id):
         owned = {r["id"] for r in conn.all(f"SELECT id FROM sg_assets WHERE user_id = ? AND id IN ({marks})", [job["user_id"], *ids])}
     normalized = bf.normalize_briefing(proposed, texts, owned)
     resposta = bf._clean_text(data.get("resposta"), 1500) or "Atualizei o briefing."
+    if normalized_ready_except_photos(normalized) and OPTIONAL_FIELD.search(resposta):
+        # Campos opcionais (loja, validade, formato…) não são cobrados: o Studio decide o visual se o cliente não disser.
+        resposta = drop_optional_questions(resposta) or (
+            "Montei o encarte com os produtos e preços que você passou. Loja e validade são opcionais.")
     if normalized["pendencias"]:
         resposta += "\n\nFalta:\n" + "\n".join(f"– {p}" for p in normalized["pendencias"][:6])
     save_briefing(conversation_id, normalized)
@@ -1920,13 +2082,15 @@ def confirm_adjustment(job, report, art_bytes):
             except Exception:  # noqa: BLE001 — a conferência nunca impede a entrega
                 current_app.logger.exception("conferência visual falhou no job %s", job["id"])
     notes = []
-    if check["textos_ok"] is False:
-        notes.append("Atenção: o texto entregue não ficou como o pedido; me avise que eu corrijo na hora.")
     if check["cena_ok"] is False:
         notes.append("O fundo mudou pouco em relação à versão anterior. Se quiser algo bem diferente, "
                      "diga “faça uma proposta totalmente nova”.")
     elif check["cena_ok"]:
-        notes.append("Conferido: o fundo mudou" + (" e os textos estão como você pediu." if expected else "."))
+        notes.append("Conferido: o fundo mudou.")
+    if check["textos_ok"] is False:
+        notes.append("Atenção: o texto entregue não ficou como o pedido; me avise que eu corrijo na hora.")
+    elif check["textos_ok"] and expected:
+        notes.append("Conferido: os textos estão como você pediu.")
     if notes:
         msg = get_conn().one("SELECT id, content FROM sg_messages WHERE job_id = ? AND role = 'assistant' "
                              "ORDER BY seq DESC LIMIT 1", (job["id"],))
@@ -1948,6 +2112,104 @@ def surface_note(job, report):
         get_conn().run("UPDATE sg_messages SET content = ? WHERE id = ?", (msg["content"] + note, msg["id"]))
 
 
+def keep_known_products(proposed, known):
+    """Junta os produtos do modelo com os já conhecidos (briefing anterior + leitura determinística da mensagem)."""
+    proposed = dict(proposed)
+    products = [dict(p) for p in proposed.get("produtos") or [] if isinstance(p, dict)]
+    names = {bf.strip_accents(str(p.get("nome", "")).lower()) for p in products}
+    for p in known.get("produtos") or []:
+        if len(p["nome"].split()) > 4:  # frase inteira lida como "produto": descarta (não é um nome de produto)
+            continue
+        key = bf.strip_accents(p["nome"].lower())
+        if not any(key in n or n in key for n in names if n):
+            products.append(dict(p))
+            names.add(key)
+    proposed["produtos"] = products
+    for field in ("loja", "formato", "validade", "titulo"):
+        if not proposed.get(field) and known.get(field):
+            proposed[field] = known[field]
+    return proposed
+
+
+OPTIONAL_FIELD = re.compile(r"\b(nome da loja|loja|validade|formato|cen[aá]rio|t[ií]tulo)\b", re.IGNORECASE)
+
+
+def drop_optional_questions(text):
+    """Tira do texto do modelo as frases que pedem campos opcionais (loja, validade, formato…)."""
+    sentences = re.split(r"(?<=[.!?])\s+", text or "")
+    kept = [s for s in sentences if not (OPTIONAL_FIELD.search(s) and re.search(r"preciso|qual|informe|me diga|\?", s,
+                                                                               re.IGNORECASE))]
+    return " ".join(kept).strip()
+
+
+def normalized_ready_except_photos(briefing):
+    return bool(briefing.get("produtos")) and all(p.get("preco") for p in briefing["produtos"])
+
+
+@bp.post("/worker/jobs/<job_id>/extracted")
+@worker_required
+def worker_extracted(job_id):
+    """Redesign: produtos, preços e recortes das fotos originais lidos da arte do cliente -> briefing do encarte."""
+    import base64  # noqa: PLC0415
+    import binascii  # noqa: PLC0415
+
+    job = worker_job(job_id)
+    data = request.get_json(silent=True) or {}
+    dados = data.get("dados") if isinstance(data.get("dados"), dict) else {}
+    fotos = data.get("fotos") if isinstance(data.get("fotos"), list) else []
+    produtos, conferir = [], []
+    for i, raw in enumerate((dados.get("produtos") or [])[:bf.MAX_PRODUCTS]):
+        if not isinstance(raw, dict):
+            continue
+        asset_id = None
+        b64 = fotos[i] if i < len(fotos) else None
+        if b64:
+            try:
+                image, mime, width, height = sanitize_image(base64.b64decode(b64), 8 * 1024 * 1024, 40_000_000, 4096)
+                asset_id = store_asset(job["user_id"], "product", image, mime, width, height)  # foto do próprio cliente
+            except (ImageRejected, binascii.Error, ValueError):
+                asset_id = None
+        nome = bf._clean_text(raw.get("nome"), 80) or f"Produto {i + 1}"
+        flags = [x for x in (raw.get("conferir") or []) if x in ("preco", "preco_de", "nome")]
+        # Preço com leitura incerta NÃO é preenchido: o cliente confirma o valor (nunca publicar preço errado).
+        preco = "" if "preco" in flags else (raw.get("preco") or "")
+        preco_de = "" if "preco_de" in flags else (raw.get("preco_de") or "")
+        produtos.append({"nome": nome, "preco": preco, "preco_de": preco_de, "unidade": "", "ean": "", "asset_id": asset_id})
+        for f in flags:
+            read = raw.get(f) or ""
+            label = {"preco": "preço", "preco_de": "preço antigo (riscado)", "nome": "nome"}[f]
+            conferir.append(f"{nome}: {label}" + (f" — li “R$ {read}”, confirme o valor" if read and f != "nome" else ""))
+    conv = get_conn().one("SELECT * FROM sg_conversations WHERE id = ?", (job["conversation_id"],))
+    previous = loads(conv["briefing"]) or bf.normalize_briefing({})
+    briefing = {**previous, "titulo": bf._clean_text(dados.get("titulo"), 60) or previous.get("titulo") or "Ofertas",
+                "loja": bf._clean_text(dados.get("loja"), 60) or previous.get("loja", ""), "produtos": produtos,
+                "referencias": list(dict.fromkeys((previous.get("referencias") or []) + (loads(job["payload"], {}) or {})
+                                                  .get("asset_ids", [])))}
+    owned = owned_asset_ids(job["user_id"], briefing_asset_ids(briefing))
+    # Preços lidos da arte do próprio cliente (não inventados); os incertos ficam marcados para conferir.
+    normalized = bf.normalize_briefing(briefing, [], owned, trust_prices=True)
+    save_briefing(conv["id"], normalized)
+    get_conn().run("UPDATE sg_conversations SET mode = 'ad' WHERE id = ?", (conv["id"],))
+    get_conn().run("UPDATE sg_jobs SET status = 'done', progress = 100, status_message = 'Pronto', result = ?, "
+                   "finished_at = ?, updated_at = ? WHERE id = ?",
+                   (dumps({"extracao": data.get("relatorio") or {}, "produtos": len(produtos)}), now(), now(), job["id"]))
+    lines = [f"• {p['nome']} — {p['preco'] or 'preço não lido'}" + (f" (de {p['preco_de']})" if p["preco_de"] else "")
+             + ("" if p["asset_id"] else " — sem foto") for p in normalized["produtos"]]
+    text = ("Li a sua arte. Produtos e preços encontrados:\n" + "\n".join(lines) if lines else
+            "Não consegui ler os produtos da sua arte com segurança. Me passe os produtos e preços (ex.: “Leite 4,99”).")
+    if conferir:
+        text += ("\n\nNão preenchi os valores com leitura incerta (para não publicar preço errado): "
+                 + "; ".join(conferir) + ". Me diga os valores certos ou ajuste no painel.")
+    if lines:
+        text += ("\n\nAs fotos são as originais da sua arte. Corrija o que precisar no painel e clique em “Gerar encarte” "
+                 "para a versão com layout moderno.")
+    msg = get_conn().one("SELECT id, content FROM sg_messages WHERE job_id = ? AND role = 'assistant' ORDER BY seq DESC LIMIT 1",
+                         (job["id"],))
+    if msg:
+        get_conn().run("UPDATE sg_messages SET content = ? WHERE id = ?", (msg["content"] + "\n\n" + text, msg["id"]))
+    return jsonify({"ok": True})
+
+
 @bp.post("/worker/jobs/<job_id>/fail")
 @worker_required
 def worker_fail(job_id):
@@ -1958,6 +2220,13 @@ def worker_fail(job_id):
         "UPDATE sg_jobs SET status = 'failed', error = ?, status_message = 'Falhou', updated_at = ? WHERE id = ?",
         (message, now(), job["id"]),
     )
+    if job.get("gen_type") == "reference_edit":
+        msg = get_conn().one("SELECT id, content FROM sg_messages WHERE job_id = ? AND role = 'assistant' "
+                             "ORDER BY seq DESC LIMIT 1", (job["id"],))
+        if msg:
+            note = (" Não consegui fazer essa troca com segurança na sua imagem (não encontrei o valor com clareza). "
+                    "Pode me dizer qual texto da imagem devo trocar, exatamente como está escrito?")
+            get_conn().run("UPDATE sg_messages SET content = ? WHERE id = ?", (msg["content"] + note, msg["id"]))
     if job["kind"] == "interpret":
         # A conversa não fica travada: cai para a interpretação por regras.
         payload = loads(job["payload"], {})

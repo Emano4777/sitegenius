@@ -121,3 +121,50 @@ def search_name(query, http=requests, limit=12):
         if len(results) >= limit:
             break
     return results
+
+
+INTERNET_REQUEST = re.compile(r"(internet|google|web|online|pesquis|busc|procur|baix)\w*", re.I)
+PHOTO_WORDS = re.compile(r"\b(foto|fotos|imagem|imagens|figura)\b", re.I)
+
+
+def wants_internet_photos(text):
+    return bool(INTERNET_REQUEST.search(text or "")) and bool(PHOTO_WORDS.search(text or "") or "internet" in (text or "").lower())
+
+
+def _tokens(text):
+    import unicodedata  # noqa: PLC0415
+
+    folded = "".join(c for c in unicodedata.normalize("NFD", (text or "").lower()) if unicodedata.category(c) != "Mn")
+    return {w for w in re.findall(r"[a-z0-9]+", folded) if len(w) >= 3}
+
+
+def match_score(product_name, candidate):
+    """Quanto o resultado corresponde ao produto pedido (0..1): todas as palavras do pedido no nome/marca do resultado."""
+    want = _tokens(product_name)
+    have = _tokens(f"{candidate.get('nome', '')} {candidate.get('marca', '')}")
+    if not want or not have:
+        return 0.0
+    return len(want & have) / len(want)
+
+
+def find_photo(product, http=requests):
+    """Foto confiável para um produto do encarte. Devolve (escolhida, opcoes).
+
+    - EAN digitado: o produto exato (escolhida).
+    - Nome específico (2+ palavras, ex.: "Leite Integral Italac"): só se todas as palavras baterem (escolhida).
+    - Nome genérico ("Leite"): NÃO escolhe sozinho (poderia ser leite condensado, em pó…): devolve opções para o
+      cliente escolher. Nunca usa resultado que não corresponda ao produto."""
+    if product.get("ean"):
+        for cand in lookup_ean(product["ean"], http=http):
+            return {**cand, "confianca": 1.0, "criterio": "EAN"}, []
+    name = product.get("nome", "")
+    matching = [c for c in search_name(name, http=http, limit=12) if match_score(name, c) >= 1.0]
+    if not matching:
+        return None, []
+    if len(_tokens(name)) < 2:
+        # Genérico: só sugere produtos cujo nome começa com o termo ("Leite …"), nunca "Doce de leite".
+        first = sorted(_tokens(name))[0]
+        starts = [c for c in matching if sorted(_tokens(c.get("nome", "").split(" ")[0]) or {""})[0] == first]
+        return None, starts[:3]
+    best = min(matching, key=lambda c: len(_tokens(c.get("nome", "")) - _tokens(name)))
+    return {**best, "confianca": 1.0, "criterio": "nome"}, []
