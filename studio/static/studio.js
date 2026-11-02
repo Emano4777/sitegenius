@@ -275,17 +275,19 @@
       : "Descreva a imagem… (ou peça um ajuste da última)";
   }
 
+  const CREATIVE = ["free_image", "text_edit"];  // criações livres (texto ajustado na mesma arte incluso)
+
   async function refresh(scroll) {
     if (!state.conversationId) return;
     const data = await api(`/conversations/${state.conversationId}`);
     setMode(data.conversa.modo);
     state.jobs = Object.fromEntries(data.jobs.map((j) => [j.id, j]));
-    state.latestDoneId = (data.jobs.find((j) => j.status === "done" && j.tipo === "free_image") || {}).id;
+    state.latestDoneId = (data.jobs.find((j) => j.status === "done" && CREATIVE.includes(j.tipo)) || {}).id;
     renderMessages(data.mensagens, scroll);
     if (state.mode === "ad" && !state.saveTimer && !$("#briefing-form").contains(document.activeElement)) {
       renderBriefing(data.briefing, data.pode_gerar, data.motivo);
     }
-    renderJobs(data.jobs.filter((j) => j.tipo !== "free_image"));
+    renderJobs(data.jobs.filter((j) => !CREATIVE.includes(j.tipo)));
     const busy = data.mensagens.some((m) => m.status === "pending") || data.jobs.some((j) => ACTIVE.includes(j.status));
     clearTimeout(state.pollTimer);
     if (busy) state.pollTimer = setTimeout(() => refresh(false).catch(() => {}), 2500);
@@ -349,13 +351,13 @@
       actions.append(
         button("Baixar", "download", { class: "btn btn-small btn-primary", href: assetUrl(job.resultado_asset_id) + "?download=1" }),
         button("Outra versão", "refresh", { class: "btn btn-small btn-ghost", onclick: () => regenerate(job.id) }),
-        button("Ajustar", "edit", { class: "btn btn-small btn-ghost", onclick: () => { $("#input").focus(); $("#input").placeholder = "Ex.: deixe mais escuro, troque o fundo por praia…"; } }),
+        button("Ajustar", "edit", { class: "btn btn-small btn-ghost", onclick: () => { $("#input").focus(); $("#input").placeholder = "Ex.: deixe mais escuro, troque o fundo por praia, mude o título para “…”"; } }),
         button("Ampliar", "open", { class: "btn btn-small btn-ghost", onclick: () => openViewer(job) }));
-    } else if (["failed", "canceled"].includes(job.status) && job.tipo === "free_image") {
+    } else if (["failed", "canceled"].includes(job.status) && CREATIVE.includes(job.tipo)) {
       actions.append(button("Tentar de novo", "refresh", { class: "btn btn-small btn-ghost", onclick: () => regenerate(job.id) }));
     }
     card.append(actions);
-    if (job.status === "done" && job.tipo === "free_image" && job.id === state.latestDoneId) {
+    if (job.status === "done" && CREATIVE.includes(job.tipo) && job.id === state.latestDoneId) {
       card.append(el("div", { class: "suggestions" },
         el("span", { class: "muted small", text: "Quer ajustar?" }),
         ...ADJUSTMENTS.map((text) => el("button", { type: "button", class: "chip-btn chip-sm", text, onclick: () => quickAdjust(text) }))));

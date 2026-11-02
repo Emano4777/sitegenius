@@ -15,3 +15,4 @@ efipay
 pyOpenSSL
 openai
 Pillow>=10.1
+numpy>=1.26

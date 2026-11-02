@@ -1,3 +1,4 @@
+import secrets
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify,make_response
 import os
 print("🔐 Caminho do certificado:", os.getenv("EFI_CERTIFICATE_PATH"))
@@ -34,22 +35,22 @@ import hashlib
 import hmac
 from dateutil import parser
 # Configuração
-cloudinary.config(
-    cloud_name='dyyrgll7h',
-    api_key='121426271799432',
-    api_secret='pJuEZvImfvoRQQE3p5cWFxK9erA'
-)
-cloud_name = 'dyyrgll7h'
-api_key = '121426271799432'
-api_secret = 'pJuEZvImfvoRQQE3p5cWFxK9erA'
+cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "dyyrgll7h")
+api_key = os.getenv("CLOUDINARY_API_KEY", "")
+api_secret = os.getenv("CLOUDINARY_API_SECRET", "")
+cloudinary.config(cloud_name=cloud_name, api_key=api_key, api_secret=api_secret)
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
-app.secret_key = os.getenv("FLASK_SECRET_KEY") or 'minha-chave-segura'
+_secret_key = os.getenv("FLASK_SECRET_KEY")
+if not _secret_key and (os.getenv("VERCEL") or os.getenv("VERCEL_ENV")):
+    raise RuntimeError("Defina FLASK_SECRET_KEY nas variáveis de ambiente do Vercel.")
+app.secret_key = _secret_key or secrets.token_hex(32)  # local: chave aleatória por processo
 from studio import init_app as init_studio
 init_studio(app)
-CORS(app, supports_credentials=True)
+# O Studio tem CSRF e cookies próprios: nunca libera CORS com credenciais para ele.
+CORS(app, supports_credentials=True, resources={r"^/(?!studio(/|$)).*": {}})
 
 load_dotenv()
 
@@ -68,14 +69,14 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_PATH'] = '/'
 
 
-MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-159038661951932-040216-41e126ddffaed400ae1a1f25863dd676-2342791238"
+MERCADO_PAGO_ACCESS_TOKEN = os.getenv("MERCADO_PAGO_ACCESS_TOKEN", "")
 # Sua chave da OpenAI aqui (ou use dotenv se preferir)
 BASE_URL = "https://sitegenius.com.br"
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def get_db_connection():
-    return psycopg2.connect("postgresql://postgres:Poupaqui123@406279.hstgr.cloud:5432/postgres")
+    return psycopg2.connect(os.environ["DATABASE_URL"])
 def login_required_admin(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -384,7 +385,10 @@ def moderar_evento():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE eventos SET aprovado = %s WHERE id = %s", (aprovar, id))
+    cur.execute("UPDATE eventos SET aprovado = %s WHERE id = %s AND comunidade IN (SELECT subdomain FROM user_templates WHERE user_id = %s)", (aprovar, id, session["user_id"]))
+    if cur.rowcount == 0:
+        cur.close()
+        return "Acesso negado", 403
     conn.commit()
     cur.close()
 
@@ -401,7 +405,10 @@ def excluir_evento():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM eventos WHERE id = %s", (id,))
+    cur.execute("DELETE FROM eventos WHERE id = %s AND comunidade IN (SELECT subdomain FROM user_templates WHERE user_id = %s)", (id, session["user_id"]))
+    if cur.rowcount == 0:
+        cur.close()
+        return "Acesso negado", 403
     conn.commit()
     cur.close()
 
@@ -419,7 +426,10 @@ def moderar_classificado():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("UPDATE classificados SET aprovado = %s WHERE id = %s", (aprovar, id))
+    cur.execute("UPDATE classificados SET aprovado = %s WHERE id = %s AND comunidade IN (SELECT subdomain FROM user_templates WHERE user_id = %s)", (aprovar, id, session["user_id"]))
+    if cur.rowcount == 0:
+        cur.close()
+        return "Acesso negado", 403
     conn.commit()
     cur.close()
 
@@ -436,7 +446,10 @@ def excluir_classificado():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM classificados WHERE id = %s", (id,))
+    cur.execute("DELETE FROM classificados WHERE id = %s AND comunidade IN (SELECT subdomain FROM user_templates WHERE user_id = %s)", (id, session["user_id"]))
+    if cur.rowcount == 0:
+        cur.close()
+        return "Acesso negado", 403
     conn.commit()
     cur.close()
 
@@ -2305,7 +2318,8 @@ def editar_produto(id):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    # A página inicial agora é o SiteGenius Studio (a página antiga continua em templates/index.html).
+    return redirect('/studio/', code=302)
 
 @app.route('/generate-payment')
 def generate_payment():

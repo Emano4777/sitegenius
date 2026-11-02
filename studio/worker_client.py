@@ -2,6 +2,7 @@
 
 Somente conexões de saída: o worker busca tarefas, nada precisa estar exposto.
 """
+import base64
 import json
 import os
 import secrets
@@ -75,6 +76,12 @@ class WorkerClient:
         resp = self.request("POST", f"/jobs/{job_id}/complete", image_bytes, "image/jpeg")
         resp.raise_for_status()
         return resp.json()
+
+    def complete_composed(self, job_id, art_bytes, final_bytes, report):
+        """Arte limpa + peça final com os textos (composta e validada no Acer, com leitura visual local)."""
+        payload = {"arte": base64.b64encode(art_bytes).decode(), "final": base64.b64encode(final_bytes).decode(),
+                   "relatorio": report}
+        return self._json("POST", f"/jobs/{job_id}/complete-composed", payload).json()
 
     def complete_json(self, job_id, payload):
         return self._json("POST", f"/jobs/{job_id}/complete", payload).json()

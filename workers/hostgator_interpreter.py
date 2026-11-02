@@ -1,0 +1,345 @@
+"""Interpretador de pedidos do SiteGenius no HostGator (somente biblioteca padrão).
+
+Processo SEPARADO do WhatsApp: não importa, não altera e não reinicia nada do
+WhatsApp. Busca tarefas no SiteGenius por HTTPS assinado (só saída) e consulta o
+Ollama local (127.0.0.1:11434), uma tarefa por vez.
+
+ATENÇÃO — para não interferir no WhatsApp:
+  * No Ollama, cada requisição redefine o keep_alive do modelo e um num_ctx
+    diferente força recarregar o modelo. Por isso SG_OLLAMA_KEEP_ALIVE e
+    SG_OLLAMA_NUM_CTX são obrigatórios e devem ser IGUAIS aos usados pelo worker
+    do WhatsApp quando o modelo for o mesmo.
+
+Variáveis de ambiente:
+    SG_BASE_URL, SG_WORKER_ID, SG_WORKER_SECRET
+    SG_OLLAMA_URL         padrão http://127.0.0.1:11434
+    SG_OLLAMA_MODEL       ex.: gemma4:e4b (tem visão segundo /api/tags)
+    SG_OLLAMA_KEEP_ALIVE  obrigatório (ex.: "-1" ou "30m"), igual ao do WhatsApp
+    SG_OLLAMA_NUM_CTX     obrigatório, igual ao do WhatsApp
+    SG_OLLAMA_NUM_THREAD  obrigatório, igual ao do WhatsApp (hoje 2). Sem ele o llama.cpp abre threads
+                          demais para a cota de CPU do ollama-piloto e a geração fica ~0,5 token/s.
+    SG_POLL_SECONDS       padrão 5
+    SG_INFER_TIMEOUT      padrão 90
+
+Uso:
+    python3 hostgator_interpreter.py --check   # valida configuração e lista modelos (não infere)
+    python3 hostgator_interpreter.py --once
+    python3 hostgator_interpreter.py
+"""
+import argparse
+import base64
+import hashlib
+import hmac
+import json
+import logging
+import os
+import secrets
+import sys
+import time
+import urllib.error
+import urllib.request
+from urllib.parse import urlsplit
+
+log = logging.getLogger("sg_interpreter")
+
+SYSTEM_PROMPT = """Você é o assistente de criação de encartes do SiteGenius.
+Converse em português do Brasil, de forma curta e objetiva.
+Sua tarefa é atualizar um briefing JSON de encarte promocional a partir da conversa.
+Regras obrigatórias:
+- NUNCA invente produtos, preços, descontos, datas ou nome de loja. Use apenas o que o usuário escreveu.
+- Se faltar preço, deixe "preco" vazio e peça ao usuário.
+- "cenario" descreve somente o fundo/ambiente, em inglês, sem texto, sem logos, sem produtos.
+- Se houver imagens de referência, descreva o estilo delas em "cenario" (cores, luz, clima). Não copie marcas.
+- formato: um de feed_4x5, quadrado, story, a4.
+Responda SOMENTE com JSON no formato:
+{"resposta": "mensagem curta ao usuário", "briefing": {"formato": "", "loja": "", "titulo": "", "tema": "", "cenario": "", "validade": "", "observacoes": "", "produtos": [{"nome": "", "ean": "", "preco": "", "preco_de": "", "unidade": ""}]}}"""
+
+
+CREATIVE_PROMPT = """Você é o diretor de arte do SiteGenius Studio. Fale em português do Brasil, curto e simpático.
+Transforme o pedido do usuário em um prompt para o gerador de imagens (Z-Image Turbo).
+Responda SOMENTE com JSON neste formato:
+{"acao": "gerar", "resposta": "", "pergunta": "", "prompt_visual": "", "estilo": "", "proporcao": "",
+ "editar_anterior": false, "uso_referencia": "base", "descricao_referencias": "",
+ "textos": [{"texto": "", "papel": "", "posicao": ""}], "estilo_texto": "", "efeito_texto": "",
+ "tipo_pedido": "nova", "ajuste": {"cena": false, "textos": false, "intensidade": "",
+ "operacoes_texto": [{"acao": "", "alvo": "", "papel": "", "texto": "", "posicao": "", "valor": "", "todos": false}]}}
+Regras:
+- acao "encarte" só se o usuário pedir encarte/panfleto/tabloide com VÁRIOS produtos e preços. Anúncio, post,
+  banner ou arte de UM produto com preço é acao "gerar" (o preço vai em "textos" com papel "preco").
+- acao "perguntar" SOMENTE se não for possível saber o assunto principal da imagem. Nunca pergunte estilo,
+  formato, cores ou detalhes: escolha você. Em "pergunta", uma pergunta curta e concreta.
+- acao "gerar": "prompt_visual" em INGLÊS, 40 a 120 palavras: assunto, ação, ambiente, composição,
+  enquadramento, luz, lente/estilo e paleta. Seja específico e visual.
+- Não invente marcas, logotipos, preços, telefones ou endereços.
+- TEXTOS: o gerador de imagens NÃO escreve letras; o Studio aplica os textos depois, com fontes reais.
+  Em "textos", liste cada texto que o usuário quer na arte, copiado EXATAMENTE como ele escreveu (mesma grafia,
+  acentos, maiúsculas, pontuação e números), com papel (titulo, subtitulo, descricao, preco, preco_de, cta, marca,
+  contato) e posicao (auto, topo, centro, rodape, esquerda, direita, topo_esquerda, topo_direita, base_esquerda,
+  base_direita, abaixo_titulo). Sem textos pedidos: "textos": []. Nunca crie textos que o usuário não escreveu.
+  Vale também SEM aspas: nome da empresa ("minha empresa Emanuel Tecnologia"), preço ("por 540 mil reais" ->
+  "R$ 540 mil"; "19,90" -> "R$ 19,90"), condições ("aceita financiamento") e frases que ele mandou escrever.
+  Se ele pedir um texto sem dizer qual ("uma frase de boas-vindas"), NÃO invente: deixe fora de "textos".
+  Texto numa superfície ("escrito na parede", "na camiseta", "na placa"): descreva no prompt_visual a superfície
+  LISA, vazia e bem visível (sem letras), para o texto ser aplicado nela depois.
+- "prompt_visual" NUNCA menciona texto, letras, palavras, títulos, logotipos, placas, cartazes ou preços: descreva só
+  a cena, os objetos, a luz e a composição. Se houver textos, deixe área limpa (céu, parede lisa, fundo suave)
+  onde eles vão ficar. Não coloque pessoas, a menos que o usuário peça.
+- PEDIDO NOVO OU AJUSTE: entenda a intenção, não as palavras exatas. Se existe imagem anterior e a mensagem fala
+  da peça atual (mudar, corrigir, aumentar, tirar, mover, trocar cor/fundo/luz, "ficou pequeno", "não gostei do
+  fundo"…), é tipo_pedido "ajuste". Se pede outra peça/tema diferente, é "nova". Na dúvida com imagem anterior, "ajuste".
+  Exemplos (com imagem anterior que tem os textos "Loja Sol" e "Ofertas da semana"):
+  * "o nome ficou pequeno" -> ajuste, cena false, textos true, [{"acao":"aumentar","alvo":"Loja Sol"}]
+  * "e se as letras fossem douradas?" -> ajuste, cena false, [{"acao":"cor","valor":"dourado","todos":true}]
+  * "tira o texto de baixo" -> ajuste, cena false, [{"acao":"remover","alvo":"Ofertas da semana"}]
+  * "não gostei do fundo, deixa mais escuro" -> ajuste, cena true, textos false, intensidade "pequena"
+  * "coloca uma praia no fundo e muda pra Promoção de Verão" -> ajuste, cena true, intensidade "grande",
+    [{"acao":"trocar","alvo":"Ofertas da semana","texto":"Promoção de Verão"}]
+  * "ficou bom, mas quero mais vibrante" -> ajuste, cena true, intensidade "pequena"
+  * "agora faz um cartaz de academia com Treine Forte" -> nova (outro assunto)
+  * "quero também uma versão para story" -> ajuste, cena true, intensidade "media" (mesma peça, outro formato)
+  Em "ajuste":
+  * ajuste.cena = true se a ARTE precisa mudar (fundo, luz, cores da imagem, objetos, enquadramento, estilo visual).
+  * ajuste.textos = true se os TEXTOS mudam. Mudança só de texto NÃO muda a cena: a mesma arte é reaproveitada.
+  * ajuste.intensidade (só se cena): "pequena" (luz, cor, contraste, detalhe), "media" (adicionar/trocar um objeto),
+    "grande" (trocar fundo, cenário ou estilo inteiro).
+  * operacoes_texto, uma por mudança: acao = trocar | adicionar | remover | mover | aumentar | diminuir | cor | estilo
+    | efeito; alvo = o texto atual exato (da lista "Textos atuais"); papel = o papel do texto; texto = o NOVO texto
+    copiado exatamente da mensagem do cliente (só para trocar/adicionar); posicao = nova posição (mover);
+    valor = cor pedida, estilo tipográfico ou efeito; todos = true se vale para todos os textos.
+  * Em ajuste de cena, escreva o prompt_visual COMPLETO da nova versão partindo do prompt anterior e
+    use editar_anterior true. Em ajuste só de texto, repita o prompt anterior.
+- estilo_texto: um de moderno, minimalista, elegante, luxo, futurista, tecnologico, impacto, divertido, manuscrito.
+  efeito_texto: auto, nenhum, sombra, brilho, contorno, gradiente ou metalico (só se o usuário pedir).
+- Imagem de referência: descreva objetivamente o que você vê em "descricao_referencias" e use os detalhes no
+  prompt. Se o usuário quer manter a pessoa, objeto, ambiente ou composição da foto: uso_referencia "base".
+  Se ela só inspira estilo/cores: "estilo". Se não deve ser usada: "nenhum".
+- Se existe imagem anterior e o usuário pede um ajuste (ex.: "deixe mais escuro", "troque o fundo"),
+  use editar_anterior true e escreva o prompt_visual COMPLETO da nova versão, partindo do prompt anterior.
+- "resposta": uma frase curta e simpática em português, como "Entendi sua ideia! Vou preparar uma cena
+  cinematográfica com um astronauta na floresta." Nunca fale de IA, modelos, prompts, servidores ou termos
+  técnicos: fale como um designer conversando com o cliente.
+- estilo: um de {styles}. proporcao: um de {aspects}, ou "" para manter a atual."""
+
+
+def sign(secret, timestamp, nonce, method, path, body):
+    """Mesmo formato de studio/security.py (canonical_request)."""
+    body_hash = hashlib.sha256(body or b"").hexdigest()
+    message = f"{timestamp}\n{nonce}\n{method.upper()}\n{path}\n{body_hash}".encode()
+    return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+
+class SiteGenius:
+    def __init__(self, base_url, worker_id, secret):
+        parts = urlsplit(base_url)
+        if parts.scheme != "https" and parts.hostname not in ("127.0.0.1", "localhost"):
+            raise SystemExit("SG_BASE_URL precisa ser https")
+        self.base = base_url.rstrip("/")
+        self.worker_id = worker_id
+        self.secret = secret.encode()
+
+    def call(self, method, path, payload=None, raw=False):
+        full_path = "/studio/worker" + path
+        body = json.dumps(payload).encode() if payload is not None else b""
+        timestamp, nonce = str(int(time.time())), secrets.token_hex(16)
+        headers = {
+            "X-SG-Worker": self.worker_id,
+            "X-SG-Timestamp": timestamp,
+            "X-SG-Nonce": nonce,
+            "X-SG-Signature": sign(self.secret, timestamp, nonce, method, full_path, body),
+            "User-Agent": "SiteGenius-Interpreter/0.1",
+        }
+        if os.getenv("SG_VERCEL_BYPASS"):  # preview protegido do Vercel
+            headers["x-vercel-protection-bypass"] = os.environ["SG_VERCEL_BYPASS"]
+        if body:
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(self.base + full_path, data=body or None, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = resp.read()
+            if resp.status == 204:
+                return None
+            return data if raw else json.loads(data)
+
+
+class Ollama:
+    def __init__(self, base_url, model, keep_alive, num_ctx, timeout, num_thread=None):
+        host = urlsplit(base_url).hostname
+        if host not in ("127.0.0.1", "localhost", "::1"):
+            raise SystemExit("SG_OLLAMA_URL deve ser local (127.0.0.1)")
+        self.base, self.model, self.timeout = base_url.rstrip("/"), model, timeout
+        self.keep_alive, self.num_ctx, self.num_thread = keep_alive, num_ctx, num_thread
+
+    def _post(self, path, payload, timeout):
+        req = urllib.request.Request(
+            self.base + path, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"}, method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read())
+
+    def tags(self):
+        with urllib.request.urlopen(self.base + "/api/tags", timeout=10) as resp:
+            return json.loads(resp.read())
+
+    def capabilities(self):
+        return self._post("/api/show", {"model": self.model}, 20).get("capabilities", [])
+
+    def chat(self, messages, temperature=0.2, num_predict=700):
+        # num_ctx e keep_alive iguais aos do WhatsApp: valor diferente recarregaria o modelo.
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "format": "json",
+            "think": False,
+            "keep_alive": self.keep_alive,
+            "options": {"temperature": temperature, "num_predict": num_predict, "num_ctx": self.num_ctx},
+        }
+        if self.num_thread:
+            payload["options"]["num_thread"] = self.num_thread
+        return self._post("/api/chat", payload, self.timeout)["message"]["content"]
+
+
+def build_messages(payload, images_b64):
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages.append({
+        "role": "system",
+        "content": "Briefing atual (JSON): " + json.dumps(payload.get("previous_briefing") or {}, ensure_ascii=False)[:6000],
+    })
+    history = payload.get("history") or []
+    for i, item in enumerate(history):
+        message = {"role": "user" if item["role"] == "user" else "assistant", "content": item["content"][:4000]}
+        if i == len(history) - 1 and item["role"] == "user" and images_b64:
+            message["images"] = images_b64
+        messages.append(message)
+    return messages
+
+
+def build_creative_messages(payload, images_b64, vision):
+    styles = ", ".join(payload.get("styles") or ["auto"])
+    aspects = ", ".join(payload.get("aspects") or ["4:5"])
+    messages = [{"role": "system", "content": CREATIVE_PROMPT.replace("{styles}", styles).replace("{aspects}", aspects)}]
+    context = []
+    previous = payload.get("previous_spec") or {}
+    if previous.get("prompt_visual"):
+        context.append("Prompt anterior: " + previous["prompt_visual"][:1200])
+        context.append(f"Estilo anterior: {previous.get('style', 'auto')}; proporção anterior: {previous.get('aspect_ratio', '')}")
+    context.append("Existe imagem anterior gerada: " + ("sim" if payload.get("previous_result_id") else "não"))
+    blocks = (previous.get("text_plan") or {}).get("blocos") or []
+    if blocks:
+        context.append("Textos atuais da peça: " + json.dumps(
+            [{"texto": b.get("texto"), "papel": b.get("papel"), "posicao": b.get("posicao")} for b in blocks],
+            ensure_ascii=False))
+    options = {k: v for k, v in (payload.get("options") or {}).items() if v and v != "auto"}
+    if options:
+        context.append("Escolhas feitas pelo usuário na tela (respeite): " + json.dumps(options, ensure_ascii=False))
+    if payload.get("image_asset_ids") and not (vision and images_b64):
+        context.append("O usuário anexou imagens, mas você NÃO consegue vê-las: não descreva o conteúdo delas.")
+    messages.append({"role": "system", "content": "\n".join(context)})
+    for item in (payload.get("history") or [])[-8:]:
+        messages.append({"role": "user" if item["role"] == "user" else "assistant", "content": item["content"][:2000]})
+    last = {"role": "user", "content": (payload.get("text") or "(apenas imagens anexadas)")[:4000]}
+    if vision and images_b64:
+        last["images"] = images_b64
+    if messages[-1]["role"] == "user" and messages[-1]["content"] == last["content"]:
+        messages[-1] = last
+    else:
+        messages.append(last)
+    return messages
+
+
+def process(site, ollama, job, vision):
+    payload = job["payload"]
+    if payload.get("mode") == "creative":
+        return process_creative(site, ollama, job, vision)
+    images = []
+    if vision:
+        for asset_id in (payload.get("image_asset_ids") or [])[:3]:
+            images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}", raw=True)).decode())
+    started = time.time()
+    content = ollama.chat(build_messages(payload, images))
+    log.info("inferência em %.1fs (%d imagem(ns))", time.time() - started, len(images))
+    try:
+        data = json.loads(content)
+    except ValueError:
+        raise RuntimeError("modelo não retornou JSON válido")
+    if not isinstance(data, dict):
+        raise RuntimeError("resposta fora do formato")
+    # O servidor revalida tudo (inclusive descarta preço não digitado pelo usuário).
+    site.call("POST", f"/jobs/{job['id']}/complete", {"resposta": data.get("resposta", ""), "briefing": data.get("briefing", {})})
+
+
+def process_creative(site, ollama, job, vision):
+    payload = job["payload"]
+    images = []
+    if vision:
+        for asset_id in (payload.get("image_asset_ids") or [])[:2]:
+            images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}", raw=True)).decode())
+    started = time.time()
+    content = ollama.chat(build_creative_messages(payload, images, vision), temperature=0.3, num_predict=900)
+    log.info("criação: inferência em %.1fs (%d imagem(ns))", time.time() - started, len(images))
+    try:
+        data = json.loads(content)
+    except ValueError:
+        raise RuntimeError("modelo não retornou JSON válido")
+    if not isinstance(data, dict):
+        raise RuntimeError("resposta fora do formato")
+    # O servidor valida tudo (normalize_model_answer): estilo, proporção, texto na imagem, referências.
+    site.call("POST", f"/jobs/{job['id']}/complete", {"modelo": data})
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--once", action="store_true")
+    parser.add_argument("--check", action="store_true")
+    args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+    required = ["SG_BASE_URL", "SG_WORKER_ID", "SG_WORKER_SECRET", "SG_OLLAMA_MODEL", "SG_OLLAMA_KEEP_ALIVE", "SG_OLLAMA_NUM_CTX",
+                "SG_OLLAMA_NUM_THREAD"]
+    missing = [name for name in required if not os.getenv(name)]
+    if missing:
+        raise SystemExit("Defina: " + ", ".join(missing))
+    keep_alive = os.environ["SG_OLLAMA_KEEP_ALIVE"]
+    keep_alive = int(keep_alive) if keep_alive.lstrip("-").isdigit() else keep_alive
+    site = SiteGenius(os.environ["SG_BASE_URL"], os.environ["SG_WORKER_ID"], os.environ["SG_WORKER_SECRET"])
+    ollama = Ollama(
+        os.getenv("SG_OLLAMA_URL", "http://127.0.0.1:11434"),
+        os.environ["SG_OLLAMA_MODEL"],
+        keep_alive,
+        int(os.environ["SG_OLLAMA_NUM_CTX"]),
+        int(os.getenv("SG_INFER_TIMEOUT", "90")),
+        int(os.environ["SG_OLLAMA_NUM_THREAD"]),
+    )
+    models = [m["name"] for m in ollama.tags().get("models", [])]
+    if ollama.model not in models:
+        raise SystemExit(f"Modelo {ollama.model} não instalado. Disponíveis: {', '.join(models)}")
+    vision = "vision" in ollama.capabilities()
+    log.info("modelo %s; visão: %s", ollama.model, "sim" if vision else "não (imagens serão ignoradas)")
+    if args.check:
+        log.info("Configuração OK (nenhuma inferência feita).")
+        return 0
+
+    poll = int(os.getenv("SG_POLL_SECONDS", "5"))
+    while True:
+        job = None
+        try:
+            job = site.call("POST", "/claim", {})
+            job = job["job"] if job else None
+            if job:
+                process(site, ollama, job, vision)
+        except KeyboardInterrupt:
+            return 0
+        except Exception as exc:  # noqa: BLE001
+            log.error("erro: %s", exc)
+            if job:
+                try:
+                    site.call("POST", f"/jobs/{job['id']}/fail", {"erro": str(exc)[:300]})
+                except (urllib.error.URLError, OSError):
+                    log.warning("não foi possível reportar a falha")
+        if args.once:
+            return 0
+        if not job:
+            time.sleep(poll)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

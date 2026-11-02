@@ -1,0 +1,26 @@
+# Unit separada do Studio. Não altera wa-ia-worker nem ollama-piloto.
+[Unit]
+Description=SiteGenius Studio - interpretador de pedidos (Ollama local)
+After=network-online.target ollama-piloto.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sitegenius
+Group=sitegenius
+EnvironmentFile=/etc/sitegenius/interpreter.env
+ExecStart=/usr/bin/python3 -u /opt/sitegenius/hostgator_interpreter.py
+Restart=on-failure
+RestartSec=30
+Nice=10
+CPUQuota=50%
+CPUWeight=10
+MemoryMax=256M
+MemorySwapMax=0
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

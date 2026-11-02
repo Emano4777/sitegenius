@@ -22,7 +22,10 @@ from flask import (
 from . import accounts
 from . import briefing as bf
 from . import creative
+from . import edits
 from . import storage
+from . import textplan
+from . import typography
 from .db import dumps, get_conn, loads, new_id, now
 from .products import lookup_ean, search_name
 from .security import (
@@ -868,13 +871,95 @@ def estimate_for_job(job, payload):
 NEW_TITLE = "Nova criação"
 
 
-def last_result_asset(conversation_id):
-    row = get_conn().one(
-        "SELECT result FROM sg_jobs WHERE conversation_id = ? AND kind = 'render' AND status = 'done' "
-        "AND gen_type = 'free_image' ORDER BY finished_at DESC LIMIT 1",
+def last_result_row(conversation_id):
+    return get_conn().one(
+        "SELECT id, result, payload FROM sg_jobs WHERE conversation_id = ? AND kind = 'render' AND status = 'done' "
+        "AND gen_type IN ('free_image', 'text_edit') ORDER BY finished_at DESC LIMIT 1",
         (conversation_id,),
     )
-    return (loads(row["result"], {}) or {}).get("asset_id") if row else None
+
+
+def last_result_asset(conversation_id):
+    """Imagem base para ajustes: a arte SEM os textos aplicados (os textos são reaplicados depois)."""
+    row = last_result_row(conversation_id)
+    if not row:
+        return None
+    result = loads(row["result"], {}) or {}
+    return result.get("art_asset_id") or result.get("asset_id")
+
+
+def apply_texts(user_id, art_bytes, spec):
+    """Etapas C e D: aplica o plano de textos sobre a arte. Devolve (asset final, relatório)."""
+    plan = spec.get("text_plan")
+    if not plan or not plan.get("blocos"):
+        return None, None
+    data, report = typography.compose(art_bytes, plan)
+    with typography.Image.open(typography.io.BytesIO(data)) as img:
+        width, height = img.size
+    return store_asset(user_id, "result", data, "image/jpeg", width, height), report
+
+
+def is_text_only_edit(texto, previous_spec):
+    """Ajuste só de texto sobre a criação anterior (sem gerar de novo). Pedido novo ("crie…") nunca entra aqui."""
+    if not previous_spec or not (previous_spec.get("text_plan") or {}).get("blocos") or previous_spec.get("pending"):
+        return False
+    if creative.NEW_REQUEST.search(texto):
+        return False
+    kind = edits.classify(texto, previous_spec["text_plan"])
+    return kind["texto"] and not kind["cena"]
+
+
+def text_edit_job(conv, user_id, texto, previous_spec, plan=None):
+    """Reaplica os textos sobre a arte anterior, sem passar pelo gerador. Devolve job_id ou None."""
+    row = last_result_row(conv["id"])
+    result = loads(row["result"], {}) or {} if row else {}
+    art_id = result.get("art_asset_id")
+    if not art_id:
+        return None
+    art = get_conn().one("SELECT * FROM sg_assets WHERE id = ? AND user_id = ?", (art_id, user_id))
+    if not art:
+        return None
+    plan = plan or edits.revise_plan(previous_spec["text_plan"], texto)
+    sources = conversation_texts(conv["id"]) + [texto] + textplan.plan_texts(previous_spec.get("text_plan"))
+    plan = textplan.validate_plan(plan, sources)
+    if not plan:
+        return None
+    spec = {**previous_spec, "text_plan": plan, "texts_in_image": textplan.plan_texts(plan), "prompt_original": texto,
+            "parent_job_id": row["id"]}
+    spec.pop("job_id", None)
+    started = now()
+    asset_id, report = apply_texts(user_id, asset_bytes(art), spec)
+    note = size_feedback(previous_spec.get("text_plan"), plan, (result.get("validacao_texto") or {}), report or {})
+    job_id, ts = new_id(), now()
+    payload = {"version": 2, "gen_type": "text_edit", "size": (loads(row["payload"], {}) or {}).get("size"), "spec": spec}
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, progress, payload, status_message, result, "
+        "schema_version, gen_type, prompt_original, prompt_visual, style, aspect_ratio, seed, render_mode, parent_job_id, "
+        "timings, created_at, updated_at, started_at, finished_at) "
+        "VALUES (?, ?, ?, 'render', 'done', 100, ?, 'Pronto', ?, 2, 'text_edit', ?, ?, ?, ?, ?, 'texto', ?, ?, ?, ?, ?, ?)",
+        (job_id, user_id, conv["id"], dumps(payload),
+         dumps({"asset_id": asset_id, "art_asset_id": art_id, "validacao_texto": report}), texto,
+         spec.get("prompt_visual"), spec.get("style"), spec.get("aspect_ratio"), spec.get("seed"), row["id"],
+         dumps({"texto_s": round(ts - started, 2)}), ts, ts, started, ts),
+    )
+    save_spec(conv["id"], {**spec, "job_id": job_id})
+    if note:
+        g.text_edit_note = note
+    return job_id
+
+
+def size_feedback(old_plan, new_plan, old_report, new_report):
+    """Pedido de texto maior/menor que não mudou de verdade (já no limite): avisa o cliente com sinceridade."""
+    before, after = old_report.get("tamanhos") or {}, new_report.get("tamanhos") or {}
+    old_scale = {b["texto"]: float(b.get("escala", 1.0)) for b in (old_plan or {}).get("blocos") or []}
+    for b in new_plan.get("blocos") or []:
+        wanted = float(b.get("escala", 1.0)) / old_scale.get(b["texto"], float(b.get("escala", 1.0)))
+        if b["texto"] in before and b["texto"] in after and abs(wanted - 1) > 0.05:
+            grew = after[b["texto"]] / max(1, before[b["texto"]])
+            if wanted > 1 and grew < 1.05:
+                return (f"“{b['texto']}” já está no maior tamanho que cabe na arte sem cortar. "
+                        "Se quiser, posso deixá-lo em uma linha só, encurtar o texto ou diminuir os outros textos.")
+    return None
 
 
 BRT_OFFSET = -3 * 3600  # Brasil sem horário de verão desde 2019
@@ -987,6 +1072,20 @@ def apply_creative_decision(conv, acao, resposta, spec, message_id, insert, text
         interpret_with_rules(conv["id"], texto, previous, message_id, insert=insert,
                              note="Entendi que é um encarte com produtos e preços: preencha e confira o briefing ao lado.")
         return None
+    if acao == "ajustar_texto":
+        # Ajuste só de texto (interpretado pelo modelo): mesma arte, textos refeitos na hora.
+        problem = render_quota_problem(g.user_id)
+        previous_spec = loads(conv.get("spec"), None) or {}
+        job_id = None if problem else text_edit_job(conv, g.user_id, texto, previous_spec, spec["text_plan"])
+        if not job_id and not problem:
+            resposta = "Não consegui ajustar o texto desta vez. Pode me dizer de novo o que quer mudar?"
+        elif getattr(g, "text_edit_note", None):
+            resposta = g.text_edit_note
+        if insert:
+            add_message(conv["id"], "assistant", problem or resposta, message_id=message_id, job_id=job_id)
+        else:
+            set_message(message_id, conv["id"], problem or resposta, job_id)
+        return job_id
     if acao == "perguntar":
         save_spec(conv["id"], spec)
     else:
@@ -1005,6 +1104,18 @@ def creative_message(conv, texto, attachments, options, previous_result):
     previous_spec = loads(conv.get("spec"), None)
     references = [a["id"] for a in attachments if a["kind"] in ("reference", "product", "logo")]
     assistant_id = new_id()
+    if previous_spec and previous_spec.get("pending") and previous_spec.get("texto_pedido"):
+        # Resposta à pergunta "qual frase você quer?": resolvida aqui, sem o modelo (texto literal do usuário).
+        spec = creative.resolve_text_answer(texto, previous_spec)
+        if spec:
+            apply_creative_decision(conv, "gerar", "Perfeito! Vou criar a arte com esse texto.", spec, assistant_id, True, texto)
+            return jsonify({"ok": True}), 201
+    if previous_result and not references and not interpreter_available() and is_text_only_edit(texto, previous_spec):
+        problem = render_quota_problem(g.user_id)
+        job_id = None if problem else text_edit_job(conv, g.user_id, texto, previous_spec)
+        if job_id or problem:
+            add_message(conv["id"], "assistant", problem or "Pronto! Ajustei o texto na mesma arte.", job_id=job_id)
+            return jsonify({"ok": True}), 201
     if interpreter_available():
         history = conn.all(
             "SELECT role, content FROM sg_messages WHERE conversation_id = ? AND status = 'ok' ORDER BY seq DESC LIMIT 10",
@@ -1045,6 +1156,15 @@ def _creative_context(payload):
 
 def creative_from_model(payload, model_answer):
     conv, references = _creative_context(payload)
+    previous_spec = payload.get("previous_spec") or {}
+    if (isinstance(model_answer, dict) and model_answer.get("tipo_pedido") == "nova" and payload.get("previous_result_id")
+            and edits.refers_to_current(payload.get("text", ""), previous_spec.get("text_plan"))):
+        # O modelo disse "nova", mas a mensagem só fala da peça atual: trata como ajuste (sem apagar o que existe).
+        current_app.logger.info("guarda: pedido tratado como ajuste (modelo disse 'nova')")
+        kind = edits.classify(payload.get("text", ""), previous_spec.get("text_plan"))
+        model_answer = {**model_answer, "tipo_pedido": "ajuste", "editar_anterior": kind["cena"],
+                        "prompt_visual": model_answer.get("prompt_visual") or previous_spec.get("prompt_visual"),
+                        "ajuste": {"cena": kind["cena"], "textos": kind["texto"], "operacoes_texto": []}}
     acao, resposta, spec = creative.normalize_model_answer(
         model_answer, payload.get("text", ""), payload.get("options"), payload.get("previous_spec"),
         payload.get("previous_result_id"), references, conversation_texts(conv["id"]),
@@ -1054,6 +1174,13 @@ def creative_from_model(payload, model_answer):
 
 def creative_fallback(payload, note=""):
     conv, references = _creative_context(payload)
+    texto = payload.get("text", "")
+    previous_spec = loads(conv.get("spec"), None)
+    if payload.get("previous_result_id") and not references and is_text_only_edit(texto, previous_spec):
+        apply_creative_decision(conv, "ajustar_texto", "Pronto! Ajustei o texto na mesma arte.",
+                                {"text_plan": edits.revise_plan(previous_spec["text_plan"], texto)},
+                                payload["assistant_message_id"], False, texto)
+        return
     acao, resposta, spec = creative.rules_interpretation(
         payload.get("text", ""), payload.get("options"), payload.get("previous_spec"),
         payload.get("previous_result_id"), references, None, conversation_texts(conv["id"]),
@@ -1279,7 +1406,7 @@ def api_regenerate(job_id):
     if blocked:
         return blocked
     job = get_conn().one("SELECT * FROM sg_jobs WHERE id = ? AND user_id = ?", (valid_id(job_id), g.user_id))
-    if not job or job.get("gen_type") != "free_image":
+    if not job or job.get("gen_type") not in ("free_image", "text_edit"):
         abort(404)
     spec = dict((loads(job["payload"], {}) or {}).get("spec") or {})
     if not spec:
@@ -1403,13 +1530,26 @@ def admin_stats():
     })
 
 
+def text_check_summary(result):
+    report = result.get("validacao_texto")
+    if not report:
+        return None
+    failed = [c["nome"] for c in report.get("verificacoes", []) if not c.get("ok")]
+    ocr = report.get("ocr") or {}
+    return {"ok": report.get("ok"), "falhas": failed, "correcoes": len(report.get("correcoes") or []),
+            "tentativas": report.get("tentativas"), "composto_no": result.get("composto_no"),
+            "superficie": (report.get("superficie") or {}).get("modo"),
+            "leitura_visual": None if not ocr.get("textos") and ocr.get("disponivel") is False else ocr.get("ok"),
+            "leitura_s": ocr.get("tempo_s"), "indesejados": [e.get("texto") for e in ocr.get("indesejados") or []][:5]}
+
+
 @bp.get("/api/admin/jobs")
 @admin_required
 def admin_jobs():
     """Atividade recente com detalhes técnicos (só no painel do administrador)."""
     rows = get_conn().all(
         "SELECT j.id, j.kind, j.gen_type, j.status, j.status_message, j.error, j.payload, j.timings, j.worker_id, "
-        "j.render_mode, j.created_at, j.started_at, j.finished_at, u.name AS user_name "
+        "j.render_mode, j.result, j.created_at, j.started_at, j.finished_at, u.name AS user_name "
         "FROM sg_jobs j LEFT JOIN sg_users u ON u.id = j.user_id ORDER BY j.created_at DESC LIMIT 40"
     )
     out = []
@@ -1420,6 +1560,7 @@ def admin_jobs():
             "status": r["status"], "detalhe": r["error"] or r["status_message"] or "", "worker": r["worker_id"] or "",
             "tamanho": payload.get("size") or payload.get("scene_size"), "passos": payload.get("steps"),
             "modo": r["render_mode"] or "", "tempos": loads(r["timings"], {}) or {},
+            "textos": text_check_summary(loads(r["result"], {}) or {}),
             "fila_s": (r["started_at"] - r["created_at"]) if r["started_at"] else None,
             "geracao_s": (r["finished_at"] - r["started_at"]) if r["finished_at"] and r["started_at"] else None,
             "criado_em": r["created_at"],
@@ -1638,11 +1779,30 @@ def worker_complete(job_id):
             data, mime, width, height = sanitize_image(request.get_data(), 8 * 1024 * 1024, 40_000_000, 4096)
         except ImageRejected as exc:
             return error(str(exc))
-        asset_id = store_asset(job["user_id"], "result", data, mime, width, height)
+        spec = (loads(job["payload"], {}) or {}).get("spec") or {}
+        result = {}
+        if spec.get("text_plan"):
+            art_id = store_asset(job["user_id"], "art", data, mime, width, height)
+            started = now()
+            try:
+                asset_id, report = apply_texts(job["user_id"], data, spec)
+            except Exception as exc:  # noqa: BLE001 — sem os textos, a peça não é entregue como pronta
+                current_app.logger.exception("composição de texto falhou no job %s", job["id"])
+                conn.run("UPDATE sg_jobs SET status = 'failed', error = ?, status_message = 'Falhou', updated_at = ? "
+                         "WHERE id = ?", (f"tipografia: {type(exc).__name__}", now(), job["id"]))
+                return jsonify({"ok": True, "asset_id": None})
+            timings = loads(job.get("timings"), {}) or {}
+            timings["texto_s"] = round(now() - started, 2)
+            conn.run("UPDATE sg_jobs SET timings = ? WHERE id = ?", (dumps(timings), job["id"]))
+            result = {"asset_id": asset_id, "art_asset_id": art_id, "validacao_texto": report, "composto_no": "servidor"}
+            surface_note(job, report)
+        else:
+            asset_id = store_asset(job["user_id"], "result", data, mime, width, height)
+            result = {"asset_id": asset_id}
         conn.run(
             "UPDATE sg_jobs SET status = 'done', progress = 100, status_message = 'Pronto', result = ?, finished_at = ?, "
             "updated_at = ? WHERE id = ?",
-            (dumps({"asset_id": asset_id}), now(), now(), job["id"]),
+            (dumps(result), now(), now(), job["id"]),
         )
         return jsonify({"ok": True, "asset_id": asset_id})
 
@@ -1653,7 +1813,10 @@ def worker_complete(job_id):
         g.user_id = job["user_id"]
         conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ? WHERE id = ?",
                  (now(), now(), job["id"]))
-        creative_from_model(payload, data.get("modelo"))
+        model_answer = data.get("modelo")
+        conn.run("UPDATE sg_jobs SET result = ? WHERE id = ?",
+                 (dumps({"modelo": model_answer})[:20000] if isinstance(model_answer, dict) else None, job["id"]))
+        creative_from_model(payload, model_answer)
         return jsonify({"ok": True})
     conversation_id = payload["conversation_id"]
     previous = payload.get("previous_briefing") or {}
@@ -1677,6 +1840,51 @@ def worker_complete(job_id):
         "UPDATE sg_jobs SET status = 'done', progress = 100, updated_at = ? WHERE id = ?", (now(), job["id"])
     )
     return jsonify({"ok": True})
+
+
+@bp.post("/worker/jobs/<job_id>/complete-composed")
+@worker_required
+def worker_complete_composed(job_id):
+    """Agente v2.3: arte limpa + peça final já com os textos (validada no Acer, inclusive com leitura visual)."""
+    import base64  # noqa: PLC0415
+    import binascii  # noqa: PLC0415
+
+    job = worker_job(job_id)
+    if job["kind"] != "render":
+        return error("Tarefa inválida.")
+    data = request.get_json(silent=True) or {}
+    try:
+        art = sanitize_image(base64.b64decode(data.get("arte") or ""), 8 * 1024 * 1024, 40_000_000, 4096)
+        final = sanitize_image(base64.b64decode(data.get("final") or ""), 8 * 1024 * 1024, 40_000_000, 4096)
+    except (ImageRejected, binascii.Error, ValueError) as exc:
+        return error(str(exc) or "imagem inválida")
+    report = data.get("relatorio") if isinstance(data.get("relatorio"), dict) else {}
+    if len(dumps(report)) > 60_000:
+        report = {k: report.get(k) for k in ("ok", "tentativas", "correcoes", "superficie", "ocr") if k in report}
+    conn = get_conn()
+    art_id = store_asset(job["user_id"], "art", *art)
+    asset_id = store_asset(job["user_id"], "result", *final)
+    result = {"asset_id": asset_id, "art_asset_id": art_id, "validacao_texto": report, "composto_no": "acer"}
+    conn.run(
+        "UPDATE sg_jobs SET status = 'done', progress = 100, status_message = 'Pronto', result = ?, finished_at = ?, "
+        "updated_at = ? WHERE id = ?",
+        (dumps(result), now(), now(), job["id"]),
+    )
+    surface_note(job, report)
+    return jsonify({"ok": True, "asset_id": asset_id})
+
+
+def surface_note(job, report):
+    """Se a superfície pedida não foi encontrada na cena, avisa o cliente de forma natural."""
+    surface = (report or {}).get("superficie") or {}
+    if surface.get("modo") != "destaque":
+        return
+    msg = get_conn().one("SELECT id, content FROM sg_messages WHERE job_id = ? AND role = 'assistant' ORDER BY seq DESC LIMIT 1",
+                         (job["id"],))
+    if msg and "destaque" not in (msg["content"] or ""):
+        note = (" Não encontrei na cena um espaço liso e bem visível para o texto, então coloquei o texto em destaque "
+                "sobre a arte. Se quiser, peça “gere outra versão” para tentar de novo.")
+        get_conn().run("UPDATE sg_messages SET content = ? WHERE id = ?", (msg["content"] + note, msg["id"]))
 
 
 @bp.post("/worker/jobs/<job_id>/fail")

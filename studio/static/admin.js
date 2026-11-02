@@ -179,6 +179,17 @@
     $("#users-sub").textContent = `${active} ativo${active === 1 ? "" : "s"} de ${state.users.length} · limite diário padrão: ${state.defaultDaily} imagens`;
   }
 
+  // Validação dos textos (interna + leitura visual), só para o administrador.
+  function textSummary(t) {
+    if (!t) return "";
+    const parts = [`textos ${t.ok ? "ok" : "com avisos"}`];
+    if (t.superficie) parts.push(`superfície: ${t.superficie}`);
+    if (t.leitura_visual !== null && t.leitura_visual !== undefined) parts.push(`OCR ${t.leitura_visual ? "ok" : "divergente"}${t.leitura_s ? ` (${t.leitura_s}s)` : ""}`);
+    if (t.indesejados && t.indesejados.length) parts.push(`texto indesejado: ${t.indesejados.join(", ")}`);
+    if (t.composto_no) parts.push(`no ${t.composto_no}`);
+    return parts.join(", ");
+  }
+
   function renderJobs(jobs) {
     const fmt = (v) => (v == null ? "—" : fmtSeconds(v));
     $("#jobs-rows").replaceChildren(...jobs.map((j) => {
@@ -196,7 +207,7 @@
         el("td", { class: "num small", text: fmt(j.fila_s) }),
         el("td", { class: "num small", text: fmt(j.geracao_s) }),
         el("td", { class: "small", text: stages.join(" · ") }),
-        el("td", { class: "small muted", text: [j.detalhe, j.worker].filter(Boolean).join(" · ") }));
+        el("td", { class: "small muted", text: [j.detalhe, j.worker, textSummary(j.textos)].filter(Boolean).join(" · ") }));
     }));
     if (!jobs.length) $("#jobs-rows").append(el("tr", {}, el("td", { colspan: 8, class: "muted empty-row", text: "Nenhuma atividade ainda." })));
   }
