@@ -19,6 +19,11 @@ from collections import deque
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
+try:  # OpenCV (no Acer vem com o RapidOCR): segmentação GrabCut e detecção de quadriláteros por contorno
+    import cv2
+except Exception:  # noqa: BLE001 — sem OpenCV (ex.: servidor), ficam os métodos só com numpy
+    cv2 = None
+
 PLANAR = {"placa", "letreiro", "outdoor", "quadro", "tela", "fachada", "vitrine", "embalagem", "caixa", "rotulo", "rótulo"}
 WALL = {"parede", "muro"}
 CURVED = {"camiseta", "camisa", "bone", "boné", "caneca", "garrafa", "copo", "lata"}
@@ -315,7 +320,17 @@ def _text_color(base, box, user_color=None, dark=(28, 28, 32), light=(248, 248, 
     return dark if gray.size and gray.mean() > 135 else light
 
 
-def apply_planar(base, quad, text, font_loader, user_color=None, wall=False):
+def _occlude(layer, mask):
+    """Recorta as letras pela máscara da superfície (suavizada): o que está na frente continua na frente."""
+    if mask is None:
+        return layer
+    soft = mask.filter(ImageFilter.GaussianBlur(1.2))
+    alpha = Image.fromarray(np.minimum(np.asarray(layer.getchannel("A")), np.asarray(soft)).astype(np.uint8))
+    layer.putalpha(alpha)
+    return layer
+
+
+def apply_planar(base, quad, text, font_loader, user_color=None, wall=False, mask=None):
     """Projeta o texto no quadrilátero (perspectiva) e integra com a luz. Devolve (imagem, info)."""
     inner = _inset(quad, 0.1, 0.18 if not wall else 0.28)
     top_w, bot_w = _dist(inner[0], inner[1]), _dist(inner[3], inner[2])
@@ -336,7 +351,7 @@ def apply_planar(base, quad, text, font_loader, user_color=None, wall=False):
     target = _inset(inner, fx, fy)
     coeffs = _homography([(0, 0), (lw, 0), (lw, lh), (0, lh)], target)
     layer = label.transform(base.size, Image.PERSPECTIVE, coeffs, Image.BICUBIC)
-    layer = _shade_and_texture(base, layer, box)
+    layer = _occlude(_shade_and_texture(base, layer, box), mask)
     out = base.convert("RGBA")
     if wall:
         sx, sy = _light_direction(base, box)
@@ -366,7 +381,7 @@ def _remap(src, map_x, map_y):
     return out
 
 
-def apply_curved(base, rect, text, font_loader, user_color=None, cylinder=0.55, bend=0.035):
+def apply_curved(base, rect, text, font_loader, user_color=None, cylinder=0.55, bend=0.035, mask=None):
     """Estampa curva: cilindro horizontal + arco leve + dobras do tecido. Devolve (imagem, info)."""
     x0, y0, x1, y1 = rect
     rw, rh = x1 - x0, y1 - y0
@@ -398,10 +413,152 @@ def apply_curved(base, rect, text, font_loader, user_color=None, cylinder=0.55, 
     warped = _remap(label, map_x, map_y)
     layer = Image.new("RGBA", base.size, (0, 0, 0, 0))
     layer.paste(Image.fromarray(np.clip(warped, 0, 255).astype(np.uint8), "RGBA"), (bx0, by0))
-    layer = _shade_and_texture(base, layer, rect)
+    layer = _occlude(_shade_and_texture(base, layer, rect), mask)
     out = base.convert("RGBA")
     out.alpha_composite(layer)
     return out.convert("RGB"), {"modo": "curva", "linhas": lines, "rect": [round(c) for c in rect]}
+
+
+# ----------------------------------------------------------------------------------- OpenCV (quando disponível)
+
+CV_WORK = 480
+
+
+def _cv_small(img):
+    scale = CV_WORK / max(img.size)
+    small = img.convert("RGB").resize((max(32, int(img.width * scale)), max(32, int(img.height * scale))), Image.BILINEAR)
+    return cv2.cvtColor(np.asarray(small), cv2.COLOR_RGB2BGR), scale
+
+
+def _full_mask(region, scale, size):
+    """Máscara (pequena, bool) -> imagem L no tamanho da arte."""
+    small = Image.fromarray((region * 255).astype(np.uint8))
+    return small.resize(size, Image.BILINEAR).point(lambda v: 255 if v > 127 else 0)
+
+
+def find_garment_cv(img, mug=False):
+    """Camiseta (vestida ou não) ou caneca: GrabCut separa o objeto do fundo; a cor do peito/lateral separa a
+    peça da pele e de outros objetos. Devolve área útil, máscara (oclusão) e confiança."""
+    bgr, scale = _cv_small(img)
+    h, w = bgr.shape[:2]
+    mask = np.zeros((h, w), np.uint8)
+    rect = (int(w * 0.1), int(h * 0.06), int(w * 0.8), int(h * 0.9))
+    bg_model, fg_model = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+    cv2.grabCut(bgr, mask, rect, bg_model, fg_model, 4, cv2.GC_INIT_WITH_RECT)
+    fg = np.isin(mask, (cv2.GC_FGD, cv2.GC_PR_FGD))
+    lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
+    seeds = [(0.5, 0.5), (0.5, 0.45), (0.5, 0.55), (0.45, 0.5), (0.55, 0.5), (0.5, 0.62)] if not mug else \
+        [(0.45, 0.5), (0.4, 0.5), (0.5, 0.5), (0.45, 0.45)]
+    best = None
+    for fx, fy in seeds:
+        y, x = int(h * fy), int(w * fx)
+        if not fg[y, x]:
+            continue
+        ref = np.median(lab[max(0, y - 4):y + 5, max(0, x - 4):x + 5].reshape(-1, 3), axis=0)
+        dist = np.sqrt((((lab - ref) * np.array([0.6, 1.0, 1.0], np.float32)) ** 2).sum(axis=2))
+        # Camiseta: a cor separa a peça da pele/braços. Caneca: o objeto inteiro (a sombra lateral também é caneca).
+        region = (fg if mug else (fg & (dist < 26))).astype(np.uint8)
+        count, labels = cv2.connectedComponents(region)
+        comp = labels == labels[y, x]
+        area = comp.mean()
+        if 0.04 <= area <= 0.7 and (best is None or area > best[0]):
+            best = (area, comp, ref)
+    if best is None:
+        return None
+    area, comp, ref = best
+    comp = cv2.morphologyEx(comp.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8)).astype(bool)
+    ys, xs = np.nonzero(comp)
+    y0, y1 = ys.min(), ys.max()
+    if mug:
+        band = (y0 + (y1 - y0) * 0.2, y0 + (y1 - y0) * 0.6)  # a máscara inclui a sombra no apoio
+    else:  # peito: logo abaixo da gola
+        band = (y0 + (y1 - y0) * 0.16, y0 + (y1 - y0) * 0.42)
+    rows = [r for r in range(int(band[0]), int(band[1])) if comp[r].any()]
+    if not rows:
+        return None
+    lefts = [np.nonzero(comp[r])[0].min() for r in rows]
+    rights = [np.nonzero(comp[r])[0].max() for r in rows]
+    left, right = float(np.median(lefts)), float(np.median(rights))
+    width = right - left
+    cx, half = (left + right) / 2, width * 0.3
+    if mug:
+        # Corpo da caneca = colunas preenchidas em quase toda a faixa (a alça é vazada); centraliza no corpo.
+        # A alça é vazada: do lado dela as colunas preenchem pouco da altura. O corpo vai do fim da alça até a
+        # borda oposta (reflexos de luz podem abrir buracos na máscara, por isso não se exige coluna cheia).
+        top = comp[y0:int(y0 + (y1 - y0) * 0.7) + 1]  # parte de cima: sem a sombra no apoio
+        cols = np.nonzero(top.any(axis=0))[0]
+        x0b, x1b = int(cols.min()), int(cols.max())
+        fill_cols = top[:, x0b:x1b + 1].mean(axis=0)
+        quarter = max(1, fill_cols.size // 4)
+        handle_left = fill_cols[:quarter].mean() < fill_cols[-quarter:].mean()
+        order = range(fill_cols.size) if handle_left else range(fill_cols.size - 1, -1, -1)
+        edge = next((i for i in order if fill_cols[i] >= 0.85), None)
+        if edge is not None:
+            body_l, body_r = (x0b + edge, x1b) if handle_left else (x0b, x0b + edge)
+            cx, half = (body_l + body_r) / 2, (body_r - body_l) * 0.36
+    rect = (cx - half, band[0], cx + half, band[1])
+    rx0, ry0, rx1, ry1 = (int(v) for v in rect)
+    fill = comp[max(0, ry0):ry1, max(0, rx0):rx1].mean() if ry1 > ry0 and rx1 > rx0 else 0
+    if fill < 0.8:
+        return None
+    inv = 1 / scale
+    return {"rect": tuple(float(v * inv) for v in rect), "mascara": _full_mask(comp, scale, img.size),
+            "confianca": round(float(fill), 2), "luminancia": float(ref[0]) * 100 / 255}
+
+
+def _order_quad(pts):
+    pts = np.array(pts, dtype=np.float32).reshape(4, 2)
+    s, d = pts.sum(axis=1), np.diff(pts, axis=1).ravel()
+    return [tuple(pts[np.argmin(s)]), tuple(pts[np.argmin(d)]), tuple(pts[np.argmax(s)]), tuple(pts[np.argmax(d)])]
+
+
+def find_quad_cv(img):
+    """Placa/painel: contornos fechados aproximados por 4 vértices, convexos, lisos por dentro. Funciona com placas
+    inclinadas ou vistas de lado (a homografia corrige a perspectiva). Parcialmente coberta: o casco convexo da
+    região lisa vira o quadrilátero e a máscara mantém o que está na frente."""
+    bgr, scale = _cv_small(img)
+    h, w = bgr.shape[:2]
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(cv2.GaussianBlur(gray, (5, 5), 0), 40, 120)
+    edges = cv2.dilate(edges, np.ones((3, 3), np.uint8))
+    contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    lab = cv2.cvtColor(bgr, cv2.COLOR_BGR2LAB).astype(np.float32)
+    best = None
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area < h * w * 0.02 or area > h * w * 0.85:
+            continue
+        hull = cv2.convexHull(c)
+        for eps in (0.02, 0.035, 0.05):
+            approx = cv2.approxPolyDP(hull, eps * cv2.arcLength(hull, True), True)
+            if len(approx) == 4 and cv2.isContourConvex(approx):
+                break
+        else:
+            continue
+        poly = np.zeros((h, w), np.uint8)
+        cv2.fillConvexPoly(poly, approx, 1)
+        inside = poly.astype(bool)
+        inner = cv2.erode(poly, np.ones((7, 7), np.uint8)).astype(bool)
+        if inner.sum() < 50:
+            continue
+        edge_density = (edges[inner] > 0).mean()
+        ref = np.median(lab[inner], axis=0)
+        same = np.sqrt((((lab - ref) * np.array([0.6, 1.0, 1.0], np.float32)) ** 2).sum(axis=2)) < 20
+        uniform = same[inner].mean()
+        if uniform < 0.6 or edge_density > 0.12:
+            continue
+        quad_area = cv2.contourArea(approx)
+        score = quad_area * uniform * (1 - edge_density)
+        if best is None or score > best[0]:
+            best = (score, approx, same & inside, uniform, edge_density)
+    if best is None:
+        return None
+    _, approx, surface, uniform, edge_density = best
+    inv = 1 / scale
+    quad = [(float(x * inv), float(y * inv)) for x, y in _order_quad(approx)]
+    confidence = round(float(min(1.0, uniform * (1 - edge_density * 3))), 2)
+    mask = _full_mask(cv2.dilate(surface.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool), scale, img.size)
+    return {"quad": quad, "confianca": confidence, "mascara": mask}
 
 
 def apply(base, surface, text, font_loader, user_color=None):
@@ -410,20 +567,37 @@ def apply(base, surface, text, font_loader, user_color=None):
     if kind is None:
         return None, "superfície não suportada"
     if kind == "curva":
-        found = find_garment(base)
+        mug = (surface or "").lower() in ("caneca", "garrafa", "copo", "lata")
+        found = None
+        if cv2 is not None:
+            try:
+                found = find_garment_cv(base, mug=mug)
+            except Exception:  # noqa: BLE001
+                found = None
+        found = found or find_garment(base)
         if not found:
             return None, "peça não localizada com confiança"
-        cyl = 0.75 if (surface or "").lower() in ("caneca", "garrafa", "copo", "lata") else 0.5
-        result = apply_curved(base, found["rect"], text, font_loader, user_color, cylinder=cyl)
+        cyl = 0.75 if mug else 0.5
+        result = apply_curved(base, found["rect"], text, font_loader, user_color, cylinder=cyl,
+                              mask=found.get("mascara"))
         if not result:
             return None, "texto não coube na peça"
         img, info = result
         info["confianca"] = found["confianca"]
         return img, info
-    found = find_planar(base, prefer_wall=(kind == "parede"))
+    found = None
+    if cv2 is not None and kind == "plana":
+        try:
+            found = find_quad_cv(base)
+        except Exception:  # noqa: BLE001
+            found = None
+        if found and found["confianca"] < 0.45:
+            found = None
+    found = found or find_planar(base, prefer_wall=(kind == "parede"))
     if not found or found.get("confianca", 0) < 0.35:
         return None, "superfície lisa não localizada com confiança"
-    result = apply_planar(base, found["quad"], text, font_loader, user_color, wall=(kind == "parede"))
+    result = apply_planar(base, found["quad"], text, font_loader, user_color, wall=(kind == "parede"),
+                          mask=found.get("mascara"))
     if not result:
         return None, "texto não coube na superfície"
     img, info = result

@@ -326,7 +326,7 @@ def final_prompt(prompt_visual, style, blocks=(), people_ok=True, hint=""):
 def build_spec(*, prompt_original, prompt_visual, style, aspect, quality, user_texts, reference_ids=(),
                reference_strength="media", init_asset_id=None, denoise=None, seed=None, gen_type="free_image",
                parent_job_id=None, notes="", model_texts=None, model_type_style=None, model_effect=None,
-               previous_plan=None, extra_blocks=None, revise_previous=False, text_ops=None):
+               previous_plan=None, extra_blocks=None, revise_previous=False, text_ops=None, fixed_plan=None):
     """Monta a spec validada.
 
     Textos na imagem (text_plan): extraídos literalmente do pedido atual (studio/textplan.py) e aplicados depois
@@ -335,14 +335,16 @@ def build_spec(*, prompt_original, prompt_visual, style, aspect, quality, user_t
     style = style if style in STYLES else "auto"
     aspect = aspect if aspect in ASPECTS else DEFAULT_ASPECT
     quality = quality if quality in QUALITIES else "qualidade"
-    if revise_previous and previous_plan and previous_plan.get("blocos"):
+    if fixed_plan is not None:
+        plan = fixed_plan  # já revisado e conferido pelo planejador de ajustes
+    elif revise_previous and previous_plan and previous_plan.get("blocos"):
         # Ajuste: mantém os textos anteriores e muda só o que o cliente pediu (literal, remoção, tamanho, posição…).
         revised = edits.apply_operations(previous_plan, text_ops, prompt_original) if text_ops             else edits.revise_plan(previous_plan, prompt_original)
         # Fontes: pedidos do cliente + textos da peça anterior (já validados quando ela foi criada).
         plan = textplan.validate_plan(revised, list(user_texts) + [prompt_original] + textplan.plan_texts(previous_plan))
     else:
         plan = textplan.plan_from_request(prompt_original, model_texts, style, model_type_style, model_effect)
-    if plan is None and previous_plan and not revise_previous:
+    if plan is None and previous_plan and not revise_previous and fixed_plan is None:
         plan = textplan.validate_plan(previous_plan, list(user_texts) + [prompt_original])
     if extra_blocks:  # textos confirmados pelo usuário numa pergunta ("pode usar" / frase digitada)
         plan = plan or {"versao": 1, "blocos": [], "estilo": textplan.detect_type_style(prompt_original, style),
@@ -463,6 +465,83 @@ def friendly_reply(text, fallback):
     return fallback if not text or TECH_WORDS.search(text) else text
 
 
+REALISTIC_PROMPT = ("photorealistic photograph of a real-world scene, natural materials and real objects, "
+                    "realistic lighting, no abstract graphics, no digital art")
+
+
+def describe_changes(decision):
+    """Frase honesta: o que foi conferido, o que vai ser feito na cena e o que não deu para fazer."""
+    parts = []
+    if decision["feitas"]:
+        parts.append("; ".join(decision["feitas"]))
+    if decision["cena"]:
+        parts.append(edits.scene_label(decision["cena"], decision["realista"]))
+    text = ""
+    if parts:
+        text = "Alterações: " + "; ".join(parts) + "."
+    if decision["faltando"]:
+        text += " Não consegui fazer: " + "; ".join(decision["faltando"]) + ". Pode me dizer de outro jeito?"
+    return text.strip()
+
+
+def adjustment_outcome(decision, previous_spec, previous_result_id, prompt_visual, data, options, text, user_texts):
+    """Executa a decisão: só texto (mesma arte), só cena (textos preservados) ou os dois."""
+    previous_spec = previous_spec or {}
+    record = {"texto": clean(text, 600), "cena": decision["cena"], "esperado": decision["esperado"],
+              "realista": decision["realista"], "arte_anterior": previous_result_id}
+    if decision["reclamacao"] and previous_spec.get("pedido_ajuste"):
+        record["texto"] = previous_spec["pedido_ajuste"].get("texto") or record["texto"]
+    if not decision["cena"]:
+        if not decision["feitas"] and edits.plan_signature(decision["plan"]) == edits.plan_signature(
+                previous_spec.get("text_plan")):
+            if decision["faltando"]:
+                return "perguntar", describe_changes(decision), {**previous_spec}
+            return ("perguntar", "Não consegui identificar o que mudar. Pode me dizer exatamente o que quer alterar "
+                                 "(texto, tamanho, cor, posição ou o fundo)?", {**previous_spec})
+        return "ajustar_texto", "Pronto! " + describe_changes(decision), {"text_plan": decision["plan"],
+                                                                          "pedido_ajuste": record}
+    level = decision["cena"]
+    visual = prompt_visual or previous_spec.get("prompt_visual") or ""
+    if decision["realista"]:
+        visual = f"{visual}, {REALISTIC_PROMPT}"
+    style = "foto" if decision["realista"] else (options.get("estilo") if options.get("estilo") in STYLES
+                                                 and options.get("estilo") != "auto" else
+                                                 data.get("estilo") or previous_spec.get("style"))
+    fresh = level == "total"  # mudança substancial: cenário novo (txt2img); os textos são reaplicados depois
+    spec = build_spec(
+        prompt_original=text, prompt_visual=visual, style=style,
+        aspect=(options.get("proporcao") if options.get("proporcao") in ASPECTS else None)
+        or previous_spec.get("aspect_ratio") or DEFAULT_ASPECT,
+        quality=options.get("qualidade"), user_texts=user_texts,
+        init_asset_id=None if fresh else previous_result_id,
+        denoise=None if fresh else edits.LEVEL_STRENGTH[level],
+        parent_job_id=previous_spec.get("job_id"), fixed_plan=decision["plan"],
+        notes=clean(data.get("descricao_referencias"), 300),
+    )
+    spec["pedido_ajuste"] = record
+    return "gerar", "Certo! Vou fazer agora. " + describe_changes(decision), spec
+
+
+def retry_last_adjustment(previous_spec, text, previous_result_id, user_texts, options=None):
+    """ "Você não mudou nada": recupera o último pedido, confere o que falta e refaz com mais força na cena."""
+    last = (previous_spec or {}).get("pedido_ajuste") or {}
+    if not last.get("texto"):
+        return None
+    model_like = {"ajuste": {"cena": bool(last.get("cena")), "intensidade": last.get("cena") or ""}}
+    decision = edits.plan_adjustment(previous_spec, f"{last['texto']} {text}", model_like, list(user_texts))
+    decision["reclamacao"] = True
+    if last.get("cena"):
+        decision["cena"] = edits.scene_level("", None, True, last["cena"])
+    acao, resposta, spec = adjustment_outcome(decision, previous_spec, previous_result_id, "", {}, options or {},
+                                              last["texto"], user_texts)
+    already = [e["texto"] for e in last.get("esperado") or [] if e.get("texto") and
+               e["texto"] in textplan.plan_texts((previous_spec or {}).get("text_plan"))]
+    intro = "Você tem razão, vou refazer. "
+    if already and not decision["feitas"]:
+        intro += "O texto já está como “" + "”, “".join(already) + "”. "
+    return acao, intro + resposta.replace("Certo! Vou fazer agora. ", "").replace("Pronto! ", ""), spec
+
+
 def _same_scene(a, b):
     """A descrição da cena é (quase) a mesma? Compara as palavras, sem pontuação."""
     wa, wb = set(re.findall(r"[a-z]{3,}", _norm(a))), set(re.findall(r"[a-z]{3,}", _norm(b)))
@@ -499,8 +578,13 @@ def normalize_model_answer(data, text, options, previous_spec, previous_result_i
     if acao != "gerar" or len(prompt_visual) < 8:
         return rules_interpretation(text, options, previous_spec, previous_result_id, reference_ids, None, user_texts)
 
-    # O modelo interpreta a intenção: criação nova ou ajuste (cena, textos ou os dois). O servidor só valida.
+    # O modelo interpreta a intenção: criação nova ou ajuste (cena, textos ou os dois). O servidor valida, aplica e
+    # confere cada mudança pedida antes de responder.
     adj = edits.model_adjustment(data) if previous_result_id and previous_spec else None
+    if adj is not None or (previous_result_id and previous_spec and edits.COMPLAINT.search(text or "")):
+        decision = edits.plan_adjustment(previous_spec, text, data, list(user_texts))
+        return adjustment_outcome(decision, previous_spec, previous_result_id, prompt_visual, data, options, text,
+                                  user_texts)
     previous_plan = (previous_spec or {}).get("text_plan")
     if adj and adj["cena"] and adj["textos"] and _same_scene(prompt_visual, (previous_spec or {}).get("prompt_visual")):
         adj["cena"] = False  # a descrição da cena não mudou: só os textos mudam, a arte é reaproveitada

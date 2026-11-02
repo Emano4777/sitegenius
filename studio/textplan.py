@@ -171,9 +171,22 @@ _SURFACE = re.compile(r"\b(na|no|numa|num|sobre a|sobre o)\s+(parede|fachada|let
                       re.IGNORECASE)
 
 
+_SURFACE_NOUN = re.compile(r"\b(parede|fachada|letreiro|placa|camiseta|camisa|caneca|vitrine|muro|outdoor|embalagem|"
+                           r"garrafa|r[oó]tulo|lata|copo|bon[eé]|quadro)\b", re.IGNORECASE)
+_APPLIED = re.compile(r"estampad|escrit|gravad|pintad|impress|bordad|no peito|na frente|na lateral|no centro d[ao]|"
+                      r"com (o )?(nome|logo|texto|frase)", re.IGNORECASE)
+
+
 def detect_surface(text):
+    """Superfície onde o texto deve ficar: "na parede", "camiseta preta com X estampado no peito",
+    "caneca com X na lateral"."""
     match = _SURFACE.search(text or "")
-    return match.group(2).lower() if match else None
+    if match:
+        return match.group(2).lower()
+    noun = _SURFACE_NOUN.search(text or "")
+    if noun and _APPLIED.search(text or ""):
+        return noun.group(1).lower()
+    return None
 
 
 # ----------------------------------------------------------------------------------- extração
@@ -194,7 +207,10 @@ _NAMED = re.compile(
     r"[A-ZÀ-Ý0-9][\wÀ-ÿ&'’.+-]*)*)"
 )
 _NAME_RUN = r"[A-ZÀ-Ý0-9][\wÀ-ÿ&'’.+-]*(?:\s+(?:(?:de|da|do|das|dos|e|&|-)\s+)?[A-ZÀ-Ý0-9][\wÀ-ÿ&'’.+-]*)*"
-_NAMED_BEFORE = re.compile(r"(?P<value>" + _NAME_RUN + r")\s+escrit[oa]s?\b")
+_NAMED_BEFORE = re.compile(r"(?P<value>" + _NAME_RUN + r")\s+(?:escrit|estampad|gravad|impress|bordad|pintad)[oa]s?\b")
+# "caneca branca com Emanuel Tecnologia na lateral": nome próprio entre "com" e a parte da superfície.
+_NAMED_ON_SURFACE = re.compile(r"\bcom\s+(?P<value>" + _NAME_RUN + r")\s+(?:na|no)\s+(?:lateral|peito|frente|centro|"
+                               r"parte da frente|meio)\b")
 # "coloca aceita financiamento", "escreve Sabor de Casa no topo": texto literal depois do verbo.
 _PUT = re.compile(r"\b(?:coloca|coloque|p[oõ]e|ponha|escreve|escreva|adiciona|adicione|inclui|inclua|bota|bote)\s+"
                   r"(?:tamb[eé]m\s+)?(?:o texto\s+|a frase\s+|escrito\s+)?(?P<value>[^,.;\n]+)", re.IGNORECASE)
@@ -291,6 +307,12 @@ def extract_blocks(message):
         before, after = _clause(message, match.start(), match.end())
         role = "marca" if re.search(r"nome|marca|empresa|loja", _fold(match.group("label"))) else detect_role(match.group("label"))
         blocks.append(_block(value, role, detect_position(before[-40:] + " " + after[:80]), match.start("value"), "nome"))
+
+    for match in _NAMED_ON_SURFACE.finditer(message):
+        value = _nfc(match.group("value"))
+        if free(match.start("value"), match.end("value")) and len(value) >= 2:
+            taken.append((match.start(), match.end()))
+            blocks.append(_block(value, "marca", "auto", match.start("value"), "nome"))
 
     for match in _NAMED_BEFORE.finditer(message):
         value = _nfc(match.group("value"))

@@ -41,6 +41,11 @@ CASES.update({
     "p6": 'Arte quadrada para açaiteria com "Açaí & Cia — nº 1 em São João" e "2 por R$ 9,99!"',
     "p7": "Uma vista aérea de uma cidade litorânea ao entardecer, foto realista",
 })
+CASES.update({
+    "s1": "Uma pessoa usando uma camiseta preta com Emano Tec estampado no peito, foto realista",
+    "s2": "Uma caneca branca com Emanuel Tecnologia na lateral, foto de produto",
+    "s3": 'Fachada de loja vista de lado com uma placa inclinada escrita "Mercado Bom Preço" na placa',
+})
 EDIT = ("1", 'mude o nome para "Emanuel Tech" e coloque no topo')
 
 

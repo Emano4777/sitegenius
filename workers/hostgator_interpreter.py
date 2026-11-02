@@ -95,13 +95,17 @@ Regras:
   * "coloca uma praia no fundo e muda pra Promoção de Verão" -> ajuste, cena true, intensidade "grande",
     [{"acao":"trocar","alvo":"Ofertas da semana","texto":"Promoção de Verão"}]
   * "ficou bom, mas quero mais vibrante" -> ajuste, cena true, intensidade "pequena"
+  * "coloca o L de loja sol maiúsculo" (texto atual "loja sol") -> [{"acao":"trocar","alvo":"loja sol","texto":"Loja sol"}]
+    (maiúsculas, acentos e pontuação: use "trocar" com o texto final exato)
+  * "não gostei, quero algo realista" / "troca o fundo" / "faz algo totalmente diferente" -> cena true,
+    intensidade "total" (cenário novo; os textos continuam)
   * "agora faz um cartaz de academia com Treine Forte" -> nova (outro assunto)
   * "quero também uma versão para story" -> ajuste, cena true, intensidade "media" (mesma peça, outro formato)
   Em "ajuste":
   * ajuste.cena = true se a ARTE precisa mudar (fundo, luz, cores da imagem, objetos, enquadramento, estilo visual).
   * ajuste.textos = true se os TEXTOS mudam. Mudança só de texto NÃO muda a cena: a mesma arte é reaproveitada.
   * ajuste.intensidade (só se cena): "pequena" (luz, cor, contraste, detalhe), "media" (adicionar/trocar um objeto),
-    "grande" (trocar fundo, cenário ou estilo inteiro).
+    "grande" (mudar bastante mantendo a ideia), "total" (outro fundo/cenário/estilo, ex.: abstrato -> foto realista).
   * operacoes_texto, uma por mudança: acao = trocar | adicionar | remover | mover | aumentar | diminuir | cor | estilo
     | efeito; alvo = o texto atual exato (da lista "Textos atuais"); papel = o papel do texto; texto = o NOVO texto
     copiado exatamente da mensagem do cliente (só para trocar/adicionar); posicao = nova posição (mover);

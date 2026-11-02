@@ -27,8 +27,8 @@ SCENE_WORDS = re.compile(r"\b(fundo|cen[aá]rio|imagem|foto|luz|ilumina\w*|c[eé
                          r"praia|cidade|mesa|parede|ch[aã]o|roupa|camiseta|casa|carro|estilo da imagem)\b", re.IGNORECASE)
 REMOVE = re.compile(r"\b(tira|tire|retira|retire|remove|remova|apaga|apague|exclui|exclua|sem o|sem a)\b", re.IGNORECASE)
 BIGGER = re.compile(r"\b(maior|aumenta|aumente|amplia|amplie|mais grande|bem grande|destaque|grande demais n[aã]o)\b|"
-                    r"\b(est[aá]|t[aá]|ficou|muito)\s+(pequen\w+|miud\w+)", re.IGNORECASE)
-SMALLER = re.compile(r"\b(menor|diminui|diminua|reduz|reduza|mais discreto)\b|\b(est[aá]|t[aá]|ficou|muito)\s+(grande|enorme)",
+                    r"\b(est[aá]|t[aá]|ficou|muito)\s+(\w+\s+){0,2}(pequen\w*|miud\w*)", re.IGNORECASE)
+SMALLER = re.compile(r"\b(menor|diminui|diminua|reduz|reduza|mais discreto)\b|\b(est[aá]|t[aá]|ficou|muito)\s+(\w+\s+){0,2}(grande|enorme)",
                      re.IGNORECASE)
 SMALL_CHANGE = re.compile(r"mais (escur|clar|quente|fri|vivo|saturad|suave|n[ií]tid|contrast)|menos (escur|clar|saturad)|"
                           r"ilumina|brilho|contraste|tom|cor(es)? (mais|menos)", re.IGNORECASE)
@@ -174,8 +174,9 @@ def apply_operations(previous_plan, ops, message):
         position = op.get("posicao") if op.get("posicao") in textplan.POSITIONS else None
         targets_ = find(op) or (blocks if op.get("todos") is True else [])
         if action in ("trocar", "adicionar"):
-            if not literal or not textplan._present(literal, message):
-                continue  # o modelo não pode inventar texto
+            formatting = op.get("formato") or op.get("origem") == "maiusculas"
+            if not literal or not (formatting or textplan._present(literal, message)):
+                continue  # o modelo não pode inventar texto (só mudar a forma do texto que o cliente escreveu)
             if action == "trocar" and targets_:
                 targets_[0]["texto"] = literal
                 targets_[0].pop("confirmado", None)
@@ -222,3 +223,275 @@ def refers_to_current(text, previous_plan):
     referential = bool(REFERENCE_WORDS.search(text))
     short = len(text.split()) <= 25
     return (mentions_text or mentions_part or referential) and short
+
+
+# ----------------------------------------------------------------------------------- confiabilidade dos ajustes
+# O que o cliente pediu vira uma lista de MUDANÇAS ESPERADAS; depois de aplicar, cada uma é conferida no estado
+# final (e, na cena, na imagem). A resposta ao cliente só afirma o que foi conferido.
+
+ACTION_ALIASES = {"mudar": "trocar", "alterar": "trocar", "substituir": "trocar", "corrigir": "trocar", "editar": "trocar",
+                  "reescrever": "trocar", "maiuscula": "trocar", "maiúscula": "trocar", "minuscula": "trocar",
+                  "minúscula": "trocar", "capitalizar": "trocar", "excluir": "remover", "apagar": "remover",
+                  "tirar": "remover", "incluir": "adicionar", "colocar": "adicionar", "inserir": "adicionar",
+                  "ampliar": "aumentar", "reduzir": "diminuir", "colorir": "cor", "posicionar": "mover"}
+
+SCENE_TOTAL = re.compile(
+    r"realist|fotograf|foto real|menos artificial|mais natural|completamente|totalmente|outra proposta|outra ideia|"
+    r"muda bastante|mude bastante|bem diferente|nada a ver|do zero|refa[zç]\w* tudo|outro estilo|outro (fundo|cen[aá]rio)|"
+    r"n[aã]o gostei d[oa] (fundo|cen[aá]rio|arte|imagem|estilo)|troc\w* (o |de )?(fundo|cen[aá]rio)|"
+    r"mud\w* (o |de )?(fundo|cen[aá]rio)|n[aã]o gostei|arte totalmente|abstrat", re.IGNORECASE)
+REALISTIC = re.compile(r"realist|fotograf|foto real|menos artificial|mais natural|n[aã]o (quero|seja) (arte )?abstrat",
+                       re.IGNORECASE)
+COMPLAINT = re.compile(
+    r"n[aã]o mudou|nada mudou|n[aã]o (alterou|trocou|fez|funcionou|mudou nada)|continua (igual|errad\w*|a mesma|o mesmo|"
+    r"min[uú]scul\w*|mai[uú]scul\w*)|t[aá] igual|est[aá] igual|ficou igual|ainda (est[aá]|t[aá]|continua)|n[aã]o era isso|"
+    r"mesma coisa|n[aã]o (deu|saiu) certo|errad\w* de novo|de novo errad|voc[eê] n[aã]o|n[aã]o atendeu", re.IGNORECASE)
+LEVELS = ("pequena", "media", "grande", "total")
+LEVEL_STRENGTH = {"pequena": 0.55, "media": 0.7, "grande": 0.85, "total": 1.0}
+
+
+def normalize_ops(ops):
+    out = []
+    for op in ops or []:
+        if not isinstance(op, dict):
+            continue
+        action = ACTION_ALIASES.get(str(op.get("acao") or "").lower(), str(op.get("acao") or "").lower())
+        if action in OPERATIONS:
+            out.append({**op, "acao": action})
+    return out[:8]
+
+
+def _same_letters(a, b):
+    """Mesmo texto a menos de maiúsculas, acentos e pontuação (mudança de forma, não de conteúdo)."""
+    from .ocr import fold  # noqa: PLC0415
+
+    return bool(a and b) and fold(a) == fold(b)
+
+
+def _target_block(blocks, message, word=None):
+    folded = _fold(message)
+    if word:
+        hit = [b for b in blocks if _fold(word) in _fold(b["texto"])]
+        if hit:
+            return hit[0]
+    hit = [b for b in blocks if _fold(b["texto"]) in folded]
+    if hit:
+        return hit[0]
+    roles = targets(message)
+    hit = [b for b in blocks if b["papel"] in roles]
+    return hit[0] if hit else (blocks[0] if len(blocks) == 1 else None)
+
+
+def case_ops(message, blocks):
+    """Maiúsculas/minúsculas pedidas em linguagem natural -> troca com o texto exato esperado.
+
+    Ex.: "coloca o T de tecnologia maiúsculo" em "tecnologia é aqui" -> "Tecnologia é aqui". Só muda a forma das
+    letras que o cliente já escreveu; o conteúdo continua o dele."""
+    t = _fold(message)
+    if not re.search(r"maiuscul|minuscul|caixa alta|caixa baixa|capitaliz", t):
+        return []
+    upper = bool(re.search(r"maiuscul|caixa alta|capitaliz", t))
+    letter = re.search(r"\b(?:o|a)\s+([a-z])\s+(?:de|do|da)\s+([a-z0-9]+)", t)
+    block = _target_block(blocks, message, letter.group(2) if letter else None)
+    if not block:
+        return []
+    text = block["texto"]
+    if re.search(r"\b(tudo|todo o texto|todas as letras|caixa alta|caixa baixa|inteir)", t):
+        new = text.upper() if upper else text.lower()
+    elif re.search(r"cada palavra|todas as palavras", t):
+        new = " ".join((w[:1].upper() if upper else w[:1].lower()) + w[1:] for w in text.split(" "))
+    elif letter:
+        ch, word = letter.group(1), letter.group(2)
+        folded_text = _fold(text)
+        start = folded_text.find(word)
+        pos = folded_text.find(ch, start if start >= 0 else 0)
+        if pos < 0:
+            return []
+        new = text[:pos] + (text[pos].upper() if upper else text[pos].lower()) + text[pos + 1:]
+    else:  # "primeira letra maiúscula", "com inicial maiúscula"
+        new = (text[:1].upper() if upper else text[:1].lower()) + text[1:]
+    if new == text:
+        return []
+    return [{"acao": "trocar", "alvo": text, "texto": new, "origem": "maiusculas"}]
+
+
+def scene_level(message, model_level=None, complaint=False, previous_level=None):
+    """Intensidade da mudança de cena. O pedido do cliente define um piso; o modelo pode pedir mais, nunca menos."""
+    level = model_level if model_level in LEVELS else None
+    floor = "total" if SCENE_TOTAL.search(message or "") else None
+    if complaint and previous_level in LEVELS:
+        floor = LEVELS[min(len(LEVELS) - 1, LEVELS.index(previous_level) + 2)]
+    candidates = [lv for lv in (level, floor) if lv]
+    if not candidates:
+        return None
+    return max(candidates, key=LEVELS.index)
+
+
+def expectations(ops):
+    """Lista do que precisa estar verdade depois do ajuste (textos)."""
+    out = []
+    for op in ops:
+        action = op["acao"]
+        if action in ("trocar", "adicionar") and op.get("texto"):
+            out.append({"tipo": action, "alvo": op.get("alvo"), "texto": textplan._nfc(op["texto"])})
+        elif action == "remover":
+            out.append({"tipo": "remover", "alvo": op.get("alvo"), "papel": op.get("papel")})
+        elif action in ("aumentar", "diminuir"):
+            out.append({"tipo": action, "alvo": op.get("alvo"), "papel": op.get("papel")})
+        elif action == "mover" and op.get("posicao") in textplan.POSITIONS:
+            out.append({"tipo": "mover", "alvo": op.get("alvo"), "posicao": op["posicao"]})
+        elif action == "cor":
+            out.append({"tipo": "cor"})
+    return out
+
+
+def _texts(plan):
+    return [b["texto"] for b in (plan or {}).get("blocos") or []]
+
+
+def verify(previous_plan, new_plan, expected):
+    """(feitas, faltando): cada mudança esperada conferida no estado final do plano."""
+    done, missing = [], []
+    before, after = _texts(previous_plan), _texts(new_plan)
+    by_text = {b["texto"]: b for b in (new_plan or {}).get("blocos") or []}
+    old_by_text = {b["texto"]: b for b in (previous_plan or {}).get("blocos") or []}
+    for e in expected:
+        kind = e["tipo"]
+        if kind in ("trocar", "adicionar"):
+            ok = e["texto"] in after
+            label = (f"texto “{e['alvo']}” → “{e['texto']}”" if kind == "trocar" and e.get("alvo")
+                     else f"incluir “{e['texto']}”")
+        elif kind == "remover":
+            gone = e.get("alvo")
+            ok = (gone in before and gone not in after) if gone else len(after) < len(before)
+            label = f"remover “{gone}”" if gone else "remover o texto"
+        elif kind in ("aumentar", "diminuir"):
+            name = e.get("alvo") if e.get("alvo") in by_text else next(iter(by_text), None)
+            new_s = float((by_text.get(name) or {}).get("escala", 1.0))
+            old_s = float((old_by_text.get(name) or {}).get("escala", 1.0))
+            ok = new_s > old_s if kind == "aumentar" else new_s < old_s
+            label = f"{kind} “{name}”"
+        elif kind == "mover":
+            name = e.get("alvo") if e.get("alvo") in by_text else next(iter(by_text), None)
+            ok = (by_text.get(name) or {}).get("posicao") == e["posicao"]
+            label = f"mover “{name}”"
+        elif kind == "cor":
+            ok = (new_plan or {}).get("cor") != (previous_plan or {}).get("cor")
+            label = "cor das letras"
+        else:
+            continue
+        (done if ok else missing).append(label)
+    return done, missing
+
+
+def plan_signature(plan):
+    """O que importa do plano para saber se algo mudou de verdade."""
+    plan = plan or {}
+    return ([(b["texto"], b.get("papel"), b.get("posicao"), float(b.get("escala", 1.0))) for b in plan.get("blocos") or []],
+            plan.get("cor"), plan.get("estilo"), plan.get("efeito"))
+
+
+def plan_diff(previous_plan, new_plan):
+    """Descrição do que mudou de fato entre dois planos (fonte da resposta ao cliente)."""
+    out = []
+    old = {b["texto"]: b for b in (previous_plan or {}).get("blocos") or []}
+    new = {b["texto"]: b for b in (new_plan or {}).get("blocos") or []}
+    replaced = set()
+    for text, b in new.items():
+        if text in old:
+            sa, sb = float(old[text].get("escala", 1.0)), float(b.get("escala", 1.0))
+            if sb > sa:
+                out.append(f"“{text}” maior")
+            elif sb < sa:
+                out.append(f"“{text}” menor")
+            if old[text].get("posicao") != b.get("posicao"):
+                out.append(f"“{text}” em outra posição")
+            continue
+        gone = next((t for t in old if t not in new and t not in replaced and old[t].get("papel") == b.get("papel")), None)
+        if gone:
+            replaced.add(gone)
+            out.append(f"“{gone}” → “{text}”")
+        else:
+            out.append(f"novo texto “{text}”")
+    out += [f"“{t}” removido" for t in old if t not in new and t not in replaced]
+    if (previous_plan or {}).get("cor") != (new_plan or {}).get("cor") and (new_plan or {}).get("cor"):
+        out.append("nova cor nas letras")
+    if (previous_plan or {}).get("efeito") != (new_plan or {}).get("efeito"):
+        out.append("novo efeito nas letras")
+    if (previous_plan or {}).get("estilo") != (new_plan or {}).get("estilo"):
+        out.append("novo estilo de letra")
+    return out
+
+
+def scene_label(level, realistic):
+    if not level:
+        return ""
+    if level == "total":
+        return "um fundo totalmente novo" + (" em estilo fotográfico realista" if realistic else "")
+    return {"pequena": "um ajuste leve no fundo", "media": "um fundo ajustado", "grande": "um fundo bem diferente"}[level]
+
+
+def plan_adjustment(previous_spec, message, model_data, user_texts):
+    """Decisão completa de um ajuste: textos esperados e aplicados, nível de cena e o que conferir depois.
+
+    Devolve dict: plan (validado), esperado, feitas, faltando, cena (nível ou None), realista, reclamacao."""
+    previous_plan = (previous_spec or {}).get("text_plan") or {"versao": 1, "blocos": [], "estilo": "moderno",
+                                                                 "efeito": "auto", "cor": None}
+    data = model_data if isinstance(model_data, dict) else {}
+    adj = data.get("ajuste") if isinstance(data.get("ajuste"), dict) else {}
+    complaint = bool(COMPLAINT.search(message or ""))
+    ops = normalize_ops(adj.get("operacoes_texto"))
+    blocks = previous_plan.get("blocos") or []
+    # Troca cujo novo texto só muda maiúsculas/acentos do texto atual é legítima: o conteúdo continua do cliente.
+    for op in ops:
+        if op["acao"] == "trocar" and op.get("texto") and not textplan._present(op["texto"], message):
+            target = next((b for b in blocks if b["texto"] == op.get("alvo")), None) or \
+                next((b for b in blocks if _same_letters(b["texto"], op.get("texto"))), None)
+            if target and _same_letters(target["texto"], op["texto"]):
+                op["alvo"], op["formato"] = target["texto"], True
+            elif op.get("alvo") not in [b["texto"] for b in blocks]:
+                op["alvo"] = None
+    for derived in case_ops(message, blocks):
+        ops = [o for o in ops if not (o["acao"] == "trocar" and o.get("alvo") == derived["alvo"])] + [derived]
+    plan = apply_operations(previous_plan, ops, message) if ops else revise_plan(previous_plan, message)
+    approved = [o["texto"] for o in ops if o.get("formato") or o.get("origem")]
+    sources = list(user_texts) + [message] + _texts(previous_plan) + approved
+    plan = textplan.validate_plan(plan, sources) or {**previous_plan, "blocos": []}
+    expected = expectations(ops)
+    _, missing = verify(previous_plan, plan, expected)
+    done = plan_diff(previous_plan, plan)  # só o que mudou de fato
+    model_scene = adj.get("cena") is True
+    explicit_scene = bool(SCENE_TOTAL.search(message or "") or SCENE_WORDS.search(message or "")
+                          or SMALL_CHANGE.search(message or ""))
+    if model_scene and not explicit_scene and not complaint and (done or ops):
+        model_scene = False  # pedido só de texto: nunca regerar a imagem para mudar letras
+    level = scene_level(message, str(adj.get("intensidade") or "").lower() if model_scene else None, complaint,
+                        ((previous_spec or {}).get("pedido_ajuste") or {}).get("cena"))
+    if not (model_scene or complaint or explicit_scene):
+        level = None
+    if level and not model_scene and not explicit_scene and not complaint:
+        level = None
+    return {"plan": plan, "esperado": expected, "feitas": done, "faltando": missing, "cena": level,
+            "realista": bool(REALISTIC.search(message or "")), "reclamacao": complaint}
+
+
+# Mudança visual mínima esperada para cada nível (diferença média 0..1 entre a arte anterior e a nova).
+MIN_VISUAL_CHANGE = {"pequena": 0.02, "media": 0.05, "grande": 0.08, "total": 0.1}
+
+
+def visual_change(old_bytes, new_bytes):
+    """Quanto a arte mudou (0 = idêntica, 1 = totalmente diferente), em cor e em estrutura."""
+    import io  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+    from PIL import Image, ImageFilter  # noqa: PLC0415
+
+    def small(data):
+        img = Image.open(io.BytesIO(data)).convert("RGB").resize((64, 64), Image.BILINEAR)
+        return np.asarray(img, dtype=np.float32) / 255, \
+            np.asarray(img.convert("L").filter(ImageFilter.FIND_EDGES), dtype=np.float32) / 255
+
+    (a, ea), (b, eb) = small(old_bytes), small(new_bytes)
+    color = float(np.abs(a - b).mean())
+    structure = float(np.abs(ea - eb).mean())
+    return round(max(color, structure * 1.5), 3)

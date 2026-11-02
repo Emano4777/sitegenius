@@ -265,3 +265,82 @@ def test_real_model_answers_are_accepted():
         {"acao": "aumentar", "alvo": "Emanuel Tecnologia"}]}}
     acao, _, spec = creative.normalize_model_answer(answer, "o nome ficou meio pequeno", {}, prev, "asset1", [], [])
     assert acao == "ajustar_texto" and spec["text_plan"]["blocos"][0]["escala"] == 1.3
+
+
+# ------------------------------------------------------------ reprodução do defeito de produção (02/11/2026)
+
+
+def test_production_bug_capital_t_and_realistic_background(tmp_path):
+    """Conversa real: o modelo pediu 'mudar' para 'Tecnologia é aqui' e o servidor descartava; o fundo mal mudava;
+    'Você não mudou nada' repetia a mesma imagem. Respostas do modelo copiadas do banco de produção."""
+    from tests.conftest import RENDER_SECRET, FlaskSession, UserClient, make_app
+    from tests.test_workers import FakeOllama, FlaskSite
+    from studio.worker_client import WorkerClient
+    from workers import hostgator_interpreter
+
+    app = make_app(tmp_path, interpreter_mode="queue")
+    user = UserClient(app, 43)
+    worker = WorkerClient("http://localhost", "acer", RENDER_SECRET, session=FlaskSession(app))
+    site = FlaskSite(app)
+    conv = new_conversation(user)
+
+    def say(text, answer=None):
+        user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": text, "anexos": [], "opcoes": {}})
+        if answer is not None:
+            job = site.call("POST", "/claim", {})["job"]
+            hostgator_interpreter.process(site, FakeOllama(json.dumps(answer)), job, vision=False)
+        return user.get(f"/studio/api/conversations/{conv}").get_json()
+
+    def payload(job_id):
+        with app.app_context():
+            return json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job_id,))["payload"])
+
+    abstract = ("A sleek, futuristic digital landscape representing advanced technology. Abstract glowing circuits and "
+                "data streams flow across a dark, high-tech background.")
+    say("Cria uma arte bem legal escrita tecnologia é aqui representando tecnologia e tals",
+        {"acao": "gerar", "tipo_pedido": "nova", "resposta": "Entendi!", "prompt_visual": abstract, "estilo": "auto",
+         "proporcao": "1:1", "textos": [{"texto": "tecnologia é aqui", "papel": "titulo", "posicao": "centro"}]})
+    render_all(worker, tmp_path)
+
+    data = say("Coloca o t de tecnologia é aqui maiúsculo por favor e muda o fundo não gostei coloca algo mais realista",
+               {"acao": "ajustar", "tipo_pedido": "ajuste", "editar_anterior": True, "resposta": "Fechou!",
+                "prompt_visual": abstract.replace("futuristic digital", "realistic modern") + " Editing previous image.",
+                "estilo": "auto", "proporcao": "1:1",
+                "ajuste": {"cena": True, "textos": True, "intensidade": "media", "operacoes_texto": [
+                    {"acao": "mudar", "alvo": "Tecnologia é aqui", "papel": "titulo", "texto": "Tecnologia é aqui",
+                     "valor": "T maiúsculo"}]}})
+    job = data["jobs"][0]
+    p = payload(job["id"])
+    assert textplan.plan_texts(p["spec"]["text_plan"]) == ["Tecnologia é aqui"]  # T maiúsculo de verdade
+    assert p["render_mode"] == "txt2img" and p["spec"]["style"] == "foto"  # cenário novo, não img2img fraco
+    assert "photorealistic" in p["prompt"]
+    reply = data["mensagens"][-1]["texto"]
+    assert "“tecnologia é aqui” → “Tecnologia é aqui”" in reply and "fundo totalmente novo" in reply
+    render_all(worker, tmp_path)
+    data = user.get(f"/studio/api/conversations/{conv}").get_json()
+    # O gerador de teste devolve sempre a mesma imagem: a conferência visual precisa perceber e avisar (não fingir).
+    assert "O fundo mudou pouco" in data["mensagens"][-1]["texto"]
+
+    # "Você não mudou nada": recupera o pedido, não repete a mesma imagem e não finge.
+    data = say("Você não mudou nada")
+    retry = data["jobs"][0]
+    assert retry["id"] != job["id"] and retry["tipo"] == "free_image"
+    p2 = payload(retry["id"])
+    assert textplan.plan_texts(p2["spec"]["text_plan"]) == ["Tecnologia é aqui"]
+    assert p2["render_mode"] == "txt2img" and p2["seed"] != p["seed"]
+    assert data["mensagens"][-1]["texto"].startswith("Você tem razão")
+
+
+def test_text_only_requests_never_regenerate(user, render_worker, tmp_path):
+    conv = new_conversation(user)
+    send(user, conv, 'post com "promoção de verão" no topo')
+    render_all(render_worker, tmp_path)
+    for text, expected in [("deixa tudo maiúsculo", "PROMOÇÃO DE VERÃO"), ("agora tudo minúsculo", "promoção de verão"),
+                           ("coloca a primeira letra maiúscula", "Promoção de verão")]:
+        data = send(user, conv, text)
+        job = data["jobs"][0]
+        assert job["tipo"] == "text_edit" and render_worker.claim() is None, text
+        with user.client.application.app_context():
+            plan = json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job["id"],))["payload"])
+        assert textplan.plan_texts(plan["spec"]["text_plan"]) == [expected], text
+

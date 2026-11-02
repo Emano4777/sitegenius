@@ -676,7 +676,8 @@ def render_groups(r, placed):
     for group, item, _, mask, bbox in lines:
         if not bbox:
             continue
-        if r.effect == "brilho" and ROLE_FONT.get(item.role) in ("title", "price", "cta"):
+        # Brilho (neon) só em letras claras: em letra escura vira uma mancha colorida.
+        if r.effect == "brilho" and ROLE_FONT.get(item.role) in ("title", "price", "cta") and _is_light(group["cor"]):
             glow_color = r.theme.get("glow", r.theme["accent"])
             for radius, strength in ((item.size * 0.22, 1.0), (item.size * 0.07, 1.2)):
                 glow = mask.filter(ImageFilter.GaussianBlur(max(1, radius)))

@@ -22,10 +22,22 @@ STEPS = [
     ("5_nova", "agora quero uma arte de pizzaria com Pizza Boa no topo"),
 ]
 
+# Reprodução exata do defeito de produção (02/11/2026) + ajustes de texto e cor/posição/tamanho.
+STEPS_BUG = [
+    ("1_criacao", "Cria uma arte bem legal escrita tecnologia é aqui representando tecnologia e tals"),
+    ("2_T_e_realista", "Coloca o t de tecnologia é aqui maiúsculo por favor e muda o fundo não gostei coloca algo mais realista"),
+    ("3_reclamacao", "Você não mudou nada"),
+    ("4_tudo_maiusculo", "deixa tudo maiúsculo"),
+    ("5_cor", "muda a cor das letras para amarelo"),
+    ("6_posicao", "coloca o texto no rodapé"),
+    ("7_tamanho", "aumenta a letra"),
+]
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--saida", default="resultados_ajustes")
+    parser.add_argument("--roteiro", default="padrao", choices=["padrao", "bug"])
     args = parser.parse_args()
     base = os.getenv("SG_TEST_BASE_URL", "https://www.sitegenius.com.br").rstrip("/")
     out = Path(args.saida)
@@ -34,7 +46,7 @@ def main():
     csrf = login(s, base, csrf, os.environ["SG_TEST_EMAIL"], os.environ["SG_TEST_SENHA"])
     conv = api(s, base, csrf, "POST", "/conversations", json={})["id"]
     seen, rows = set(), []
-    for name, text in STEPS:
+    for name, text in (STEPS_BUG if args.roteiro == "bug" else STEPS):
         t0 = time.time()
         data, interp = send(s, base, csrf, conv, text)
         new = [j for j in data["jobs"] if j["id"] not in seen]

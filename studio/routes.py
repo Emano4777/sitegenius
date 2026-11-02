@@ -909,7 +909,7 @@ def is_text_only_edit(texto, previous_spec):
     return kind["texto"] and not kind["cena"]
 
 
-def text_edit_job(conv, user_id, texto, previous_spec, plan=None):
+def text_edit_job(conv, user_id, texto, previous_spec, plan=None, record=None):
     """Reaplica os textos sobre a arte anterior, sem passar pelo gerador. Devolve job_id ou None."""
     row = last_result_row(conv["id"])
     result = loads(row["result"], {}) or {} if row else {}
@@ -919,13 +919,17 @@ def text_edit_job(conv, user_id, texto, previous_spec, plan=None):
     art = get_conn().one("SELECT * FROM sg_assets WHERE id = ? AND user_id = ?", (art_id, user_id))
     if not art:
         return None
-    plan = plan or edits.revise_plan(previous_spec["text_plan"], texto)
-    sources = conversation_texts(conv["id"]) + [texto] + textplan.plan_texts(previous_spec.get("text_plan"))
-    plan = textplan.validate_plan(plan, sources)
+    if plan is None:  # sem planejador (reserva): revisa e valida aqui
+        plan = edits.revise_plan(previous_spec["text_plan"], texto)
+        sources = conversation_texts(conv["id"]) + [texto] + textplan.plan_texts(previous_spec.get("text_plan"))
+        plan = textplan.validate_plan(plan, sources)
+    # Com o planejador, o plano já foi validado (inclui mudanças só de forma, como maiúsculas, do texto do cliente).
     if not plan:
         return None
     spec = {**previous_spec, "text_plan": plan, "texts_in_image": textplan.plan_texts(plan), "prompt_original": texto,
             "parent_job_id": row["id"]}
+    if record:
+        spec["pedido_ajuste"] = record
     spec.pop("job_id", None)
     started = now()
     asset_id, report = apply_texts(user_id, asset_bytes(art), spec)
@@ -1076,7 +1080,8 @@ def apply_creative_decision(conv, acao, resposta, spec, message_id, insert, text
         # Ajuste só de texto (interpretado pelo modelo): mesma arte, textos refeitos na hora.
         problem = render_quota_problem(g.user_id)
         previous_spec = loads(conv.get("spec"), None) or {}
-        job_id = None if problem else text_edit_job(conv, g.user_id, texto, previous_spec, spec["text_plan"])
+        job_id = None if problem else text_edit_job(conv, g.user_id, texto, previous_spec, spec["text_plan"],
+                                                    spec.get("pedido_ajuste"))
         if not job_id and not problem:
             resposta = "Não consegui ajustar o texto desta vez. Pode me dizer de novo o que quer mudar?"
         elif getattr(g, "text_edit_note", None):
@@ -1104,11 +1109,26 @@ def creative_message(conv, texto, attachments, options, previous_result):
     previous_spec = loads(conv.get("spec"), None)
     references = [a["id"] for a in attachments if a["kind"] in ("reference", "product", "logo")]
     assistant_id = new_id()
+    if previous_result and previous_spec and previous_spec.get("pedido_ajuste") and edits.COMPLAINT.search(texto) \
+            and not references:
+        retried = creative.retry_last_adjustment(previous_spec, texto, previous_result, conversation_texts(conv["id"]),
+                                                 options)
+        if retried:
+            apply_creative_decision(conv, retried[0], retried[1], retried[2], assistant_id, True, texto)
+            return jsonify({"ok": True}), 201
     if previous_spec and previous_spec.get("pending") and previous_spec.get("texto_pedido"):
         # Resposta à pergunta "qual frase você quer?": resolvida aqui, sem o modelo (texto literal do usuário).
         spec = creative.resolve_text_answer(texto, previous_spec)
         if spec:
             apply_creative_decision(conv, "gerar", "Perfeito! Vou criar a arte com esse texto.", spec, assistant_id, True, texto)
+            return jsonify({"ok": True}), 201
+    if previous_result and not references and not interpreter_available() and previous_spec             and (previous_spec.get("text_plan") or {}).get("blocos") and not creative.NEW_REQUEST.search(texto):
+        # Sem o modelo: o mesmo planejador de ajustes (textos conferidos; cena só se o pedido falar dela).
+        decision = edits.plan_adjustment(previous_spec, texto, {}, conversation_texts(conv["id"]))
+        if decision["feitas"] or decision["cena"]:
+            acao, resposta, spec = creative.adjustment_outcome(decision, previous_spec, previous_result, "", {}, options,
+                                                               texto, conversation_texts(conv["id"]))
+            apply_creative_decision(conv, acao, resposta, spec, assistant_id, True, texto)
             return jsonify({"ok": True}), 201
     if previous_result and not references and not interpreter_available() and is_text_only_edit(texto, previous_spec):
         problem = render_quota_problem(g.user_id)
@@ -1796,9 +1816,11 @@ def worker_complete(job_id):
             conn.run("UPDATE sg_jobs SET timings = ? WHERE id = ?", (dumps(timings), job["id"]))
             result = {"asset_id": asset_id, "art_asset_id": art_id, "validacao_texto": report, "composto_no": "servidor"}
             surface_note(job, report)
+            result["conferencia"] = confirm_adjustment(job, report, data)
         else:
             asset_id = store_asset(job["user_id"], "result", data, mime, width, height)
             result = {"asset_id": asset_id}
+            result["conferencia"] = confirm_adjustment(job, None, data)
         conn.run(
             "UPDATE sg_jobs SET status = 'done', progress = 100, status_message = 'Pronto', result = ?, finished_at = ?, "
             "updated_at = ? WHERE id = ?",
@@ -1865,6 +1887,7 @@ def worker_complete_composed(job_id):
     art_id = store_asset(job["user_id"], "art", *art)
     asset_id = store_asset(job["user_id"], "result", *final)
     result = {"asset_id": asset_id, "art_asset_id": art_id, "validacao_texto": report, "composto_no": "acer"}
+    result["conferencia"] = confirm_adjustment(job, report, art[0])
     conn.run(
         "UPDATE sg_jobs SET status = 'done', progress = 100, status_message = 'Pronto', result = ?, finished_at = ?, "
         "updated_at = ? WHERE id = ?",
@@ -1872,6 +1895,44 @@ def worker_complete_composed(job_id):
     )
     surface_note(job, report)
     return jsonify({"ok": True, "asset_id": asset_id})
+
+
+def confirm_adjustment(job, report, art_bytes):
+    """Depois de gerar: confere o pedido de ajuste (textos entregues e mudança real do fundo) e atualiza a resposta.
+
+    Devolve o resumo da conferência (gravado no resultado do job)."""
+    spec = (loads(job["payload"], {}) or {}).get("spec") or {}
+    record = spec.get("pedido_ajuste")
+    if not record:
+        return None
+    check = {"textos_ok": None, "mudanca_visual": None, "cena_ok": None}
+    drawn = next((c for c in (report or {}).get("verificacoes") or [] if c.get("nome") == "textos_completos_e_identicos"), None)
+    expected = [e["texto"] for e in record.get("esperado") or [] if e.get("texto")]
+    if drawn is not None:
+        check["textos_ok"] = bool(drawn.get("ok")) and all(t in (drawn.get("desenhado") or []) for t in expected)
+    if record.get("cena") and record.get("arte_anterior"):
+        old = get_conn().one("SELECT * FROM sg_assets WHERE id = ? AND user_id = ?", (record["arte_anterior"], job["user_id"]))
+        if old:
+            try:
+                score = edits.visual_change(asset_bytes(old), art_bytes)
+                check["mudanca_visual"] = score
+                check["cena_ok"] = score >= edits.MIN_VISUAL_CHANGE.get(record["cena"], 0.05)
+            except Exception:  # noqa: BLE001 — a conferência nunca impede a entrega
+                current_app.logger.exception("conferência visual falhou no job %s", job["id"])
+    notes = []
+    if check["textos_ok"] is False:
+        notes.append("Atenção: o texto entregue não ficou como o pedido; me avise que eu corrijo na hora.")
+    if check["cena_ok"] is False:
+        notes.append("O fundo mudou pouco em relação à versão anterior. Se quiser algo bem diferente, "
+                     "diga “faça uma proposta totalmente nova”.")
+    elif check["cena_ok"]:
+        notes.append("Conferido: o fundo mudou" + (" e os textos estão como você pediu." if expected else "."))
+    if notes:
+        msg = get_conn().one("SELECT id, content FROM sg_messages WHERE job_id = ? AND role = 'assistant' "
+                             "ORDER BY seq DESC LIMIT 1", (job["id"],))
+        if msg:
+            get_conn().run("UPDATE sg_messages SET content = ? WHERE id = ?", (msg["content"] + " " + " ".join(notes), msg["id"]))
+    return check
 
 
 def surface_note(job, report):
