@@ -127,3 +127,18 @@ def test_photo_download_network_timeout_never_breaks_chat(app, monkeypatch):
     monkeypatch.setattr(routes, "safe_download", lambda *a, **k: (_ for _ in ()).throw(requests.ConnectTimeout("tls")))
     with app.app_context():
         assert routes._download_candidate("u1", {"image_url": "https://images.openfoodfacts.org/x.jpg"}) is None
+
+
+def test_websearch_dedupes_same_page(monkeypatch):
+    dup = [{"title": "Biscoito Oreo Original 90g", "img_src": f"https://f.com/oreo{i}.jpg", "url": "https://f.com/oreo", "resolution": "800 x 800"} for i in range(2)]
+    dup.append({"title": "Biscoito Oreo Original Recheado 90g", "img_src": "https://g.com/o.jpg", "url": "https://g.com/o", "resolution": "800 x 800"})
+    monkeypatch.setattr(tools, "searx", lambda q, cat="general", timeout=15: (dup, []))
+    monkeypatch.setattr(tools, "allowed", lambda url: True)
+    monkeypatch.setattr(tools, "_download", lambda url: _jpeg())
+    fake_pw = types.ModuleType("playwright.sync_api")
+    fake_pw.sync_playwright = lambda: None
+    monkeypatch.setitem(sys.modules, "playwright.sync_api", fake_pw)
+    site = FakeSite()
+    tools.process_websearch(site, {"id": "j3", "payload": {"produtos": [{"nome": "Biscoito Oreo Original 90g"}]}})
+    pages = [b["pagina"] for p, b in site.calls if p.endswith("/candidate")]
+    assert pages == ["https://f.com/oreo", "https://g.com/o"]

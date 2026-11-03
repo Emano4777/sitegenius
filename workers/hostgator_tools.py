@@ -513,8 +513,10 @@ def process_websearch(site, job):
                 level, motivo = "exato", "EAN confere"
             if level == "descartar" or not c["imagem"].startswith("http") or not allowed(c["imagem"]):
                 continue
-            if any(o["imagem"] == c["imagem"] for o in chosen):
-                continue
+            key = productmatch.fold(c.get("titulo") or "")
+            if any(o["imagem"] == c["imagem"] or (c.get("pagina") and o.get("pagina") == c["pagina"])
+                   or (key and productmatch.fold(o.get("titulo") or "") == key and o.get("fonte") == c.get("fonte")) for o in chosen):
+                continue  # mesma foto, mesma página ou mesmo anúncio repetido: uma opção só
             try:
                 data = _download(c["imagem"])
             except Exception:  # noqa: BLE001
