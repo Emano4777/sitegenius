@@ -109,7 +109,11 @@ def prompt_messages(question, sources):
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
+MULTI_CITATION = re.compile(r"\[(\d{1,2}(?:\s*[,;e]\s*\d{1,2})+)\]")
+
+
 def _strip_foreign(text, sources):
+    text = MULTI_CITATION.sub(lambda m: "".join(f"[{n}]" for n in re.findall(r"\d{1,2}", m.group(1))), text)  # [1, 4] -> [1][4]
     allowed = {s["url"] for s in sources}
     text = URL_IN_TEXT.sub(lambda m: m.group(0) if m.group(0).rstrip(".,;") in allowed else "", text)
     valid = {s["n"] for s in sources}

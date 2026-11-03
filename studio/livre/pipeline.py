@@ -105,13 +105,30 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
             e["cor"] = "#1e1e22" if _lum_under(scene, e["b"]) > 150 else "#ffffff"
     uris = {i: v["uri"] for i, v in info.items()}
 
+    for e in solved["elementos"]:  # efeito do plano e cor de contorno que contrasta com o preenchimento (para o reparo)
+        if e["tipo"] == "texto":
+            st = plan["titulo"] if e["papel"] == "titulo" else e
+            e["ef_plano"] = st.get("ef")
+            e["_reforco_cor"] = "#111114" if htmlflyer._luma(st.get("cor") or "#ffffff") >= 128 else "#ffffff"
     t = time.time()
     history = []
     items = []
+    tmp = workdir or os.path.join(os.environ.get("TEMP", "/tmp"), f"sg_livre_{os.getpid()}")
+    os.makedirs(tmp, exist_ok=True)
     for rnd in range(max_repair + 1):
         doc = render.build(plan, solved, briefing, uris, scene_uri, size)
-        items = valida.measure(doc, size) or []
-        probs = valida.check(items, solved, size, scene, len(briefing.get("produtos") or []))
+        shot, bare = os.path.join(tmp, "_qa_com.png"), os.path.join(tmp, "_qa_sem.png")
+        keys = valida.ink_keys(solved)
+        for f in (shot, bare):
+            if os.path.exists(f):
+                os.remove(f)
+        extra = [(render.build(plan, solved, briefing, uris, scene_uri, size, hide_text=True), bare)] if keys else []
+        items = valida.measure(doc, size, screenshot=shot if keys else None, extra_shots=extra) or []
+        legivel = None
+        if items and keys and os.path.exists(shot) and os.path.exists(bare):
+            with Image.open(shot) as a, Image.open(bare) as b:
+                legivel = valida.ink(a, b, items, size, keys)
+        probs = valida.check(items, solved, size, scene, len(briefing.get("produtos") or []), legivel)
         history.append([list(p) for p in probs])
         if not probs or rnd == max_repair or not valida.repair(solved, probs, items, size):
             break

@@ -245,3 +245,32 @@ def test_price_never_invents_cents():
     assert render._split_price("R$ 17,90") == ("17", ",90", "")
     assert render._split_price("R$ 1.800/mês") == ("1.800", "", "/mês")
     assert render._split_price("R$ 420.000") == ("420.000", "", "")
+
+
+# ------------------------------------------------ legibilidade pelo desenho real (título e arco)
+def _ink_case(text_rgb):
+    bare = Image.new("RGB", (200, 100), (225, 235, 240))  # fundo claro
+    full = bare.copy()
+    ImageDraw.Draw(full).rectangle((40, 30, 160, 70), fill=text_rgb)
+    items = [{"k": "titulo:", "x": 20, "y": 20, "w": 160, "h": 60}]
+    return valida.ink(full, bare, items, (200, 100), {"titulo:"})["titulo:"]
+
+
+def test_ink_measures_real_contrast_for_any_effect():
+    assert _ink_case((250, 240, 190)) < valida.LEGIBLE_INK  # dourado claro sobre fundo claro: ilegível
+    assert _ink_case((20, 20, 30)) > 0.9                    # escuro sobre claro: legível
+
+
+def test_unreadable_title_gets_outline_then_plate_and_arc_never_deforms():
+    solved = {"elementos": [{"tipo": "texto", "papel": "titulo", "b": [5, 3, 90, 20], "prio": 1, "min": 1, "z": 5,
+                             "ef_plano": "arco", "_reforco_cor": "#111114"}], "zonas_objetos": []}
+    items = [{"k": "titulo:", "x": 50, "y": 40, "w": 900, "h": 260, "bx": 50, "by": 40, "bw": 970, "bh": 270, "fonte": 120,
+              "arco": True, "arco_escala": 0.5, "visivel": 1}]
+    probs = valida.check(items, solved, (1080, 1350), None, 1, {"titulo:": 0.2})
+    codes = {p[0] for p in probs}
+    assert {"legibilidade", "letras_deformadas"} <= codes
+    valida.repair(solved, probs, items, (1080, 1350))
+    e = solved["elementos"][0]
+    assert e["ef_forcado"] != "arco" and e["reforco"] == "#111114"  # sai do arco e ganha contorno
+    valida.repair(solved, [("legibilidade", "titulo:", 0.2)], items, (1080, 1350))
+    assert e["placa"]  # ainda ilegível: placa atrás do texto

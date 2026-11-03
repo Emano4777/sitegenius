@@ -97,18 +97,23 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
             font = st.get("fonte", "poppins")
             if recursos.FONTS.get(font, ("", "", "", False))[3]:
                 txt = txt.upper()
-            ef = st.get("ef", "sombra")
+            ef = e.get("ef_forcado") or st.get("ef", "sombra")  # o reparo pode trocar um efeito ilegível
+            ring = e.get("reforco")  # contorno de contraste posto pelo reparo de legibilidade
             if ef == "arco":
                 inner = (f'<svg viewBox="0 0 1000 320" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible">'
                          f'<path id="arc{e["papel"]}" d="M40 300 Q500 -40 960 300" fill="none"/><text font-family="{_fam(font)}" '
-                         f'font-size="170" fill="{st["cor"]}" stroke="{st["cor2"]}" stroke-width="10" paint-order="stroke" text-anchor="middle">'
+                         f'font-size="170" fill="{st["cor"]}" stroke="{ring or st["cor2"]}" stroke-width="{24 if ring else 10}" '
+                         f'paint-order="stroke" stroke-linejoin="round" text-anchor="middle">'
                          f'<textPath href="#arc{e["papel"]}" startOffset="50%" textLength="880" lengthAdjust="spacingAndGlyphs">{html.escape(txt)}'
                          f'</textPath></text></svg>')
                 out.append(f'<div class="l" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}">{inner}</div>')
             else:
                 plate = "background:rgba(10,10,14,.6);border-radius:16px;padding:0 .4em;" if e.get("placa") else ""
+                fx = _text_fx(ef, st["cor"], st["cor2"])
+                if ring:
+                    fx += f"-webkit-text-stroke:calc(var(--hpx)*.05) {ring};paint-order:stroke fill;"
                 out.append(f'<div class="l txt fit" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}font-family:\'{_fam(font)}\';'
-                           f'{_text_fx(ef, st["cor"], st["cor2"])}{plate}font-size:calc(var(--hpx)*.86)">{html.escape(txt)}</div>')
+                           f'{fx}{plate}font-size:calc(var(--hpx)*.86)">{html.escape(txt)}</div>')
         elif t == "produto":
             src = photos_uri[e["produto"]]
             # reflexo só em superfície brilhante (pedestal em cena escura); madeira/tecido não refletem
@@ -192,7 +197,11 @@ body{{width:{W}px;height:{H}px;overflow:hidden;position:relative;background:#111
 
 # Ajuste de fonte (nunca corta) + medição para o validador: retângulos, texto cortado, visibilidade, fonte final.
 QA_JS = """
-function fit(){document.querySelectorAll('.fit').forEach(e=>{let s=parseFloat(getComputedStyle(e).fontSize);
+function natw(t,fs){const c=document.createElement('canvas').getContext('2d');c.font=fs+'px '+getComputedStyle(t).fontFamily;
+ return c.measureText(t.textContent).width||1;}
+function fit(){document.querySelectorAll('svg text').forEach(t=>{if(!t.querySelector('textPath'))return;
+  t.setAttribute('font-size',Math.min(200,170*880/natw(t,170)).toFixed(1));});
+ document.querySelectorAll('.fit').forEach(e=>{let s=parseFloat(getComputedStyle(e).fontSize);
   while((e.scrollWidth>e.clientWidth+2||e.scrollHeight>e.clientHeight*1.06)&&s>10){s-=1;e.style.fontSize=s+'px';}});
  document.querySelectorAll('.preco').forEach(e=>{let s=parseFloat(getComputedStyle(e).fontSize);const b=e.parentElement;
   if(e.classList.contains('pm')){while((e.scrollWidth>e.clientWidth+1||e.scrollHeight>e.clientHeight+1)&&s>14){s-=2;e.style.fontSize=s+'px';}return;}
@@ -205,6 +214,9 @@ function qa(){const pg=document.body.getBoundingClientRect();const BW=pg.width,B
    const rg=document.createRange();rg.selectNodeContents(e);const g=rg.getBoundingClientRect();if(g.width>0)rr=g;}
   const it={k,x:rr.left,y:rr.top,w:rr.width,h:rr.height,bx:r.left,by:r.top,bw:r.width,bh:r.height};
   const f=e.querySelector('.preco')||e;it.fonte=parseFloat(getComputedStyle(f).fontSize);it.arco=!!e.querySelector('textPath');
+  if(it.arco){const tx=e.querySelector('text'),sv=e.querySelector('svg').getBoundingClientRect();
+   const fs=parseFloat(tx.getAttribute('font-size'));const sy=sv.height/320;
+   it.arco_escala=(880/natw(tx,fs))*((sv.width/1000)/sy);it.fonte=fs*sy;}
   if(e.classList.contains('fit'))it.corta=e.scrollWidth>e.clientWidth+3||e.scrollHeight>e.clientHeight*1.12;
   let v=0,tot=0;for(let i=1;i<=4;i++)for(let j=1;j<=3;j++){const px=rr.left+rr.width*i/5,py=rr.top+rr.height*j/4;tot++;
    if(px<0||py<0||px>BW||py>BH)continue;const top=document.elementFromPoint(px,py);if(top&&(top===e||e.contains(top)))v++;}

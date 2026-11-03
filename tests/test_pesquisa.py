@@ -152,3 +152,9 @@ def test_research_flow_end_to_end_never_becomes_an_action(tmp_path):
     assert last["status"] == "ok" and "Fontes:" in last["texto"] and "https://saude.org/clareamento" in last["texto"]
     assert "golpe.com" not in last["texto"]
     assert not [j for j in msgs["jobs"] if j.get("kind") == "render"]  # conteúdo pesquisado nunca dispara geração
+
+
+def test_grouped_citations_are_split_and_listed():
+    srcs = research.clean_sources([{"url": f"https://s{i}.org/x", "titulo": f"S{i}", "trecho": "Texto.", "extraido": True} for i in range(1, 5)])
+    text, used = research.compose("q", srcs, {"resposta": "Personalização é tendência [1, 4]."})
+    assert "[1][4]" in text and [s["n"] for s in used] == [1, 4] and "https://s4.org/x" in text

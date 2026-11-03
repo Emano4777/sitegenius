@@ -21,27 +21,35 @@ CHROME_CANDIDATES = [os.environ.get("SG_CHROME") or "", r"C:\Program Files\Googl
 MIN_FONT = {"nome": 20, "nome_heroi": 30, "preco": 44, "preco_principal": 90, "titulo": 60, "chamada": 26, "loja": 20}
 # pisos medidos (% da peça: 1 produto, vários); o resolvedor mira acima deles (6,0/3,8 e 16/9,5)
 MIN_AREA = {"preco_principal": (4.6, 3.0), "heroi": (14.0, 7.5)}
+LEGIBLE_INK = 0.45  # fração mínima da tinta do texto com contraste >= 3:1 contra o fundo (WCAG, texto grande)
 
 
 def chrome():
     return next((c for c in CHROME_CANDIDATES if c and os.path.exists(c)), None)
 
 
-def measure(doc, size, screenshot=None):
-    """Abre a peça no Chromium (janela maior que a peça, para medir a borda) e devolve as medições."""
+def measure(doc, size, screenshot=None, extra_shots=()):
+    """Abre a peça no Chromium (janela maior que a peça, para medir a borda) e devolve as medições.
+    screenshot: captura da peça; extra_shots: [(outro_doc, caminho)] capturados AO MESMO TEMPO (ex.: a peça sem textos)."""
     exe = chrome()
     if not exe:
         return None
+    flags = [exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=8000"]
     with tempfile.TemporaryDirectory() as d:
-        path = os.path.join(d, "peca.html")
-        open(path, "w", encoding="utf-8").write(doc)
-        url = "file:///" + path.replace("\\", "/")
-        r = subprocess.run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--window-size={size[0] + 160},{size[1] + 210}",
-                            "--virtual-time-budget=8000", "--dump-dom", url], capture_output=True, timeout=120)
-        out = r.stdout.decode("utf-8", "replace")
-        if screenshot:
-            subprocess.run([exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", f"--window-size={size[0]},{size[1]}",
-                            "--virtual-time-budget=8000", f"--screenshot={screenshot}", url], capture_output=True, timeout=120)
+        urls = []
+        for i, html_doc in enumerate([doc] + [x[0] for x in extra_shots]):
+            path = os.path.join(d, f"peca{i}.html")
+            open(path, "w", encoding="utf-8").write(html_doc)
+            urls.append("file:///" + path.replace("\\", "/"))
+        procs = [subprocess.Popen(flags + [f"--window-size={size[0] + 160},{size[1] + 210}", f"--user-data-dir={d}/u0", "--dump-dom", urls[0]],
+                                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)]
+        shots = ([(urls[0], screenshot)] if screenshot else []) + [(u, x[1]) for u, x in zip(urls[1:], extra_shots)]
+        for j, (u, target) in enumerate(shots):
+            procs.append(subprocess.Popen(flags + [f"--window-size={size[0]},{size[1]}", f"--user-data-dir={d}/u{j + 1}",
+                                                   f"--screenshot={target}", u], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+        out = procs[0].communicate(timeout=120)[0].decode("utf-8", "replace")
+        for pr in procs[1:]:
+            pr.wait(timeout=120)
     a = out.find('<pre id="qa"')
     if a < 0:
         return []
@@ -60,13 +68,68 @@ def _contrast(hex_color, lum):
     return (max(l1, l2) + 0.05) / (min(l1, l2) + 0.05)
 
 
-def check(items, solved, size, bg_img=None, n_products=0):
-    """Lista de problemas objetivos: (código, chave, detalhe)."""
+def ink(full, bare, items, size, keys):
+    """Legibilidade pelo DESENHO real: pixels que mudam entre a peça com e sem textos são o texto (preenchimento,
+    contorno, brilho, placa). Fração do miolo das letras com contraste >= 3:1 contra o entorno renderizado. Vale para
+    qualquer efeito (arco, neon, metal, contorno, gradiente) e qualquer cenário."""
+    import numpy as np  # noqa: PLC0415
+
+    def rel(img):
+        a = np.asarray(img.convert("RGB").resize(size), dtype=np.float32) / 255
+        a = np.where(a <= 0.03928, a / 12.92, ((a + 0.055) / 1.055) ** 2.4)
+        return a @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32), a
+    lf, af = rel(full)
+    lb, ab = rel(bare)
+    out = {}
+    for it in items:
+        if it["k"] not in keys:
+            continue
+        x0, y0 = max(0, int(it["x"])), max(0, int(it["y"]))
+        x1, y1 = min(size[0], int(it["x"] + it["w"])), min(size[1], int(it["y"] + it["h"]))
+        if x1 - x0 < 4 or y1 - y0 < 4:
+            continue
+        diff = np.abs(af[y0:y1, x0:x1] - ab[y0:y1, x0:x1]).sum(axis=2)
+        mask = diff > 0.12
+        if mask.sum() < 50:
+            out[it["k"]] = 0.0
+            continue
+        # miolo da letra = pixels que mais mudaram; entorno = o resto da área COMO APARECE na peça (brilho, placa,
+        # contorno e cenário). Legível quando o miolo se separa do entorno.
+        core = mask & (diff >= np.percentile(diff[mask], 60))
+        region = lf[y0:y1, x0:x1]
+        around = region[~core]
+        if around.size < 50:
+            around = lb[y0:y1, x0:x1].ravel()
+        s = float(np.median(around))
+        a = region[core]
+        ratio = (np.maximum(a, s) + 0.05) / (np.minimum(a, s) + 0.05)
+        out[it["k"]] = round(float((ratio >= 3.0).mean()), 2)
+    return out
+
+
+def _ef(e):
+    """Efeito em uso no elemento de texto (o reparo pode ter trocado o do plano)."""
+    return e.get("ef_forcado") or e.get("ef_plano") or e.get("ef")
+
+
+def ink_keys(solved):
+    """Títulos (qualquer efeito) e todo texto em arco: os que a conferência por cor não cobre."""
+    return {f'{e["papel"]}:{e.get("produto", "")}' for e in solved["elementos"]
+            if e["tipo"] == "texto" and (e["papel"] == "titulo" or _ef(e) == "arco")}
+
+
+def check(items, solved, size, bg_img=None, n_products=0, legivel=None):
+    """Lista de problemas objetivos: (código, chave, detalhe). legivel: {chave: fração de tinta legível} de ink()."""
     W, H = size
     by = {f'{e["papel"]}:{e.get("produto", "")}': e for e in solved["elementos"]}
     probs = []
+    for k, frac in (legivel or {}).items():
+        if frac < LEGIBLE_INK:
+            probs.append(("legibilidade", k, frac))
     for it in items:
         k = it["k"]; papel = k.split(":")[0]
+        if it.get("arco") and not 0.82 <= it.get("arco_escala", 1) <= 1.25:
+            probs.append(("letras_deformadas", k, round(it["arco_escala"], 2)))
         if it.get("fora"):
             dx = (-it["x"] if it["x"] < 0 else W - (it["x"] + it["w"]) if it["x"] + it["w"] > W else 0) * 100 / W
             dy = (-it["y"] if it["y"] < 0 else H - (it["y"] + it["h"]) if it["y"] + it["h"] > H else 0) * 100 / H
@@ -76,7 +139,7 @@ def check(items, solved, size, bg_img=None, n_products=0):
         if papel not in ("produto", "heroi", "icone") and it.get("visivel", 1) < 0.75:
             probs.append(("escondido", k, round(it.get("visivel", 0), 2)))
         need_font = MIN_FONT[papel] * (0.78 if papel == "preco_principal" and n_products > 1 else 1.0) if papel in MIN_FONT else 0
-        if need_font and it.get("fonte") and not it.get("arco") and it["fonte"] < need_font * W / 1080:
+        if need_font and it.get("fonte") and it["fonte"] < need_font * W / 1080:  # no arco, a altura real da letra
             probs.append(("fonte_pequena", k, round(it["fonte"])))
         if papel in MIN_AREA:
             area = it["w"] * it["h"] * 100 / (W * H) * 100 / 100
@@ -123,6 +186,20 @@ def repair(solved, probs, items, size):
         elif code == "escondido" and e:
             e["z"] = max(x["z"] for x in solved["elementos"]) + 2
             done += 1
+        elif code in ("letras_deformadas", "fonte_pequena") and e and e["tipo"] == "texto" \
+                and _ef(e) == "arco" and not e.get("_saiu_do_arco"):
+            # texto longo demais para o arco: em linha reta ele cabe maior e sem deformar (vale para qualquer título)
+            e["ef_forcado"] = "adesivo"; e["_saiu_do_arco"] = True
+            done += 1
+        elif code == "legibilidade" and e:
+            if not e.get("reforco"):
+                e["reforco"] = e.get("_reforco_cor") or "#111114"  # contorno largo que separa a letra do fundo
+                done += 1
+            elif not e.get("placa"):
+                if _ef(e) == "arco":
+                    e["ef_forcado"] = "adesivo"; e["_saiu_do_arco"] = True
+                e["placa"] = True
+                done += 1
         elif code == "contraste" and e:
             if e.get("_tentou_cor"):
                 e["placa"] = True; e["cor"] = "#ffffff"
