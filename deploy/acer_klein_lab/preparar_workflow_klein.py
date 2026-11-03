@@ -1,6 +1,6 @@
 """Converte o workflow do Klein (exportado do ComfyUI em formato de API) no MODELO que o agente atual do Acer usa:
 marca {{PROMPT}}, {{WIDTH}}, {{HEIGHT}} e {{SEED}} pelos tipos dos nós e acrescenta a super-resolução na GPU
-(Real-ESRGAN x4 + redução a ~1,45 MP, o maior tamanho que cabe no envio de 4 MB da fila atual).
+(Real-ESRGAN x4 + redução a ~1,4 MP com ImageScaleBy, o maior tamanho que cabe no envio de 4 MB da fila atual).
 
 Uso: python preparar_workflow_klein.py klein_api.json klein_modelo_agente.json [--sem-ampliacao]
 """
@@ -8,7 +8,7 @@ import json
 import sys
 
 UPSCALE_MODEL = "RealESRGAN_x4plus.pth"
-MAX_MP = 1.45
+SCALE_BY = 0.29  # depois do x4 do Real-ESRGAN: ~1,4 MP para gerações de ~1 MP
 
 
 def main(src, dst, upscale=True):
@@ -37,8 +37,10 @@ def main(src, dst, upscale=True):
         nid = max(int(x) for x in wf if x.isdigit()) + 1
         wf[str(nid)] = {"class_type": "UpscaleModelLoader", "inputs": {"model_name": UPSCALE_MODEL}}
         wf[str(nid + 1)] = {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": [str(nid), 0], "image": src_img}}
-        wf[str(nid + 2)] = {"class_type": "ImageScaleToTotalPixels",
-                            "inputs": {"image": [str(nid + 1), 0], "upscale_method": "lanczos", "megapixels": MAX_MP}}
+        # ImageScaleBy existe há anos com as mesmas entradas (ImageScaleToTotalPixels ganhou entrada obrigatória nova e
+        # foi recusado pelo ComfyUI do Acer). Gerações de ~1 MP x4 = ~16 MP; x0,29 -> ~1,4 MP (cabe no envio de 4 MB).
+        wf[str(nid + 2)] = {"class_type": "ImageScaleBy",
+                            "inputs": {"image": [str(nid + 1), 0], "upscale_method": "lanczos", "scale_by": SCALE_BY}}
         wf[save]["inputs"]["images"] = [str(nid + 2), 0]
     wf[save]["inputs"]["filename_prefix"] = "sglab_klein"
     json.dump(wf, open(dst, "w", encoding="utf-8"), indent=1)
