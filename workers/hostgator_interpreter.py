@@ -242,7 +242,7 @@ def ollama_healthy(base="http://127.0.0.1:11434"):
         return False
 
 
-def llama_busy(sample=1.0):
+def llama_busy(sample=2.0):
     """O modelo está trabalhando (ex.: atendendo o WhatsApp)? Mede a CPU do llama-server em /proc."""
     try:
         clk = os.sysconf("SC_CLK_TCK")
@@ -268,7 +268,8 @@ def llama_busy(sample=1.0):
             return total
         a = ticks()
         time.sleep(sample)
-        return (ticks() - a) / (clk * sample) * 100 > 25
+        # Ocioso, o llama-server já fica em 60-105% de CPU (medido em 03/11/2026); gerando, 150-180%.
+        return (ticks() - a) / (clk * sample) * 100 > 130
     except Exception:  # noqa: BLE001 — sem medição, assume ocupado (prudência)
         return True
 
@@ -364,12 +365,12 @@ class Ollama:
         timeout = max(self.timeout, int(os.getenv("SG_VISION_TIMEOUT", "240"))) if has_images else self.timeout
         if not ollama_healthy(self.base):
             raise RuntimeError("Ollama indisponível (Studio pausado)")
+        if has_images and not vision_allowed():  # espera fora do bloqueio (não atrasa outras mensagens)
+            for m in payload["messages"]:
+                m.pop("images", None)  # segue só com texto: nunca disputa codificação de imagem com o WhatsApp
+            has_images = False
+            timeout = self.timeout
         with ollama_turn():
-            if has_images and not vision_allowed():
-                for m in payload["messages"]:
-                    m.pop("images", None)  # segue só com texto: nunca disputa codificação de imagem com o WhatsApp
-                has_images = False
-                timeout = self.timeout
             data = self._post("/api/chat", payload, timeout)
         ns = 1e9
         # Métricas reais do Ollama (só log): carga do modelo, leitura do prompt e geração.
@@ -466,10 +467,7 @@ def process_evaluate(site, ollama, job, vision):
     if not vision or (base and not ollama_healthy(base)):
         site.call("POST", f"/jobs/{job['id']}/complete", {"avaliacao": None})
         return
-    idle = True
-    if base:
-        with ollama_turn():
-            idle = vision_allowed()
+    idle = vision_allowed() if base else True
     if not idle:  # modelo ocupado: sem conferência visual agora (a resposta diz isso), nunca veredito inventado
         site.call("POST", f"/jobs/{job['id']}/complete", {"avaliacao": None})
         return
@@ -495,6 +493,8 @@ def process_evaluate(site, ollama, job, vision):
 def process_creative(site, ollama, job, vision):
     payload = job["payload"]
     images = []
+    if vision and getattr(ollama, "base", None) and (payload.get("current_image_id") or payload.get("image_asset_ids"))             and not vision_allowed():
+        vision = False  # modelo ocupado: segue sem imagem e com o prompt sem visão (não finge que viu a arte)
     if vision:
         if payload.get("current_image_id"):  # a arte atual primeiro: o modelo vê o que vai mudar
             images.append(base64.b64encode(site.call("GET", f"/assets/{payload['current_image_id']}/preview",

@@ -1834,6 +1834,38 @@ def recolor_art(data, colors):
     return out.getvalue()
 
 
+def _rel_luminance(c):
+    def ch(v):
+        v = v / 255
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    r, g_, b = (ch(x) for x in c[:3])
+    return 0.2126 * r + 0.7152 * g_ + 0.0722 * b
+
+
+def contrast_ratio(a, b):
+    la, lb = sorted((_rel_luminance(a), _rel_luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def legible_text_color(art_bytes, palette):
+    """Cor do texto depois de trocar a paleta: a mais viva que tenha contraste >= 3:1 com o fundo onde o texto fica
+    (centro da peça); se nenhuma tiver, a versão clara/escura da paleta com mais contraste (nunca ilegível)."""
+    from PIL import Image, ImageStat  # noqa: PLC0415
+
+    img = Image.open(io.BytesIO(art_bytes)).convert("RGB")
+    w, h = img.size
+    region = img.crop((int(w * .15), int(h * .25), int(w * .85), int(h * .75))).resize((64, 64))
+    bg = tuple(int(v) for v in ImageStat.Stat(region).median)
+    vivid = sorted(palette, key=lambda c: -(max(c) - min(c)))
+    for c in vivid:
+        if contrast_ratio(c, bg) >= 3.0:
+            return [int(v) for v in c]
+    light = [tuple(min(255, int(v + (255 - v) * .85)) for v in c) for c in palette] + [(250, 250, 250)]
+    dark = [tuple(int(v * .18) for v in c) for c in palette] + [(18, 18, 22)]
+    best = max(light + dark, key=lambda c: contrast_ratio(c, bg))
+    return [int(v) for v in best]
+
+
 def recolor_job(conv, user_id, texto, previous_spec, spec):
     """“Recolorir”: nova arte a partir da anterior (sem gerador), textos reaplicados e conferência visual."""
     row = last_result_row(conv["id"])
@@ -1844,9 +1876,8 @@ def recolor_job(conv, user_id, texto, previous_spec, spec):
     new_art = sanitize_image(recolor_art(asset_bytes(art), spec["cores"]), 16 * 1024 * 1024, 40_000_000, 4096)
     art_id = store_asset(user_id, "art", *new_art)
     plan = dict(spec.get("text_plan") or previous_spec.get("text_plan") or {}) or None
-    if plan:  # o texto acompanha a paleta nova (senão fica com a cor/brilho antigos)
-        bright = max(spec["cores"], key=lambda c: (max(c) - min(c)) + 0.3 * sum(c) / 3)
-        plan["cor"] = [int(v) for v in bright]
+    if plan:  # o texto acompanha a paleta nova, mas só com contraste legível sobre a região onde ele fica
+        plan["cor"] = legible_text_color(new_art[0], [tuple(c) for c in spec["cores"]])
     full = {**previous_spec, "text_plan": plan,
             "pedido_ajuste": spec.get("pedido_ajuste"), "prompt_original": texto, "parent_job_id": row["id"]}
     full.pop("job_id", None)
@@ -3006,8 +3037,148 @@ def worker_complete_composed(job_id):
     return jsonify({"ok": True, "asset_id": asset_id})
 
 
+FAVICON_WANTED = re.compile(r"favicon|[íi]cone d[oae]s? (site|app|aplicativo|loja|navegador)|como [íi]cone|"
+                            r"usar (tamb[ée]m )?(como|de) [íi]cone", re.IGNORECASE)
+
+
+def favicon_kit(user_id, art_bytes, plan):
+    """Versões para tamanhos pequenos: só o símbolo (recortado) num quadrado da cor da marca; sem símbolo
+    separável, as iniciais da marca. Devolve (folha de prévia, [ids dos PNGs 512/192/48/32/16])."""
+    from PIL import Image, ImageDraw  # noqa: PLC0415
+
+    from . import composer  # noqa: PLC0415
+
+    arts = [art_bytes] if isinstance(art_bytes, (bytes, bytearray)) else list(art_bytes)
+    art = Image.open(io.BytesIO(arts[0])).convert("RGB")
+    subject, ok = None, False
+    # 1º: arte em que o símbolo se separa de forma limpa (fundo uniforme); 2º: símbolo colorido sobre fundo claro.
+    for finder in (composer.cutout, _saturated_symbol):
+        for data in arts:
+            subject, ok = finder(Image.open(io.BytesIO(data)).convert("RGB"))
+            if ok:
+                break
+        if ok:
+            break
+    brand = _brand_color(subject if ok else art)
+    if ok:
+        bg = tuple(int(v + (255 - v) * 0.88) for v in brand)  # fundo claro na cor da marca, símbolo em destaque
+    else:
+        bg = brand
+    base = Image.new("RGBA", (512, 512), bg + (255,))
+    small_base = None
+    if ok and subject.width > 20:
+        piece = subject.copy()
+        piece.thumbnail((400, 400), Image.LANCZOS)
+        small_base = base.copy()
+        base.alpha_composite(piece, ((512 - piece.width) // 2, (512 - piece.height) // 2))
+        # Em 16-48 px o traço fino some: versão com o símbolo maior e o traço engrossado.
+        from PIL import ImageFilter  # noqa: PLC0415
+
+        bold = subject.copy()
+        bold.thumbnail((460, 460), Image.LANCZOS)
+        alpha = bold.getchannel("A").filter(ImageFilter.MaxFilter(7))  # engrossa sem virar mancha
+        solid = Image.new("RGBA", bold.size, _brand_color(subject) + (255,))
+        solid.putalpha(alpha)
+        small_base.alpha_composite(solid, ((512 - bold.width) // 2, (512 - bold.height) // 2))
+    else:
+        words = [w for w in " ".join(textplan.plan_texts(plan)).split() if w[:1].isalnum()] or ["S"]
+        initials = "".join(w[0] for w in words[:2]).upper()
+        light = sum(bg) / 3 > 140
+        family = {"tecnologico": "orbitron", "futurista": "orbitron"}.get((plan or {}).get("estilo"), "montserrat")
+        f = typography.get_font(family, 800, 300 if len(initials) == 1 else 230)
+        ImageDraw.Draw(base).text((256, 260), initials, font=f, fill=(20, 20, 24) if light else (250, 250, 250), anchor="mm")
+    mask = Image.new("L", (512, 512), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, 511, 511), radius=96, fill=255)
+    icon = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+    icon.paste(base, (0, 0), mask)
+    icon_small = icon
+    if small_base is not None:
+        icon_small = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+        icon_small.paste(small_base, (0, 0), mask)
+    ids, previews = [], []
+    for size in (512, 192, 48, 32, 16):
+        im = (icon if size > 48 else icon_small).resize((size, size), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "PNG")
+        ids.append(store_asset(user_id, "result", buf.getvalue(), "image/png", size, size))
+        previews.append(im)
+    sheet = Image.new("RGB", (860, 320), (245, 245, 247))
+    d = ImageDraw.Draw(sheet)
+    x = 30
+    for size, im in zip((512, 192, 48, 32, 16), previews):
+        show = im.resize((256, 256), Image.LANCZOS) if size == 512 else im.resize((160, 160), Image.LANCZOS) \
+            if size == 192 else im  # 48/32/16 em tamanho real: é assim que aparecem na aba do navegador
+        sheet.paste(show, (x, 160 - show.height // 2), show)
+        d.text((x, 290), f"{size}px", fill=(60, 60, 66), font=typography.get_font("poppins", 600, 20))
+        x += show.width + 40
+    buf = io.BytesIO()
+    sheet.save(buf, "JPEG", quality=90)
+    return store_asset(user_id, "preview", buf.getvalue(), "image/jpeg", sheet.width, sheet.height), ids
+
+
+def _saturated_symbol(img):
+    """Símbolo de traço colorido sobre fundo claro/degradê: os pixels de cor forte (saturados) formam o símbolo."""
+    from PIL import Image  # noqa: PLC0415
+
+    hsv = img.convert("HSV")
+    s_ch, v_ch = hsv.getchannel("S"), hsv.getchannel("V")
+    mask = Image.eval(s_ch, lambda v: 255 if v > 110 else 0)
+    mask = Image.composite(mask, Image.new("L", img.size, 0), Image.eval(v_ch, lambda v: 255 if v > 40 else 0))
+    bbox = mask.getbbox()
+    if not bbox:
+        return img, False
+    area = sum(1 for v in mask.resize((96, 96)).getdata() if v > 128) / (96 * 96)
+    if not 0.01 < area < 0.45:
+        return img, False
+    out = img.convert("RGBA")
+    out.putalpha(mask)
+    piece = out.crop(bbox)
+    return piece, True
+
+
+def _brand_color(img):
+    """Cor dominante mais viva (a "cor da marca") da imagem; ignora fundo transparente, branco e cinza."""
+    small = img.convert("RGBA").resize((64, 64))
+    counts = {}
+    for r, g_, b, a in small.getdata():
+        if a < 128 or max(r, g_, b) - min(r, g_, b) < 50:
+            continue
+        key = (r // 32 * 32 + 16, g_ // 32 * 32 + 16, b // 32 * 32 + 16)
+        counts[key] = counts.get(key, 0) + 1
+    if not counts:
+        return (30, 60, 120)
+    return max(counts, key=counts.get)
+
+
+def maybe_favicon(job, result):
+    """Pedido de logo para usar como ícone/favicon: entrega também as versões pequenas."""
+    try:
+        texts = " ".join(conversation_texts(job["conversation_id"]))
+        if not FAVICON_WANTED.search(texts) or not result.get("art_asset_id"):
+            return
+        rows = get_conn().all("SELECT result FROM sg_jobs WHERE conversation_id = ? AND kind = 'render' AND status = 'done' "
+                              "ORDER BY created_at DESC LIMIT 6", (job["conversation_id"],))
+        ids_art = [result["art_asset_id"]] + [(loads(r["result"], {}) or {}).get("art_asset_id") for r in rows]
+        arts = []
+        for aid in dict.fromkeys(a for a in ids_art if a):
+            row = get_conn().one("SELECT * FROM sg_assets WHERE id = ? AND user_id = ?", (aid, job["user_id"]))
+            if row:
+                arts.append(asset_bytes(row))
+        spec = (loads(job["payload"], {}) or {}).get("spec") or {}
+        sheet, ids = favicon_kit(job["user_id"], arts, spec.get("text_plan"))
+        add_message(job["conversation_id"], "assistant",
+                    "Para o ícone do site, fiz versões simplificadas (só o símbolo, sem texto, que fica ilegível em "
+                    "16–32 px), nos tamanhos 512, 192, 48, 32 e 16 px. Os de 48, 32 e 16 aparecem em tamanho real na folha.",
+                    [{"id": sheet, "kind": "preview"}] + [{"id": i, "kind": "favicon"} for i in ids])
+    except Exception:  # noqa: BLE001 — o kit nunca impede a entrega da arte
+        current_app.logger.exception("kit de favicon falhou no job %s", job.get("id"))
+
+
 def schedule_evaluation(job, result):
     """Depois de gerar: o modelo de visão compara antes x depois x pedido. Até o veredito, nada é dado como conferido."""
+    if (loads(job["payload"], {}) or {}).get("gen_type") in ("free_image", "text_edit", "art_edit") and \
+            job.get("conversation_id"):
+        maybe_favicon(job, result)
     try:
         payload_job = loads(job["payload"], {}) or {}
         spec = payload_job.get("spec") or {}

@@ -90,7 +90,7 @@ def ollama_healthy(base="http://127.0.0.1:11434"):
         return False
 
 
-def llama_busy(sample=1.0):
+def llama_busy(sample=2.0):
     """O modelo está trabalhando (ex.: atendendo o WhatsApp)? Mede a CPU do llama-server em /proc."""
     try:
         clk = os.sysconf("SC_CLK_TCK")
@@ -116,7 +116,8 @@ def llama_busy(sample=1.0):
             return total
         a = ticks()
         time.sleep(sample)
-        return (ticks() - a) / (clk * sample) * 100 > 25
+        # Ocioso, o llama-server já fica em 60-105% de CPU (medido em 03/11/2026); gerando, 150-180%.
+        return (ticks() - a) / (clk * sample) * 100 > 130
     except Exception:  # noqa: BLE001 — sem medição, assume ocupado (prudência)
         return True
 
@@ -182,9 +183,9 @@ def ollama_vision(image_bytes, prompt):
         raise SystemExit("SG_OLLAMA_URL deve ser local")
     req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
+    if not vision_allowed():
+        return None
     with ollama_turn():
-        if not vision_allowed():
-            return None
         with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "180"))) as resp:
             data = json.loads(resp.read())
     try:
@@ -211,9 +212,9 @@ def ollama_chat(messages, images=None, num_predict=500, temperature=0.4):
     url = os.getenv("SG_OLLAMA_URL", "http://127.0.0.1:11434")
     req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
+    if images and not vision_allowed():
+        return None
     with ollama_turn():
-        if images and not vision_allowed():
-            return None
         with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "180"))) as resp:
             data = json.loads(resp.read())
     try:
@@ -271,6 +272,11 @@ def process_flyer_design(site, job):
     except Exception as exc:  # noqa: BLE001
         log.warning("plano do design falhou: %s", exc)
     design = artdirector.merge(base, planned or {}, names)
+    prev = payload.get("design_anterior") or {}
+    if prev.get("composicao") and design.get("composicao") in (prev.get("composicao"), "auto"):
+        # Nova versão tem de ser OUTRA composição (o modelo às vezes repete a anterior).
+        options = [c for c in artdirector.compositions_for(len(photos)) if c != prev.get("composicao")]
+        design["composicao"] = options[(int(payload.get("semente") or 1)) % len(options)]
     for k in ("paleta",):  # com referência, as cores medidas valem mais que as sugeridas
         if ref and base.get(k):
             design[k] = {**design[k], **{c: base[k][c] for c in ("primaria", "secundaria")}}
@@ -288,7 +294,11 @@ def process_flyer_design(site, job):
                     t1 = time.time()
                     critique = ollama_chat([{"role": "system", "content": artdirector.CRITIQUE_PROMPT},
                                             {"role": "user", "content": "Pedido do cliente: " + (payload.get("instrucoes") or
-                                                                                                "encarte profissional")}],
+                                                                                                "encarte profissional")
+                                             + (". Produtos SEM foto disponível (aparecem só com nome e preço, de "
+                                                "propósito; não peça fotos, avalie a composição): "
+                                                + ", ".join(n for n in names if n not in photos) if len(photos) < len(names)
+                                                else "")}],
                                            images=[base64.b64encode(image).decode()], num_predict=300, temperature=0.2)
                     report["rodadas"].append({"nota": (critique or {}).get("nota"), "s": round(time.time() - t1, 1),
                                               "problemas": (critique or {}).get("problemas", [])[:4]})

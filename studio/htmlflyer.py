@@ -31,6 +31,7 @@ DEFAULT = {
     "paleta": {"primaria": "#d71920", "secundaria": "#ffcc00", "fundo": "#fff4cc", "texto": "#1e1e22", "preco": "#d71920"},
     "fundo": "gradiente", "cabecalho": "diagonal", "titulo_fonte": "anton", "grade": "uniforme", "destaque": None,
     "cartao": "branco", "preco_estilo": "etiqueta", "decoracao": ["estrelas"], "densidade": "equilibrada", "chamada": "",
+    "composicao": "auto", "proporcao_destaque": 0.56, "angulo": -8, "sobreposicao": 0.05, "estilo_unidade": "cartao",
 }
 SIZES = {"story": (1080, 1920), "feed_4x5": (1080, 1350), "quadrado": (1080, 1080), "a4": (1240, 1754)}
 
@@ -79,6 +80,16 @@ def normalize(design):
         if d.get(k) not in vals:
             d[k] = DEFAULT[k]
     d["decoracao"] = [x for x in (d.get("decoracao") or []) if x in ("estrelas", "confete", "circulos", "faixas")][:3]
+    from .htmllayout import COMPOSITIONS  # noqa: PLC0415
+
+    if d.get("composicao") not in COMPOSITIONS + ("auto",):
+        d["composicao"] = "auto"
+    d["estilo_unidade"] = d["estilo_unidade"] if d.get("estilo_unidade") in ("cartao", "solto") else "cartao"
+    for k, lo, hi in (("proporcao_destaque", 0.4, 0.72), ("angulo", -14, 14), ("sobreposicao", 0, 0.12)):
+        try:
+            d[k] = max(lo, min(hi, float(d.get(k))))
+        except (TypeError, ValueError):
+            d[k] = DEFAULT[k]
     d["chamada"] = " ".join(str(d.get("chamada") or "").split())[:60]
     return d
 
@@ -164,10 +175,52 @@ def build(briefing, photos, design):
     loja = html.escape(briefing.get("loja") or "")
     titulo = html.escape((briefing.get("titulo") or "Ofertas").strip())
     chamada = html.escape(d["chamada"] or (f"Ofertas válidas {briefing['validade']}" if briefing.get("validade") else ""))
-    validade = html.escape(f"Ofertas válidas {briefing['validade']}" if briefing.get("validade") else (loja and f"Só na {loja}"))
+    validade = html.escape(f"Ofertas válidas {briefing['validade']}" if briefing.get("validade") else (loja and f"Ofertas • {loja}"))
 
+    comp = d["composicao"]
+    if comp == "auto":
+        n_photo = sum(1 for x in products if photos.get(x["nome"]))
+        comp = ("heroi_lateral" if n_photo == 3 else "heroi_topo" if n_photo in (2, 4) else "mosaico" if n_photo <= 6
+                else "grade") if n_photo else "grade"
+    use_free = comp in ("heroi_lateral", "heroi_topo", "diagonal", "mosaico", "vitrine") or \
+        any(not photos.get(x["nome"]) for x in products)
     cards = []
-    for i, prod in enumerate(products):
+    free_units = []
+    if use_free:
+        from .htmllayout import plan_units  # noqa: PLC0415
+
+        has_photo = [bool(photos.get(x["nome"])) for x in products]
+        free_units = plan_units(products, has_photo, (pad, head_h + pad + 10, area_w, area_h), comp,
+                                {"destaque": hero["nome"] if hero else d.get("destaque"), "gap": gap,
+                                 "proporcao_destaque": d["proporcao_destaque"], "angulo": d["angulo"],
+                                 "sobreposicao": d["sobreposicao"], "estilo_unidade": d["estilo_unidade"]})
+    for u in free_units:
+        prod = products[u["indice"]]
+        ref = u["h"] if u["tipo"] == "tipografica" else min(u["w"], u["h"] * (1.25 if u["tipo"] == "foto_horizontal" else 1.0))
+        style_pos = (f"left:{u['x']}px;top:{u['y']}px;width:{u['w']}px;height:{u['h']}px;z-index:{u['z']};--s:{int(ref)}px;"
+                     + (f"transform:rotate({u['rot']}deg);" if u["rot"] else ""))
+        offer = f'<div class="oferta">{html.escape(prod["oferta"])}</div>' if prod.get("oferta") else ""
+        price = f'<div class="precobox">{_price_html(prod.get("preco"), prod.get("preco_de"), prod.get("unidade"))}</div>'
+        disc = _discount(prod.get("preco"), prod.get("preco_de"))
+        sticker = f'<div class="selo-desc">{disc}</div>' if disc else ""
+        name = f'<div class="nome fit">{html.escape(prod["nome"])}</div>'
+        kind = u["tipo"]
+        if kind == "tipografica":  # sem foto: nome + preço em destaque, compacto, sem caixa vazia
+            cards.append(f'<div class="u tipo" style="{style_pos}">{sticker}<div class="tipo-nome fit">'
+                         f'{html.escape(prod["nome"])}</div><div class="tipo-preco">{offer}{price}</div></div>')
+            continue
+        img = f'<img src="{photos[prod["nome"]]}">'
+        hero_cls = " heroi" if u["heroi"] else ""
+        if kind == "foto_solta":  # recorte solto, selo de preço sobreposto à foto
+            cards.append(f'<div class="u solta{hero_cls}" style="{style_pos}">{sticker}<div class="foto">{img}'
+                         f'<div class="chao"></div><div class="preco-sobre">{offer}{price}</div></div>{name}</div>')
+        elif kind == "foto_horizontal":
+            cards.append(f'<div class="u card horiz{hero_cls}" style="{style_pos}">{sticker}<div class="foto">{img}</div>'
+                         f'<div class="info">{name}{offer}{price}</div></div>')
+        else:
+            cards.append(f'<div class="u card{hero_cls}" style="{style_pos}">{sticker}<div class="foto">{img}</div>'
+                         f'<div class="info">{name}{offer}{price}</div></div>')
+    for i, prod in enumerate(products if not use_free else []):
         is_hero = hero is not None and i == 0 and cols > 1
         span = f"grid-column: span {min(2, cols)};" if is_hero else ""
         photo = photos.get(prod["nome"])
@@ -228,6 +281,9 @@ def build(briefing, photos, design):
             deco.append(f'<div class="confete" style="left:{rnd.uniform(0, 100):.1f}%;top:{rnd.uniform(18, 98):.1f}%;'
                         f'background:{rnd.choice([p["primaria"], p["secundaria"], "#ffffff"])};'
                         f'transform:rotate({rnd.uniform(0, 180):.0f}deg)"></div>')
+    if comp == "diagonal":
+        deco.append(f'<div class="faixa-deco" style="top:{int(H * .42)}px;height:{int(H * .3)}px;'
+                    f'transform:rotate({d["angulo"]}deg)"></div>')
     if "faixas" in d["decoracao"]:
         deco.append(f'<div class="faixa-deco" style="top:{int(H * .58)}px"></div>')
 
@@ -261,6 +317,44 @@ def build(briefing, photos, design):
       grid-template-columns:repeat({cols},1fr);grid-template-rows:repeat({rows},1fr);gap:{gap}px;z-index:3}}
     .card{{{card_css}position:relative;display:flex;flex-direction:column;padding:{int(gap * .8)}px;min-width:0;min-height:0;overflow:visible}}
     .card.hero{{flex-direction:row;gap:{gap}px}}
+    .livre{{position:absolute;left:0;top:0;width:100%;height:100%;z-index:3}}
+    .u{{position:absolute;display:flex;flex-direction:column;min-width:0;min-height:0}}
+    .u.card{{padding:calc(var(--s) * .05)}}
+    .u.card .nome, .u.card .de, .u.card .un, .u.tipo .tipo-nome{{color:{_on('#ffffff') if d['cartao'] in ('branco', 'vidro', 'borda') else p['texto']}}}
+    .u .nome{{font-size:calc(var(--s) * .072);height:2.45em}}
+    .u .preco{{font-size:calc(var(--s) * .21)}}
+    .u.card .info{{gap:2px}}
+    .u .oferta{{font-size:calc(var(--s) * .05)}}
+    .u .de{{font-size:calc(var(--s) * .05)}}
+    .u .selo-desc{{width:calc(var(--s) * .2);height:calc(var(--s) * .2);font-size:calc(var(--s) * .065)}}
+    .u .info{{flex:0 0 auto}}
+    .u.card .foto{{flex:1 1 auto;min-height:calc(var(--s) * .5)}}
+    .u.horiz{{flex-direction:row;gap:{gap}px;align-items:stretch}}
+    .u.horiz .foto{{flex:1 1 52%}}
+    .u.horiz .info{{flex:1 1 48%;justify-content:center}}
+    .u.heroi .nome{{font-size:calc(var(--s) * .062)}}
+    .u.heroi .preco{{font-size:calc(var(--s) * .185)}}
+    .u.solta{{align-items:center}}
+    .u .foto{{position:relative;min-height:0}}
+    .u .foto img{{width:100%;height:100%;object-fit:contain;max-width:none;max-height:none}}
+    .u.solta .foto{{flex:1 1 70%;position:relative;width:100%}}
+    .u.solta .foto img{{filter:drop-shadow(0 22px 18px rgba(0,0,0,.35))}}
+    .u.solta .chao{{position:absolute;left:12%;right:12%;bottom:-6px;height:16px;border-radius:50%;
+      background:radial-gradient(rgba(0,0,0,.28),transparent 70%)}}
+    .u.solta .nome{{font-size:calc(var(--s) * .085);height:2.4em;color:{p['texto']};margin-top:calc(var(--s) * .08)}}
+    .u.solta .preco-sobre{{position:absolute;right:-4%;bottom:4%;width:62%;z-index:4;display:flex;flex-direction:column;
+      align-items:flex-end;transform:rotate(-6deg)}}
+    .u.solta .preco-sobre .precobox{{align-items:flex-end}}
+    .u.solta .preco{{font-size:calc(var(--s) * .24)}}
+    .u.tipo{{background:linear-gradient(120deg,#fff 0 58%,{_mix(p['primaria'], '#ffffff', .88)} 58%);border-radius:22px;
+      box-shadow:0 10px 24px rgba(0,0,0,.14);flex-direction:row;align-items:center;padding:12px 18px 12px 26px;gap:14px;
+      border-left:10px solid {p['primaria']}}}
+    .tipo-nome{{flex:1 1 55%;height:100%;display:flex;align-items:center;font-family:'PoppinsX';
+      font-size:calc(var(--s) * .3);line-height:1.08}}
+    .tipo-preco{{flex:0 0 42%;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}}
+    .u.tipo .preco{{font-size:calc(var(--s) * .5)}}
+    .u.tipo .de{{font-size:calc(var(--s) * .14)}}
+    .u.tipo .oferta{{font-size:calc(var(--s) * .13)}}
     .foto{{flex:1 1 55%;min-height:0;display:flex;align-items:center;justify-content:center}}
     .foto img{{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 14px rgba(0,0,0,.28))}}
     .semfoto{{background:{_mix(p['primaria'], '#ffffff', .9)};border:3px dashed {_mix(p['primaria'], '#ffffff', .55)};
@@ -301,7 +395,8 @@ def build(briefing, photos, design):
     body = (f'<div class="head"></div><div class="loja fit">{loja or titulo}</div>'
             f'<div class="titulo"><div class="fit titulo-txt">{titulo}</div></div>'
             + (f'<div class="chamada fit">{chamada}</div>' if chamada else "")
-            + "".join(deco) + f'<div class="grade">{"".join(cards)}</div>'
+            + "".join(deco) + (f'<div class="livre">{"".join(cards)}</div>' if free_units else
+                               f'<div class="grade">{"".join(cards)}</div>')
             + (f'<div class="rodape">{validade}</div>' if validade else ""))
     return (f'<!doctype html><html><head><meta charset="utf-8"><style>{css}</style></head><body>{body}'
             f'<script>{fit_js}</script></body></html>')

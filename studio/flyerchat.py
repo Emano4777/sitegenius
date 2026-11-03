@@ -346,7 +346,7 @@ def apply(message, briefing):
         if not b["layout"].get("modelo") or b["layout"].get("modelo") in layouts.STYLES:
             b["layout"]["modelo"] = "criativo"
         done.append("nova versão do layout (mesmos produtos, preços e fotos)")
-        actions.add("gerar" if briefing.get("gerado") else "previas")
+        actions.add("gerar")  # nova versão = nova composição pelo diretor de arte (mesmos produtos, preços e fotos)
     if REFERENCE_WORDS.search(t):
         actions.add("referencia")
 
@@ -433,7 +433,8 @@ _UNDERSTOOD = re.compile(
     r"preco|valor|troc|mud|coloc|deix|quero|favor|obrigad|ok|sim|beleza|valeu|oi|ola|bom dia|boa (tarde|noite)|"
     r"jornal|premium|relampago|catalogo|moderno|minimalista|gere|gera|cri[ae]|faz|faca|mont|versao|diagona|"
     r"assimetr|zig|alternad|explos|etiqueta|raios|listra|bolha|circul|onda|dinamic|criativ|parecid|igual|inspir|"
-    r"referencia|anexo|anexad|imagem|arte|entao|agora|isso|assim", re.IGNORECASE)
+    r"referencia|anexo|anexad|imagem|arte|entao|agora|isso|assim|ousad|diferente|bonit|chamativ|impact|elegant|"
+    r"profissional|caprich", re.IGNORECASE)
 
 
 def all_understood(message):
