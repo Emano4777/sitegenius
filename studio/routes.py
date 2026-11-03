@@ -794,6 +794,9 @@ def start_art_direction(conv, user_id, final, signature):
     return ""
 
 
+MIN_FLYER_SCORE = 6.5  # abaixo disso, a arte vira rascunho (o diretor de arte reprovou a própria peça)
+
+
 def handle_flyer_design(job, payload, data):
     """Arte pronta (já revisada pelo diretor de arte): vira o resultado da conversa, com os dados conferidos."""
     from . import htmlflyer  # noqa: PLC0415
@@ -808,13 +811,28 @@ def handle_flyer_design(job, payload, data):
         side_job_failed(payload)
         return
     final = payload["briefing"]
-    asset_id = store_asset(conv["user_id"], "result", *image)
-    job_id, ts = new_id(), now()
     design = htmlflyer.normalize(data.get("design") if isinstance(data.get("design"), dict) else {})
     try:
         nota = round(float(data.get("nota")), 1)
     except (TypeError, ValueError):
         nota = None
+    problems = [bf._clean_text(x, 160) for x in (data.get("problemas") or [])[:4] if isinstance(x, str) and x.strip()]
+    no_photo = [p["nome"] for p in final.get("produtos") or [] if not p.get("asset_id")]
+    if nota is not None and nota < MIN_FLYER_SCORE:
+        # Não publica uma arte que o próprio diretor de arte reprovou: mostra como rascunho, diz o porquê e o que falta.
+        draft = store_asset(conv["user_id"], "preview", *image)
+        missing = (f" Para ficar profissional, faltam fotos de: {', '.join(no_photo)} (envie aqui ou peça para eu buscar)."
+                   if no_photo else "")
+        text = (f"Fiz uma versão, mas na minha revisão ela ficou abaixo do nível para divulgar (nota {nota:g}/10), então "
+                f"não a publiquei como arte final." + (f" Problemas que vi: {'; '.join(problems)}." if problems else "")
+                + missing + " Veja o rascunho e me diga o que ajustar, ou peça “outra versão”.")
+        get_conn().run("UPDATE sg_messages SET content = ?, status = 'ok', attachments = ? WHERE id = ? AND conversation_id = ?",
+                       (text, dumps([{"id": draft, "kind": "preview"}]), payload["assistant_message_id"], conv["id"]))
+        current = loads(conv["briefing"]) or final
+        save_briefing(conv["id"], {**current, "layout": {**(current.get("layout") or {}), "design": design}})
+        return
+    asset_id = store_asset(conv["user_id"], "result", *image)
+    job_id, ts = new_id(), now()
     rec = {"version": 2, "gen_type": "flyer", "briefing": final, "size": [image[2], image[3]],
            "assinatura": payload.get("assinatura"), "design": design, "nota": nota,
            "relatorio": data.get("relatorio") if isinstance(data.get("relatorio"), dict) else None}
@@ -829,7 +847,6 @@ def handle_flyer_design(job, payload, data):
     lay = {**(current.get("layout") or {}), "design": design, "gerado_assinatura": payload.get("assinatura")}
     save_briefing(conv["id"], {**current, "layout": lay, "gerado": True})
     rounds = len((rec["relatorio"] or {}).get("rodadas") or [])
-    no_photo = [p["nome"] for p in final.get("produtos") or [] if not p.get("asset_id")]
     text = (f"Pronto! Criei o encarte com {len(final.get('produtos') or [])} produto(s), nomes e preços exatamente como "
             f"estão no briefing. Revisei a composição {rounds} vez(es)" + (f" (nota final {nota:g}/10)" if nota is not None else "")
             + "." + (f" Sem foto (aparece só o nome): {', '.join(no_photo)}." if no_photo else "")
@@ -1377,10 +1394,12 @@ def choose_photo(conv, briefing, idx, name):
     product["asset_id"] = opt["asset_id"]
     autorizacao = opt.get("autorizacao") or catalog.authorization_today(opt.get("fonte"))
     if not opt.get("catalogo"):
-        catalog.add(g.user_id, nome=product["nome"], asset_id=opt["asset_id"], marca=opt.get("marca", ""),
+        # Guarda o que a foto É (título do produto encontrado), não a palavra do pedido: "Leite" escolhendo
+        # "Leite moça" não faz toda foto de "Leite" virar leite condensado nos próximos encartes.
+        catalog.add(g.user_id, nome=opt.get("nome") or product["nome"], asset_id=opt["asset_id"], marca=opt.get("marca", ""),
                     ean=opt.get("ean", ""), apresentacao=opt.get("apresentacao", ""), fonte=opt.get("fonte", ""),
                     pagina=opt.get("pagina", ""), licenca=opt.get("licenca", ""), autorizacao=autorizacao,
-                    compartilhar=False)
+                    compartilhar=False, origem="escolha")
     opcoes.pop(name, None)
     texts = user_texts(conv["id"])
     normalized = bf.normalize_briefing({**briefing, "opcoes_foto": opcoes}, texts,
@@ -1799,7 +1818,7 @@ def recolor_art(data, colors):
     img = Image.open(io.BytesIO(data)).convert("RGB")
     cols = sorted([tuple(c) for c in colors], key=lambda c: 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2])
     darkest = tuple(int(v * 0.18) for v in cols[0])
-    lightest = tuple(int(v + (255 - v) * 0.75) for v in cols[-1])
+    lightest = tuple(int(v + (255 - v) * 0.3) for v in cols[-1])  # o claro continua sendo a cor pedida (não bege)
     stops = [darkest] + cols + [lightest]
     lut = []
     for ch in range(3):
@@ -1824,7 +1843,11 @@ def recolor_job(conv, user_id, texto, previous_spec, spec):
         return None
     new_art = sanitize_image(recolor_art(asset_bytes(art), spec["cores"]), 16 * 1024 * 1024, 40_000_000, 4096)
     art_id = store_asset(user_id, "art", *new_art)
-    full = {**previous_spec, "text_plan": spec.get("text_plan") or previous_spec.get("text_plan"),
+    plan = dict(spec.get("text_plan") or previous_spec.get("text_plan") or {}) or None
+    if plan:  # o texto acompanha a paleta nova (senão fica com a cor/brilho antigos)
+        bright = max(spec["cores"], key=lambda c: (max(c) - min(c)) + 0.3 * sum(c) / 3)
+        plan["cor"] = [int(v) for v in bright]
+    full = {**previous_spec, "text_plan": plan,
             "pedido_ajuste": spec.get("pedido_ajuste"), "prompt_original": texto, "parent_job_id": row["id"]}
     full.pop("job_id", None)
     full.pop("recompor", None)
@@ -2854,6 +2877,8 @@ def worker_complete(job_id):
     # Interpretação: nunca confiar no modelo, tudo passa pela validação.
     data = request.get_json(silent=True) or {}
     payload = loads(job["payload"], {})
+    if payload.get("mode") in ("layout_ref", "websearch", "flyer_design"):
+        touch_worker(f"{g.worker_id}:tools", "tools")  # acabou de entregar: continua disponível para a próxima etapa
     if payload.get("mode") == "flyer_design":
         conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",
                  (now(), now(), dumps({"nota": data.get("nota"), "relatorio": data.get("relatorio")})[:8000], job["id"]))

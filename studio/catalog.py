@@ -28,7 +28,7 @@ def _fields(nome, marca="", apresentacao=""):
 
 
 def add(user_id, *, nome, asset_id, marca="", ean="", apresentacao="", fonte="", pagina="", image_url="", licenca="",
-        autorizacao="", compartilhar=False):
+        autorizacao="", compartilhar=False, origem=""):
     """Registra (ou atualiza) uma foto verificada. compartilhar=True só para licença aberta."""
     conn = get_conn()
     owner = GLOBAL if compartilhar else user_id
@@ -57,10 +57,12 @@ def lookup(user_id, product):
     ean = product.get("ean") or ""
     exact, options = None, []
     for row in rows:
-        if row["user_id"] == user_id and productmatch.fold(row["nome"]) == productmatch.fold(name):
-            level = "exato"  # o próprio cliente identificou essa foto com esse nome
-        else:
-            level, _ = productmatch.evaluate(name, row["nome"], row["marca"], row["apresentacao"], ean, row["ean"])
+        # Mesmo para fotos do próprio cliente: só vale se o produto da foto corresponde ao pedido
+        # (tipo, marca, variante e apresentação). Nome idêntico ao que ele mesmo cadastrou continua valendo.
+        level, _ = productmatch.evaluate(name, row["nome"], row["marca"], row["apresentacao"], ean, row["ean"])
+        if level != "descartar" and row["user_id"] == user_id and productmatch.fold(row["nome"]) == productmatch.fold(name) \
+                and (row.get("autorizacao") or "").startswith("foto enviada"):
+            level = "exato"
         if level == "exato" and exact is None:
             exact = row
         elif level == "opcao" and len(options) < 3:

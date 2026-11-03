@@ -39,15 +39,20 @@ def test_photo_options_choice_and_catalog_reuse(user, monkeypatch):
     assert b["produtos"][0]["asset_id"]
     assert b["opcoes_foto"] == {} and "Coloquei a foto 2" in data["mensagens"][-1]["texto"]
     with user.client.application.app_context():
-        row = get_conn().one("SELECT * FROM sg_catalog WHERE nome = 'Leite integral'")
-    assert row["nome"] == "Leite integral" and "licença aberta" in row["autorizacao"] and row["apresentacao"] == "1 L"
-    # Outro encarte do mesmo cliente: o catálogo vem antes de qualquer busca.
-    monkeypatch.setattr("studio.routes.find_photo", lambda product, http=None: (_ for _ in ()).throw(AssertionError("não buscar")))
+        row = get_conn().one("SELECT * FROM sg_catalog WHERE nome LIKE 'Leite Integral Piracanjuba%'")
+    # O catálogo guarda o produto REAL da foto (não a palavra "Leite integral" do pedido).
+    assert "licença aberta" in row["autorizacao"] and row["apresentacao"] == "1 L"
+    # Outro encarte: o catálogo vem antes de qualquer busca e só reutiliza sozinho quando o produto confere.
+    monkeypatch.setattr("studio.routes.find_photo", lambda product, http=None: (None, []))
     conv2 = new_conversation(user)
     send(user, conv2, "Cria um encarte para o Mercado Bom Preço.")
-    send(user, conv2, "Coloca leite integral por R$ 5,49.")
+    send(user, conv2, "Coloca leite integral Piracanjuba 1L por R$ 5,49 e leite integral por R$ 4,99.")
     data = send(user, conv2, "Busca as fotos.")
-    assert data["briefing"]["produtos"][0]["asset_id"] and "do seu catálogo" in data["mensagens"][-1]["texto"]
+    prods = {p["nome"]: p for p in data["briefing"]["produtos"]}
+    assert prods["Leite integral Piracanjuba 1L"]["asset_id"] and "do seu catálogo" in data["mensagens"][-1]["texto"]
+    # "Leite integral" (sem marca): a foto da Piracanjuba vira OPÇÃO, nunca escolha automática.
+    assert not prods["Leite integral"]["asset_id"]
+    assert [o["nome"] for o in data["briefing"]["opcoes_foto"]["Leite integral"]][0].startswith("Leite Integral Piracanjuba")
 
 
 def test_several_flyers_in_one_conversation(user):

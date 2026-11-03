@@ -741,7 +741,8 @@ def plan_outcome(plano, data, text, options, previous_spec, previous_result_id, 
     new_style = data.get("estilo_texto") if data.get("estilo_texto") in textplan.TYPE_STYLES else None
     if plan and (new_style or wants_type):
         style = new_style or plan.get("estilo")
-        if wants_type and style == (prev_plan or {}).get("estilo"):
+        if wants_type and attempt == 1 and style == (prev_plan or {}).get("estilo"):
+            # (só na 1ª tentativa: na nova tentativa a fonte já foi trocada e deve ser mantida)
             # Pediu outra tipografia: tem de mudar de verdade (próximo estilo da lista).
             order = list(textplan.TYPE_STYLES)
             style = order[(order.index(style) + 1) % len(order)] if style in order else "futurista"

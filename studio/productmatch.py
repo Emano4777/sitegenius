@@ -25,7 +25,10 @@ VARIANT_GROUPS = [
 MODIFIERS = ["zero lactose", "sem lactose", "condensado", "creme de", "doce de", "em po", "achocolatado",
              "bebida lactea", "fermentado", "sabor", "kit", "combo", "fardo", "refil", "infantil", "mini", "sache",
              "capsula", "capsulas", "uht"]
-NEUTRAL_MODIFIERS = {"uht"}  # aparece em quase todo leite de caixinha: não conta como diferença
+NEUTRAL_MODIFIERS = {"uht"}
+# Marcas que, no varejo, SÃO outro tipo de produto: "Leite Moça" é leite condensado, "Ninho" é leite em pó.
+BRAND_IMPLIES = {"moca": "condensado", "ninho": "em po", "nescau": "achocolatado", "toddy": "achocolatado",
+                 "itambezinho": "fermentado", "danoninho": "fermentado", "chamyto": "fermentado"}  # aparece em quase todo leite de caixinha: não conta como diferença
 LEAD_NOISE = {"kit", "combo", "pack", "caixa", "fardo", "promocao", "oferta"}
 UNIT_RE = re.compile(r"(?<![\w,.])(\d+(?:[.,]\d+)?)\s*(kg|quilos?|g|gr|gramas?|l|lt|lts|litros?|ml|un|und|unid|unidades?|"
                      r"comprimidos?|caps|capsulas?|m|metros?|folhas?|rolos?)\b")
@@ -80,7 +83,9 @@ def variants(text):
 
 def modifiers(text):
     t = fold(text)
-    return {m for m in MODIFIERS if _has(t, m)}
+    found = {m for m in MODIFIERS if _has(t, m)}
+    found |= {implied for brand, implied in BRAND_IMPLIES.items() if _has(t, brand)}
+    return found
 
 
 def parse(name, brand_hint=""):

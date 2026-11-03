@@ -652,8 +652,8 @@ def test_internet_photo_search_validates_match(monkeypatch):
     celular = {**leite, "nome": "Smartphone X", "marca": "Y"}
     moca = {**leite, "nome": "Leite moça", "marca": "Nestlé"}
     monkeypatch.setattr(products, "search_name", lambda q, http=None, limit=12: [celular, moca, leite])
-    chosen, options = products.find_photo({"nome": "Leite"})  # genérico: não escolhe sozinho (leite moça ≠ leite)
-    assert chosen is None and [o["nome"] for o in options] == ["Leite moça", "Leite Integral Italac 1L"]
+    chosen, options = products.find_photo({"nome": "Leite"})  # genérico: não escolhe sozinho; "Leite moça" é condensado
+    assert chosen is None and [o["nome"] for o in options] == ["Leite Integral Italac 1L"]
     chosen, _ = products.find_photo({"nome": "Leite Integral Italac"})
     assert chosen["nome"] == "Leite Integral Italac 1L"
     monkeypatch.setattr(products, "search_name", lambda q, http=None, limit=12: [celular])

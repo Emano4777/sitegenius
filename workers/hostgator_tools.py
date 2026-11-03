@@ -72,6 +72,67 @@ class ollama_turn:
         return False
 
 
+_BREAKER = {"ate": 0.0}
+
+
+def ollama_healthy(base="http://127.0.0.1:11434"):
+    """Disjuntor: se o Ollama não responde em 5 s, o Studio não envia nada por 10 minutos (nunca empilha pedidos
+    num Ollama travado; o WhatsApp vem primeiro)."""
+    if time.time() < _BREAKER["ate"]:
+        return False
+    try:
+        with urllib.request.urlopen(base + "/api/version", timeout=5) as resp:
+            resp.read()
+        return True
+    except Exception:  # noqa: BLE001
+        _BREAKER["ate"] = time.time() + 600
+        log.warning("Ollama sem resposta: Studio pausado por 10 minutos")
+        return False
+
+
+def llama_busy(sample=1.0):
+    """O modelo está trabalhando (ex.: atendendo o WhatsApp)? Mede a CPU do llama-server em /proc."""
+    try:
+        clk = os.sysconf("SC_CLK_TCK")
+        pids = []
+        for d in os.listdir("/proc"):
+            if d.isdigit():
+                try:
+                    with open(f"/proc/{d}/cmdline", "rb") as f:
+                        if b"llama-server" in f.read(200):
+                            pids.append(d)
+                except OSError:
+                    continue
+
+        def ticks():
+            total = 0
+            for pid in pids:
+                try:
+                    with open(f"/proc/{pid}/stat") as f:
+                        parts = f.read().rsplit(")", 1)[1].split()
+                    total += int(parts[11]) + int(parts[12])
+                except (OSError, IndexError, ValueError):
+                    pass
+            return total
+        a = ticks()
+        time.sleep(sample)
+        return (ticks() - a) / (clk * sample) * 100 > 25
+    except Exception:  # noqa: BLE001 — sem medição, assume ocupado (prudência)
+        return True
+
+
+def vision_allowed(max_wait=90):
+    """Análise de imagem só com o modelo ocioso: espera até max_wait s; se continuar ocupado, a etapa visual é pulada.
+    (Duas codificações de imagem simultâneas travaram o Ollama em 02/11/2026.)"""
+    deadline = time.time() + max_wait
+    while time.time() < deadline:
+        if not llama_busy():
+            return True
+        time.sleep(4)
+    log.info("modelo ocupado: etapa visual pulada para não disputar com o WhatsApp")
+    return False
+
+
 def sign(secret, timestamp, nonce, method, path, body):
     body_hash = hashlib.sha256(body or b"").hexdigest()
     message = f"{timestamp}\n{nonce}\n{method.upper()}\n{path}\n{body_hash}".encode()
@@ -104,8 +165,10 @@ def ollama_vision(image_bytes, prompt):
     """Leitura visual com o modelo já carregado (mesmos parâmetros do intérprete: não recarrega o modelo)."""
     from PIL import Image  # noqa: PLC0415
 
+    if not ollama_healthy():
+        return None
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img.thumbnail((768, 768))
+    img.thumbnail((512, 512))
     buf = io.BytesIO()
     img.save(buf, "JPEG", quality=88)
     keep = os.environ.get("SG_OLLAMA_KEEP_ALIVE", "30m")
@@ -119,8 +182,11 @@ def ollama_vision(image_bytes, prompt):
         raise SystemExit("SG_OLLAMA_URL deve ser local")
     req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
-    with ollama_turn(), urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
-        data = json.loads(resp.read())
+    with ollama_turn():
+        if not vision_allowed():
+            return None
+        with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "180"))) as resp:
+            data = json.loads(resp.read())
     try:
         out = json.loads(data["message"]["content"])
         return out if isinstance(out, dict) else None
@@ -131,9 +197,11 @@ def ollama_vision(image_bytes, prompt):
 def ollama_chat(messages, images=None, num_predict=500, temperature=0.4):
     """Chamada ao modelo já carregado (mesmos parâmetros do intérprete). images vai na última mensagem."""
     keep = os.environ.get("SG_OLLAMA_KEEP_ALIVE", "30m")
+    if not ollama_healthy():
+        return None
     msgs = [dict(m) for m in messages]
     if images:
-        msgs[-1]["images"] = images
+        msgs[-1]["images"] = [_shrink_b64(i) for i in images]
     payload = {"model": os.environ["SG_OLLAMA_MODEL"], "stream": False, "format": "json", "think": False,
                "keep_alive": int(keep) if keep.lstrip("-").isdigit() else keep,
                "options": {"temperature": temperature, "num_predict": num_predict,
@@ -143,13 +211,27 @@ def ollama_chat(messages, images=None, num_predict=500, temperature=0.4):
     url = os.getenv("SG_OLLAMA_URL", "http://127.0.0.1:11434")
     req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
-    with ollama_turn(), urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
-        data = json.loads(resp.read())
+    with ollama_turn():
+        if images and not vision_allowed():
+            return None
+        with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "180"))) as resp:
+            data = json.loads(resp.read())
     try:
         out = json.loads(data["message"]["content"])
         return out if isinstance(out, dict) else None
     except (ValueError, KeyError):
         return None
+
+
+def _shrink_b64(b64):
+    """Imagem para o modelo com no máximo 512 px (codificação mais curta e previsível)."""
+    from PIL import Image  # noqa: PLC0415
+
+    img = Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB")
+    img.thumbnail((512, 512))
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=85)
+    return base64.b64encode(buf.getvalue()).decode()
 
 
 def render_html(page, html_doc, size):

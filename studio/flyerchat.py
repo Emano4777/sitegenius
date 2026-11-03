@@ -375,6 +375,9 @@ def numbers_accounted(message, briefing):
                 known.add(cents)
     t = fold(message)
     t = re.sub(r"\b\d+\s*[:x/]\s*\d+\b|\ba4\b|\b(?:primeir|segund|terceir)\w*", " ", t)  # 9:16, A4, ordinais
+    # quantidades com unidade (1L, 500g, 5kg, 12 un, "leve 2") não são preço
+    t = re.sub(r"\b\d+(?:[.,]\d+)?\s*(?:kg|g|gr|mg|ml|l|lt|litros?|un|und|unid|unidades?|cx|pct|m|cm|caps|comprimidos)\b"
+               r"|\b(?:leve|levando|leva|compre|comprando)\s+\d{1,2}\b(?!\s*(?:reais|,))", " ", t)  # "paga 45" é preço
     for raw in re.findall(r"\d{1,5}(?:[.,]\d{1,2})?", t):
         cents = price_to_cents(raw)
         if not cents or cents not in known:

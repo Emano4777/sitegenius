@@ -89,7 +89,8 @@ def _font_faces():
         path = os.path.join(FONT_DIR, file)
         if os.path.exists(path):
             data = base64.b64encode(open(path, "rb").read()).decode()
-            out.append(f"@font-face{{font-family:'{family}';src:url(data:font/ttf;base64,{data});font-display:block}}")
+            weight = "font-weight:100 900;" if file.endswith("-VF.ttf") else ""  # fontes variáveis: todos os pesos
+            out.append(f"@font-face{{font-family:'{family}';src:url(data:font/ttf;base64,{data});{weight}font-display:block}}")
     return "\n".join(out)
 
 
@@ -247,11 +248,11 @@ def build(briefing, photos, design):
     .head::after{{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.06) 0 18px,transparent 18px 36px)}}
     .loja{{position:absolute;left:{pad}px;top:{int(head_h * .14)}px;width:{int(W * .62)}px;height:{int(head_h * .42)}px;
       font-family:'{title_font}';font-size:{int(head_h * .36)}px;line-height:1.02;color:{on_primary};text-transform:uppercase;
-      text-shadow:0 4px 0 rgba(0,0,0,.25);display:flex;align-items:center;z-index:3;letter-spacing:.5px}}
+      text-shadow:0 4px 0 rgba(0,0,0,.25);display:flex;align-items:center;z-index:3;letter-spacing:.5px;font-weight:900}}
     .titulo{{position:absolute;right:{pad}px;top:{int(head_h * .08)}px;width:{int(head_h * .86)}px;height:{int(head_h * .86)}px;
       background:{p['secundaria']};color:{_on(p['secundaria'], '#fff', p['primaria'])};z-index:4;display:flex;align-items:center;
       justify-content:center;text-align:center;font-family:'{title_font}';font-size:{int(head_h * .26)}px;text-transform:uppercase;
-      line-height:.95;clip-path:polygon(50% 0,61% 12%,75% 4%,78% 20%,94% 22%,88% 37%,100% 50%,88% 63%,94% 78%,78% 80%,75% 96%,
+      line-height:.95;font-weight:900;clip-path:polygon(50% 0,61% 12%,75% 4%,78% 20%,94% 22%,88% 37%,100% 50%,88% 63%,94% 78%,78% 80%,75% 96%,
       61% 88%,50% 100%,39% 88%,25% 96%,22% 80%,6% 78%,12% 63%,0 50%,12% 37%,6% 22%,22% 20%,25% 4%,39% 12%);
       transform:rotate(-8deg);filter:drop-shadow(0 6px 0 rgba(0,0,0,.25));padding:{int(head_h * .2)}px}}
     .chamada{{position:absolute;left:{pad}px;top:{int(head_h * .62)}px;width:{int(W * .6)}px;height:{int(head_h * .18)}px;
