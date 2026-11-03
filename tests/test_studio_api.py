@@ -119,7 +119,11 @@ def test_attachment_of_other_user_is_refused(user, other_user):
     assert resp.status_code == 403
 
 
-def test_rate_limit_on_messages(user):
+def test_rate_limit_on_messages(user, monkeypatch):
+    # Janela fixa alinhada ao minuto: se o envio cruzasse a virada do minuto, a contagem se dividiria entre duas janelas
+    # e o teste falharia por acaso (causa da falha intermitente). Relógio fixo = o teste mede só a regra.
+    import studio.security as security
+    monkeypatch.setattr(security, "now", lambda: 1_800_000_000 - 1_800_000_000 % 60 + 5)
     conv = new_conversation(user)
     codes = [user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": f"oi {i}"}).status_code for i in range(32)]
     assert codes.count(429) >= 1

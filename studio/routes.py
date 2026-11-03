@@ -3222,6 +3222,8 @@ def handle_evaluation(job, payload, verdict):
     g.user_id = conv["user_id"]
     lst = lambda v: [bf._clean_text(x, 140) for x in (v or [])[:4] if isinstance(x, str) and x.strip()]  # noqa: E731
     mudou, faltou = lst(verdict.get("mudou")), lst(verdict.get("faltou"))
+    # "Nenhum", "nada", "-" significam que nada faltou; não podem reprovar a arte.
+    faltou = [x for x in faltou if not re.fullmatch(r"\W*(nenhum[a]?|nada|n/?a|-+|sem pend[eê]ncias?)\W*", x, re.I)]
     resumo = bf._clean_text(verdict.get("resumo"), 300)
     try:
         nota = float(verdict.get("nota"))
