@@ -1025,6 +1025,8 @@ def flyer_chat(conv, texto, previous, assistant_id):
     if "referencia" in actions and not (normalized.get("layout") or {}).get("referencia") and normalized.get("referencias"):
         normalized = start_reference_analysis(conv, normalized, normalized["referencias"][-1], "gerar" in actions)
     if "buscar_fotos" in actions:
+        # a busca já está acontecendo: tira o convite "Sem foto… posso buscar" do resumo (não se contradiz)
+        replies = [re.sub(r"\s*Sem foto: .*?envia as fotos aqui\.", "", r) for r in replies]
         replies.append(fetch_product_photos(conv, normalized))
         attachments += getattr(g, "photo_sheets", [])
         normalized = loads(get_conn().one("SELECT briefing FROM sg_conversations WHERE id = ?", (conv["id"],))["briefing"])
@@ -1187,7 +1189,12 @@ def _own_copy(user_id, asset_id):
         return None
     if row["user_id"] == user_id:
         return asset_id
-    return store_asset(user_id, row["kind"] if row["kind"] in ("product", "candidate") else "product", asset_bytes(row),
+    try:
+        data = asset_bytes(row)
+    except Exception:  # noqa: BLE001 — armazenamento lento/indisponível: segue sem a foto (busca continua), sem erro 500
+        current_app.logger.exception("não foi possível copiar a foto do catálogo %s", asset_id)
+        return None
+    return store_asset(user_id, row["kind"] if row["kind"] in ("product", "candidate") else "product", data,
                        row["mime"], row["width"], row["height"], row.get("source_url"), row.get("license"), row.get("attribution"))
 
 

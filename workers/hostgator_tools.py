@@ -391,6 +391,54 @@ def _download(url):
     return data
 
 
+SEARX_URL = os.getenv("SG_SEARX_URL", "http://127.0.0.1:8899")
+
+
+def searx(query, category="general", timeout=15):
+    """Busca no SearXNG local (sitegenius-busca, só 127.0.0.1). Motores que bloqueiam ficam de fora (sem contorno)."""
+    url = SEARX_URL + "/search?" + urllib.parse.urlencode({"q": query, "format": "json", "categories": category, "language": "pt-BR"})
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=timeout) as resp:
+            data = json.loads(resp.read(3_000_000))
+        return data.get("results") or [], [f"{e[0]}: {e[1]}" for e in data.get("unresponsive_engines") or [] if isinstance(e, list)]
+    except Exception as exc:  # noqa: BLE001
+        return [], [f"busca local: {type(exc).__name__}"]
+
+
+def gtin_valid(code):
+    """Dígito verificador de EAN-8/UPC-12/EAN-13/GTIN-14."""
+    if not re.fullmatch(r"\d{8}|\d{12,14}", code or ""):
+        return False
+    digits = [int(c) for c in code]
+    check = digits.pop()
+    total = sum(d * (3 if i % 2 == 0 else 1) for i, d in enumerate(reversed(digits)))
+    return (10 - total % 10) % 10 == check
+
+
+def search_product_searx(query, ean=None, limit=16):
+    """Candidatos de imagem pelo SearXNG: {titulo, imagem, pagina, fonte, resolucao, ean_confere}."""
+    out, notes = [], []
+    queries = [query] + ([f"{query} {ean}"] if ean and gtin_valid(ean) else [])
+    for q in queries:
+        results, n = searx(q, "images")
+        notes += n
+        for r in results:
+            img = r.get("img_src") or ""
+            if not img.startswith("http") or any(o["imagem"] == img for o in out):
+                continue
+            m = re.match(r"(\d+)\s*[x×]\s*(\d+)", r.get("resolution") or "")
+            if m and min(int(m.group(1)), int(m.group(2))) < 300:
+                continue  # resolução baixa demais para arte
+            text = " ".join(str(r.get(k) or "") for k in ("title", "content", "url", "img_src"))
+            out.append({"titulo": (r.get("title") or "").strip(), "imagem": img, "pagina": r.get("url") or "",
+                        "fonte": urlsplit(r.get("url") or img).netloc, "resolucao": r.get("resolution") or "",
+                        "ean_confere": bool(ean) and ean in text})
+            if len(out) >= limit:
+                break
+    out.sort(key=lambda c: not c["ean_confere"])  # EAN confirmado primeiro
+    return out, sorted(set(notes))[:6]
+
+
 def search_product(page, query, per_source=8, deadline=45):
     """Candidatos {titulo, imagem, pagina, fonte} de fontes permitidas. Nunca contorna bloqueio."""
     from studio import productmatch  # noqa: PLC0415
@@ -457,34 +505,50 @@ def process_websearch(site, job):
 
     payload = job["payload"]
     results, notes = [], []
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-zygote", "--disable-gpu",
-                                                          "--js-flags=--max-old-space-size=256"])
-        try:
-            page = browser.new_page(viewport={"width": 1280, "height": 900}, locale="pt-BR")
-            page.set_default_timeout(20000)
-            for item in (payload.get("produtos") or [])[:8]:
-                name = item["nome"]
-                cands, n = search_product(page, name)
-                notes += [f"{name} — {x}" for x in n]
-                chosen = []
-                for c in cands:
-                    level, motivo = productmatch.evaluate(name, c["titulo"])
-                    if level == "descartar" or not c["imagem"].startswith("http") or not allowed(c["imagem"]):
-                        continue
-                    try:
-                        data = _download(c["imagem"])
-                    except Exception:  # noqa: BLE001
-                        continue
-                    if products.looks_like_barcode(data):
-                        continue
-                    chosen.append({**c, "nivel": level, "motivo": motivo,
-                                   "dados": base64.b64encode(data).decode()})
-                    if len(chosen) >= 3:
-                        break
-                results.append({"produto": name, "opcoes": chosen})
-        finally:
-            browser.close()
+
+    def choose(name, cands, chosen):
+        for c in cands:
+            level, motivo = productmatch.evaluate(name, c["titulo"])
+            if c.get("ean_confere") and level != "descartar":
+                level, motivo = "exato", "EAN confere"
+            if level == "descartar" or not c["imagem"].startswith("http") or not allowed(c["imagem"]):
+                continue
+            if any(o["imagem"] == c["imagem"] for o in chosen):
+                continue
+            try:
+                data = _download(c["imagem"])
+            except Exception:  # noqa: BLE001
+                continue
+            if products.looks_like_barcode(data):
+                continue
+            chosen.append({**c, "nivel": level, "motivo": motivo, "dados": base64.b64encode(data).decode()})
+            if len(chosen) >= 3:
+                break
+        return chosen
+
+    pending = []
+    for item in (payload.get("produtos") or [])[:8]:  # 1) busca local (SearXNG): rápida, sem navegador
+        name = item["nome"] if isinstance(item, dict) else str(item)
+        ean = item.get("ean") if isinstance(item, dict) else None
+        cands, n = search_product_searx(name, ean)
+        notes += [f"{name} — {x}" for x in n]
+        chosen = choose(name, cands, [])
+        results.append({"produto": name, "opcoes": chosen})
+        if len(chosen) < 2:
+            pending.append(results[-1])
+    if pending:  # 2) reserva: fontes diretas com navegador, só para o que faltou
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-zygote", "--disable-gpu",
+                                                              "--js-flags=--max-old-space-size=256"])
+            try:
+                page = browser.new_page(viewport={"width": 1280, "height": 900}, locale="pt-BR")
+                page.set_default_timeout(20000)
+                for r in pending:
+                    cands, n = search_product(page, r["produto"])
+                    notes += [f"{r['produto']} — {x}" for x in n]
+                    r["opcoes"] = choose(r["produto"], cands, r["opcoes"])
+            finally:
+                browser.close()
     for r in results:  # uma imagem por chamada (limite de corpo do servidor)
         for opt in r["opcoes"]:
             resp = site.call("POST", f"/jobs/{job['id']}/candidate", {"produto": r["produto"], **opt}, timeout=90)

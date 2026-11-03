@@ -1,0 +1,27 @@
+[Unit]
+Description=SiteGenius busca local (SearXNG, somente 127.0.0.1:8899)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=SEARXNG_SETTINGS_PATH=/opt/sg-busca-poc/settings.yml
+WorkingDirectory=/opt/sg-busca-poc/searxng
+ExecStart=/opt/sg-busca-poc/venv/bin/python -m searx.webapp
+Restart=on-failure
+RestartSec=15
+# Limites: a busca nunca disputa recursos com o WhatsApp nem com o Ollama
+MemoryHigh=380M
+MemoryMax=450M
+CPUQuota=50%
+Nice=15
+IOSchedulingClass=idle
+TasksMax=80
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/sg-busca-poc
+
+[Install]
+WantedBy=multi-user.target

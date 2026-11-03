@@ -62,6 +62,12 @@ def get(key, mime):
     url, _ = cloudinary.utils.cloudinary_url(
         key, type="authenticated", resource_type="image", format=_ext(mime), sign_url=True, secure=True, **creds
     )
-    resp = requests.get(url, timeout=20)
-    resp.raise_for_status()
-    return resp.content
+    # conexão curta + uma nova tentativa: um aperto de mão TLS lento não pode derrubar a conversa do cliente
+    for attempt in range(2):
+        try:
+            resp = requests.get(url, timeout=(5, 12))
+            resp.raise_for_status()
+            return resp.content
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt:
+                raise
