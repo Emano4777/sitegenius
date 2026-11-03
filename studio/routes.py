@@ -5,8 +5,11 @@ import hmac
 import os
 import re
 import secrets
+import time
 from functools import wraps
 from urllib.parse import urlsplit
+
+import requests
 
 from flask import (
     Blueprint,
@@ -1206,7 +1209,7 @@ def _download_candidate(user_id, cand, kind="candidate"):
         raw = safe_download(cand["image_url"], cfg().max_upload_bytes * 2)
         image, mime, width, height = sanitize_image(raw, cfg().max_upload_bytes * 2, cfg().max_image_pixels,
                                                     cfg().max_image_side)
-    except (UnsafeUrl, ImageRejected):
+    except (UnsafeUrl, ImageRejected, requests.RequestException):  # rede lenta/fora: sem foto, nunca erro 500
         return None
     if looks_like_barcode(image) or min(width, height) < 120:
         return None
@@ -1256,8 +1259,12 @@ def fetch_product_photos(conv, briefing):
     found, missing, choice_msgs, sheets = [], [], [], []
     opcoes = dict(briefing.get("opcoes_foto") or {})
     to_web = []
+    t0 = time.monotonic()
     for product in briefing.get("produtos") or []:
         if product.get("asset_id"):
+            continue
+        if time.monotonic() - t0 > 7:  # orçamento da requisição (o Vercel corta em 15 s): o resto vai para a busca em 2º plano
+            to_web.append(product["nome"])
             continue
         exact, cat_opts = catalog.lookup(g.user_id, product)
         if exact:

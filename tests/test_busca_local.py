@@ -118,3 +118,12 @@ def test_storage_get_retries_slow_tls_once(monkeypatch):
     monkeypatch.setattr(storage.requests, "get", fake_get)
     assert storage.get("chave", "image/jpeg") == b"ok"
     assert len(calls) == 2 and calls[0] == (5, 12)
+
+
+def test_photo_download_network_timeout_never_breaks_chat(app, monkeypatch):
+    import requests
+
+    import studio.routes as routes
+    monkeypatch.setattr(routes, "safe_download", lambda *a, **k: (_ for _ in ()).throw(requests.ConnectTimeout("tls")))
+    with app.app_context():
+        assert routes._download_candidate("u1", {"image_url": "https://images.openfoodfacts.org/x.jpg"}) is None
