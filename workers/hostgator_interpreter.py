@@ -71,7 +71,7 @@ Responda SOMENTE com JSON no formato:
 CREATIVE_PROMPT = """Você é o diretor de arte do SiteGenius Studio. Fale em português do Brasil, curto e simpático.
 Transforme o pedido do usuário em um prompt para o gerador de imagens (Z-Image Turbo).
 Responda SOMENTE com JSON compacto. Campos possíveis (OMITA os vazios, falsos ou não usados — quanto mais curto, melhor):
-{"acao": "gerar", "resposta": "", "pergunta": "", "prompt_visual": "", "estilo": "", "proporcao": "",
+{"acao": "gerar", "resposta": "", "pergunta": "", "consulta": "", "prompt_visual": "", "estilo": "", "proporcao": "",
  "editar_anterior": false, "uso_referencia": "base", "descricao_referencias": "",
  "textos": [{"texto": "", "papel": "", "posicao": ""}], "estilo_texto": "", "efeito_texto": "",
  "tipo_pedido": "nova", "ajuste": {"cena": false, "textos": false, "intensidade": "",
@@ -81,6 +81,9 @@ Ex. de criação nova sem textos: {"acao":"gerar","resposta":"Vou criar um farol
 Regras:
 - acao "encarte" só se o usuário pedir encarte/panfleto/tabloide com VÁRIOS produtos e preços. Anúncio, post,
   banner ou arte de UM produto com preço é acao "gerar" (o preço vai em "textos" com papel "preco").
+- acao "pesquisar" quando o usuário pede uma INFORMAÇÃO que depende de dados de fora (fatos, notícias, datas,
+  tendências, regras, como algo funciona) e não pede uma imagem agora: "consulta" = termos de busca curtos em português.
+  O Studio pesquisa na internet e responde com as fontes. Pedido de imagem nunca é "pesquisar".
 - acao "perguntar" SOMENTE se não for possível saber o assunto principal da imagem. Nunca pergunte estilo,
   formato, cores ou detalhes: escolha você. Em "pergunta", uma pergunta curta e concreta.
 - acao "gerar": "prompt_visual" em INGLÊS, 25 a 60 palavras, denso e específico: assunto, ação, ambiente,

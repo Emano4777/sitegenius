@@ -29,6 +29,7 @@ from . import creative
 from . import edits
 from . import flyerchat
 from . import layouts
+from . import research
 from . import storage
 from . import textplan
 from . import typography
@@ -362,7 +363,7 @@ def workers_online(kind):
     if row and row["t"] and now() - row["t"] <= WORKER_ONLINE_S:
         return True
     if kind == "tools":  # ocupado com uma análise/encarte longos: não pede tarefa, mas está vivo
-        busy = get_conn().one("SELECT id FROM sg_jobs WHERE gen_type IN ('layout_ref', 'websearch', 'flyer_ai') AND "
+        busy = get_conn().one("SELECT id FROM sg_jobs WHERE gen_type IN ('layout_ref', 'websearch', 'flyer_ai', 'research') AND "
                               "status IN ('claimed', 'running') AND updated_at > ?", (now() - FLYER_AI_TIMEOUT_S,))
         return bool(busy)
     return False
@@ -698,6 +699,11 @@ def api_send_message(conversation_id):
     options = data.get("opcoes") if isinstance(data.get("opcoes"), dict) else {}
     mode = conv.get("mode") or "ad"  # conversas antigas (antes da criação livre) eram encartes
     previous_result = last_result_asset(conv["id"])
+    if research_request(texto, conv, attachments):
+        # Pedido de informação (não de arte): pesquisa com fontes; o resultado só vira texto de resposta.
+        if not start_research(conv, texto):
+            add_message(conv["id"], "assistant", "A pesquisa na internet não está disponível agora. Tente de novo em alguns minutos.")
+        return jsonify({"ok": True}), 201
     # Cada trabalho tem o seu estado: o encarte (briefing) e a criação livre (spec) não se misturam.
     if mode != "ad" and re.search(r"volt\w*\s+(?:ao|para o|pro|no)\s+encarte", texto, re.IGNORECASE) and             (loads(conv["briefing"]) or {}).get("produtos"):
         conn.run("UPDATE sg_conversations SET mode = 'ad' WHERE id = ?", (conv["id"],))
@@ -1350,6 +1356,48 @@ def start_websearch(conv, names):
     return True
 
 
+def research_request(texto, conv, attachments):
+    """Pedido explícito de pesquisa de informação? No encarte, "busca na internet o café" continua sendo foto."""
+    if attachments or not research.wants_research(texto) or flyerchat.wants_generation(texto):
+        return False
+    if (conv.get("mode") or "ad") == "ad":
+        t = flyerchat.fold(texto)
+        names = [flyerchat.fold(p.get("nome") or "").split()[:1] for p in (loads(conv["briefing"]) or {}).get("produtos") or []]
+        if wants_internet_photos(texto) or any(n and re.search(rf"\b{re.escape(n[0])}\b", t) for n in names):
+            return False
+    return True
+
+
+def start_research(conv, texto, message_id=None, consulta=None):
+    """Pesquisa geral com fontes (ferramentas da HostGator). Devolve o texto pendente, ou None se indisponível."""
+    if not workers_online("tools"):
+        return None
+    msg_id = message_id or new_id()
+    query = research.query_from(consulta or texto)
+    pending = f"Pesquisando na internet: “{query}”…"
+    if message_id:  # resposta já criada (ex.: "Pensando na sua ideia…"): vira o aviso da pesquisa, ainda pendente
+        get_conn().run("UPDATE sg_messages SET content = ?, status = 'pending' WHERE id = ? AND conversation_id = ?",
+                       (pending, msg_id, conv["id"]))
+    else:
+        add_message(conv["id"], "assistant", pending, status="pending", message_id=msg_id)
+    payload = {"mode": "research", "conversation_id": conv["id"], "assistant_message_id": msg_id, "consulta": query,
+               "pergunta": bf._clean_text(texto, 400), "tipo": research.kind_of(texto)}
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, payload, gen_type, created_at, updated_at) "
+        "VALUES (?, ?, ?, 'interpret', 'queued', ?, 'research', ?, ?)",
+        (new_id(), g.user_id, conv["id"], dumps(payload), now(), now()),
+    )
+    return pending
+
+
+def handle_research(job, payload, data):
+    """Resultado da pesquisa: só vira TEXTO de resposta (nunca ação). Fontes e URLs vêm da ferramenta, conferidas."""
+    sources = research.clean_sources(data.get("fontes"))
+    text, _ = research.compose(payload.get("pergunta") or payload.get("consulta") or "", sources,
+                               data.get("resposta_modelo"), data.get("notas") or [])
+    set_message(payload["assistant_message_id"], payload["conversation_id"], text)
+
+
 def handle_websearch(job, payload, data):
     """Opções vindas da internet: o cliente escolhe (a escolha registra a autorização de uso)."""
     conv = get_conn().one("SELECT * FROM sg_conversations WHERE id = ?", (payload["conversation_id"],))
@@ -1503,6 +1551,7 @@ SIDE_FAILURE = {
     "layout_ref": "Não consegui analisar a imagem de referência agora. Posso seguir com um layout criativo (diga "
                   "“pode gerar”) ou você pode tentar enviar a referência de novo.",
     "websearch": "A busca na internet não respondeu agora. Você pode enviar as fotos aqui ou pedir para eu tentar de novo.",
+    "research": "A pesquisa na internet não respondeu agora. Pode pedir para eu tentar de novo daqui a pouco.",
 }
 
 
@@ -2066,6 +2115,15 @@ def apply_creative_decision(conv, acao, resposta, spec, message_id, insert, text
         else:
             set_message(message_id, conv["id"], text, job_id)
         return job_id
+    if acao == "pesquisar":
+        if start_research(conv, texto, None if insert else message_id, consulta=spec["consulta"]):
+            return None  # a mensagem pendente "Pesquisando…" vira a resposta com as fontes
+        resposta = "A pesquisa na internet não está disponível agora. Tente de novo em alguns minutos."
+        if insert:
+            add_message(conv["id"], "assistant", resposta, message_id=message_id)
+        else:
+            set_message(message_id, conv["id"], resposta)
+        return None
     if acao == "perguntar":
         save_spec(conv["id"], spec)
     else:
@@ -2756,8 +2814,8 @@ def worker_claim():
     candidates = conn.all(
         "SELECT id FROM sg_jobs WHERE kind = ? AND status = 'queued' AND (gen_type IS NULL OR gen_type NOT IN "
         "('reference_edit', 'reference_read') OR ? = 1) AND (? = 0 OR gen_type IN ('reference_edit', 'reference_read')) "
-        "AND (gen_type IS NULL OR gen_type NOT IN ('layout_ref', 'websearch', 'flyer_ai') OR ? = 1) "
-        "AND (? = 0 OR gen_type IN ('layout_ref', 'websearch', 'flyer_ai')) "
+        "AND (gen_type IS NULL OR gen_type NOT IN ('layout_ref', 'websearch', 'flyer_ai', 'research') OR ? = 1) "
+        "AND (? = 0 OR gen_type IN ('layout_ref', 'websearch', 'flyer_ai', 'research')) "
         # Mensagens do cliente antes das conferências (a conversa nunca espera uma avaliação).
         "ORDER BY CASE WHEN gen_type = 'evaluate' THEN 1 ELSE 0 END, created_at LIMIT 5",
         (kind, 1 if capable else 0, 1 if set(body.get("somente") or []) & {"reference_edit", "reference_read"} else 0,
@@ -2922,7 +2980,7 @@ def worker_complete(job_id):
     # Interpretação: nunca confiar no modelo, tudo passa pela validação.
     data = request.get_json(silent=True) or {}
     payload = loads(job["payload"], {})
-    if payload.get("mode") in ("layout_ref", "websearch", "flyer_design"):
+    if payload.get("mode") in ("layout_ref", "websearch", "flyer_design", "research"):
         touch_worker(f"{g.worker_id}:tools", "tools")  # acabou de entregar: continua disponível para a próxima etapa
     if payload.get("mode") == "flyer_design":
         conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",
@@ -2933,6 +2991,12 @@ def worker_complete(job_id):
         conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",
                  (now(), now(), dumps({"notas": data.get("notas")})[:8000], job["id"]))
         handle_websearch(job, payload, data)
+        return jsonify({"ok": True})
+    if payload.get("mode") == "research":
+        pesquisa = data.get("pesquisa") if isinstance(data.get("pesquisa"), dict) else {}
+        conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",
+                 (now(), now(), dumps({k: pesquisa.get(k) for k in ("consulta", "notas", "tempos")})[:8000], job["id"]))
+        handle_research(job, payload, pesquisa)
         return jsonify({"ok": True})
     if payload.get("mode") == "layout_ref":
         conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",

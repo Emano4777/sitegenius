@@ -559,6 +559,127 @@ def process_websearch(site, job):
     site.call("POST", f"/jobs/{job['id']}/complete", {"websearch": results, "notas": notes[:20]})
 
 
+# ------------------------------------------------------------------------------------- pesquisa geral
+def public_url(url):
+    """Só endereços públicos: nunca 127.0.0.1 (Ollama, SearXNG), rede interna ou metadados da máquina."""
+    import ipaddress  # noqa: PLC0415
+    import socket  # noqa: PLC0415
+
+    parts = urlsplit(url or "")
+    if parts.scheme not in ("http", "https") or not parts.hostname or parts.username or parts.password:
+        return False
+    try:
+        infos = socket.getaddrinfo(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80))
+    except OSError:
+        return False
+    return bool(infos) and all(ipaddress.ip_address(i[4][0]).is_global for i in infos)
+
+
+class _PublicRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if not public_url(newurl) or not allowed(newurl):
+            raise urllib.error.HTTPError(newurl, 403, "redirecionamento recusado", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_PAGE_OPENER = urllib.request.build_opener(_PublicRedirects)
+MAX_PAGE = 2_000_000
+
+
+def _terms(text):
+    from studio import productmatch  # noqa: PLC0415
+
+    return {w for w in productmatch.fold(text).split() if len(w) > 3}
+
+
+def extract_page(url, query, limit=900):
+    """Baixa a página (robots.txt, só endereço público, até 2 MB, 10 s) e extrai o texto principal com o Trafilatura.
+    Devolve (trecho mais relevante para a consulta, data, status)."""
+    if not public_url(url):
+        return "", "", "endereço não público"
+    if not allowed(url):
+        return "", "", "robots.txt não permite"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "text/html,application/xhtml+xml"})
+        with _PAGE_OPENER.open(req, timeout=10) as resp:
+            if "html" not in (resp.headers.get("Content-Type") or "html"):
+                return "", "", "não é página"
+            raw = resp.read(MAX_PAGE)
+    except urllib.error.HTTPError as exc:
+        return "", "", f"HTTP {exc.code}"
+    except Exception as exc:  # noqa: BLE001
+        return "", "", type(exc).__name__
+    try:
+        import trafilatura  # noqa: PLC0415
+
+        text = trafilatura.extract(raw, url=url, include_comments=False, include_tables=False, favor_precision=True) or ""
+        meta = trafilatura.extract_metadata(raw)
+        when = (getattr(meta, "date", None) or "") if meta else ""
+    except ImportError:
+        html = raw.decode("utf-8", "ignore")
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", " ".join(re.findall(r"<p[^>]*>(.*?)</p>", html, re.S | re.I))))
+        when = ""
+    paras = [p.strip() for p in re.split(r"\n+", text) if len(p.strip()) > 60]
+    if not paras:
+        return "", when, "sem texto"
+    q = _terms(query)
+    ranked = sorted(range(len(paras)), key=lambda i: (-len(q & _terms(paras[i])), i))
+    chosen, size = [], 0
+    for i in ranked:
+        if size > limit:
+            break
+        chosen.append(i)
+        size += len(paras[i])
+    return " ".join(paras[i] for i in sorted(chosen))[:limit + 300], str(when)[:10], "ok"
+
+
+def process_research(site, job):
+    """Pesquisa geral: SearXNG local -> páginas permitidas -> trechos extraídos (dados, não instruções) -> resumo do
+    modelo com citações, só com o modelo ocioso (o WhatsApp vem primeiro). O servidor confere tudo de novo."""
+    from studio import research  # noqa: PLC0415
+
+    payload = job["payload"]
+    query = str(payload.get("consulta") or "")[:160]
+    question = str(payload.get("pergunta") or query)[:400]
+    t0 = time.time()
+    results, notes = searx(query, "news" if payload.get("tipo") == "noticias" else "general")
+    if payload.get("tipo") == "noticias" and len(results) < 3:
+        more, n2 = searx(query, "general")
+        results, notes = results + more, notes + n2
+    t_search = time.time() - t0
+    sources, hosts = [], set()
+    for r in results:
+        url = r.get("url") or ""
+        host = urlsplit(url).hostname or ""
+        if not url.startswith("http") or host in hosts:
+            continue  # um resultado por site: fontes variadas
+        hosts.add(host)
+        trecho, when, status = extract_page(url, query)
+        if status != "ok":
+            notes.append(f"{host}: {status}")
+            trecho = str(r.get("content") or "")[:400]  # sem extração: o resumo do próprio buscador
+        sources.append({"titulo": r.get("title") or host, "url": url, "data": when or str(r.get("publishedDate") or "")[:10],
+                        "trecho": trecho, "extraido": status == "ok", "motor": r.get("engine") or ""})
+        if len([s for s in sources if s["extraido"]]) >= 4 or len(sources) >= 6 or time.time() - t0 > 45:
+            break
+    t_extract = time.time() - t0 - t_search
+    clean = research.clean_sources(sources)
+    answer, t_model = None, 0.0
+    if clean and vision_allowed(max_wait=45):  # mesmo critério de ociosidade da leitura visual
+        t1 = time.time()
+        try:
+            answer = ollama_chat(research.prompt_messages(question, clean[:4]), num_predict=320, temperature=0.2)
+        except Exception as exc:  # noqa: BLE001 — sem resumo do modelo, a resposta sai dos trechos
+            notes.append(f"resumo: {type(exc).__name__}")
+        t_model = time.time() - t1
+    elif clean:
+        notes.append("resumo: modelo ocupado (resposta montada dos trechos)")
+    site.call("POST", f"/jobs/{job['id']}/complete", {
+        "pesquisa": {"consulta": query, "fontes": sources, "resposta_modelo": answer if isinstance(answer, dict) else None,
+                     "notas": sorted(set(notes))[:20],
+                     "tempos": {"busca_s": round(t_search, 1), "extracao_s": round(t_extract, 1), "resumo_s": round(t_model, 1)}}})
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--once", action="store_true")
@@ -599,6 +720,8 @@ def main(argv=None):
                     process_flyer_design(site, job)
                 elif mode == "websearch":
                     process_websearch(site, job)
+                elif mode == "research":
+                    process_research(site, job)
                 else:
                     raise RuntimeError(f"tarefa desconhecida: {mode}")
                 log.info("%s concluída em %.1fs", mode, time.time() - started)

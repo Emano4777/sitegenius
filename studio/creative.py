@@ -815,9 +815,12 @@ def normalize_model_answer(data, text, options, previous_spec, previous_result_i
     options = options or {}
     acao = data.get("acao")
     # O modelo às vezes usa sinônimos ("ajustar", "editar"): o que vale é o conteúdo, não a palavra.
-    if acao in ("ajustar", "ajuste", "editar", "alterar", "modificar", "criar", "nova") or             (acao not in ("perguntar", "encarte") and data.get("tipo_pedido") in ("ajuste", "nova")):
+    if acao in ("ajustar", "ajuste", "editar", "alterar", "modificar", "criar", "nova") or             (acao not in ("perguntar", "encarte", "pesquisar") and data.get("tipo_pedido") in ("ajuste", "nova")):
         acao = "gerar"
     resposta = friendly_reply(data.get("resposta"), "")
+    if acao == "pesquisar" and len(clean(data.get("consulta"), 160)) >= 3 and not reference_ids:
+        # Informação externa (fatos, notícias, tendências): pesquisa com fontes; o resultado só vira texto.
+        return "pesquisar", resposta, {"consulta": clean(data.get("consulta"), 160)}
     if acao == "encarte" and classify(text, bool(previous_result_id)) == "ad_composite":
         return "encarte", resposta, None
     if acao == "encarte":
