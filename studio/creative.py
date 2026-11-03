@@ -74,7 +74,7 @@ STYLES = {
     "minimalista": ("Minimalista", "minimalist, clean composition, generous negative space, flat colors"),
     "produto": ("Foto de produto", "studio product photography, softbox lighting, clean background, commercial quality"),
     "imovel": ("Imobiliário", "professional real estate photography, wide angle, bright natural light, interior design magazine"),
-    "logo": ("Logotipo", "flat vector logo design, simple bold shapes, centered, plain background"),
+    "logo": ("Logotipo", "logo design, clean bold shapes, centered composition"),
 }
 
 # Fidelidade à referência no img2img: quanto menor o denoise, mais a imagem segue a referência.
@@ -214,7 +214,7 @@ def sizes_table():
 
 
 NEW_REQUEST = re.compile(r"^\s*(?:(?:e|agora|então|entao|beleza|ok|show|legal|valeu)[,!.]?\s+)*(crie|cria|criar|fa[cç]a|faz|fazer|gere|gera|quero uma?|desenhe|preciso de uma?|"
-                         r"me (d[eê]|faz|faça)|nova (arte|imagem)|quero (uma|um) (nova|novo|outra|outro|arte|imagem|post|banner|logo|cartaz|foto))",
+                         r"me (d[eê]|faz|faça)|nova (arte|imagem)|quero (uma|um) (nova|novo|outra|outro|arte|imagem|post|banner|logo|cartaz|foto))\b",
                          re.IGNORECASE)
 _TEXT_CLAUSE = re.compile(
     r"(\bwith|\bfeaturing|\bshowing|\bdisplaying|\band)?\s*(the\s+|a\s+|an\s+|bold\s+|large\s+|big\s+)*"
@@ -597,7 +597,7 @@ COMMERCIAL_SEEN = re.compile(r"pre[cç]|price|r\$|produto|product|oferta|offer|e
 def wants_commercial_redesign(text, reference_ids, description=""):
     """Modernizar uma arte comercial anexada (produtos, preços, marcas): nunca regenerar por IA (trocaria os
     produtos). O redesign é feito com os dados e fotos reais, no fluxo de encarte."""
-    design_piece = re.search(r"layout|distribu\w*|organiz\w*|arte|encarte|panfleto|post|an[uú]ncio|cartaz|"
+    design_piece = re.search(r"layout|distribu\w*|organiz\w*|\barte\b|encarte|panfleto|\bpost\b|an[uú]ncio|cartaz|"
                              r"banner|flyer|diagrama\w*", text or "", re.IGNORECASE)
     return bool(reference_ids) and bool(REDESIGN.search(text or "")) and bool(
         COMMERCIAL.search(text or "") or design_piece or COMMERCIAL_SEEN.search(description or ""))
@@ -621,6 +621,143 @@ def _same_scene(a, b):
     """A descrição da cena é (quase) a mesma? Compara as palavras, sem pontuação."""
     wa, wb = set(re.findall(r"[a-z]{3,}", _norm(a))), set(re.findall(r"[a-z]{3,}", _norm(b)))
     return bool(wa and wb) and len(wa & wb) / len(wa | wb) >= 0.85
+
+
+CLAIM_DONE = re.compile(r"\b(pronto|feito|conclu[ií]d|j[aá] (troquei|mudei|alterei|fiz)|aqui est[aá])\b", re.IGNORECASE)
+STRATEGIES = ("so_texto", "editar_leve", "trocar_fundo", "reestilizar", "recriar")
+STRATEGY_DENOISE = {"editar_leve": 0.55, "reestilizar": 0.86}
+ESCALATE = {"editar_leve": "reestilizar", "trocar_fundo": "reestilizar", "reestilizar": "recriar", "recriar": "recriar",
+            "so_texto": "so_texto"}
+STRATEGY_LABEL = {"so_texto": "ajustar só os textos na mesma arte", "editar_leve": "fazer um retoque leve na arte",
+                  "trocar_fundo": "manter o elemento principal e criar um fundo novo",
+                  "reestilizar": "refazer o visual com bastante liberdade, mantendo a ideia",
+                  "recriar": "criar uma versão nova do zero"}
+
+
+def _clean_list(values, n):
+    return [clean(x, 160) for x in (values or [])[:n] if isinstance(x, str) and clean(x, 160)]
+
+
+def clean_plan(plano):
+    """Plano do modelo validado (só campos conhecidos, textos curtos)."""
+    if not isinstance(plano, dict) or plano.get("estrategia") not in STRATEGIES:
+        return None
+    mudar = []
+    for m in (plano.get("mudar") or [])[:8]:
+        if isinstance(m, dict) and (m.get("elemento") or m.get("como")):
+            mudar.append({"elemento": clean(m.get("elemento"), 30), "como": clean(m.get("como"), 200)})
+    textos = plano.get("textos_finais")
+    return {"entendimento": clean(plano.get("entendimento"), 300), "estrategia": plano["estrategia"],
+            "preservar": _clean_list(plano.get("preservar"), 8), "mudar": mudar, "fundo": clean(plano.get("fundo"), 600),
+            "textos_finais": [t for t in textos if isinstance(t, dict) and clean(t.get("texto"), 140)][:8]
+            if isinstance(textos, list) else None,
+            "criterios": _clean_list(plano.get("criterios"), 5)}
+
+
+def prefer_final_texts(decision, data, text, previous_spec, user_texts):
+    """O modelo mandou a lista FINAL de textos (ex.: só "Nuvem Azul") e também uma operação conflitante (ex.: remover
+    "Nuvem Azul Software"): vale a lista final, validada contra o que o cliente escreveu. Tamanho/posição/cor ficam."""
+    textos = data.get("textos") if isinstance(data.get("textos"), list) else None
+    if not textos or decision.get("ambiguo"):
+        return decision
+    finals = [clean(t.get("texto"), 140) for t in textos if isinstance(t, dict) and clean(t.get("texto"), 140)]
+    current = textplan.plan_texts(decision.get("plan"))
+    if not finals or finals == current:
+        return decision
+    prev_plan = (previous_spec or {}).get("text_plan") or {}
+    sources = list(user_texts) + [text] + textplan.plan_texts(prev_plan)
+    base = decision.get("plan") or prev_plan or {"versao": 1, "estilo": "moderno", "efeito": "auto", "cor": None}
+    old_blocks = {b["papel"]: b for b in (base.get("blocos") or prev_plan.get("blocos") or [])}
+    blocks = []
+    for t in textos:
+        if isinstance(t, dict) and clean(t.get("texto"), 140):
+            keep = old_blocks.get(t.get("papel") or "titulo", {})
+            block = {k: v for k, v in keep.items() if k in ("escala", "destaque", "posicao")}
+            block.update({"texto": clean(t.get("texto"), 140), "papel": t.get("papel") or keep.get("papel") or "titulo"})
+            if t.get("posicao") and t["posicao"] != "auto":
+                block["posicao"] = t["posicao"]
+            blocks.append(block)
+    style = data.get("estilo_texto") if data.get("estilo_texto") in textplan.TYPE_STYLES else base.get("estilo")
+    plan = textplan.validate_plan({**base, "blocos": blocks, "estilo": style}, sources)
+    if not plan or textplan.plan_texts(plan) != finals:
+        return decision  # algum texto não veio do cliente: fica a decisão conferida
+    done = ["texto: “" + "”, “".join(finals) + "”"]
+    return {**decision, "plan": plan, "feitas": done + [f for f in decision["feitas"] if "removid" not in f],
+            "faltando": [f for f in decision["faltando"] if "remov" not in f],
+            "esperado": [{"texto": f} for f in finals]}
+
+
+def plan_outcome(plano, data, text, options, previous_spec, previous_result_id, user_texts, attempt=1):
+    """Executa o plano do modelo com a ferramenta certa. Nada é afirmado como feito: a resposta diz o que VAI ser feito
+    e o resultado é conferido visualmente depois (avaliação)."""
+    previous_spec = previous_spec or {}
+    options = options or {}
+    data = data or {}
+    est = plano["estrategia"]
+    prev_plan = previous_spec.get("text_plan")
+    sources = list(user_texts) + [text] + textplan.plan_texts(prev_plan)
+    plan = prev_plan
+    if plano.get("textos_finais") is not None:
+        blocks = [{"texto": t["texto"], "papel": t.get("papel") or "titulo", "posicao": t.get("posicao") or "auto"}
+                  for t in plano["textos_finais"]]
+        base = prev_plan or {"versao": 1, "estilo": "moderno", "efeito": "auto", "cor": None}
+        plan = textplan.validate_plan({**base, "blocos": blocks}, sources) if blocks else None
+    wants_type = any((m.get("elemento") or "").startswith(("tipograf", "fonte", "texto")) for m in plano["mudar"])
+    new_style = data.get("estilo_texto") if data.get("estilo_texto") in textplan.TYPE_STYLES else None
+    if plan and (new_style or wants_type):
+        style = new_style or plan.get("estilo")
+        if wants_type and style == (prev_plan or {}).get("estilo"):
+            # Pediu outra tipografia: tem de mudar de verdade (próximo estilo da lista).
+            order = list(textplan.TYPE_STYLES)
+            style = order[(order.index(style) + 1) % len(order)] if style in order else "futurista"
+        plan = {**plan, "estilo": style}
+    record = {"texto": clean(text, 600), "plano": plano, "estrategia": est, "criterios": plano["criterios"],
+              "arte_anterior": previous_result_id, "tentativa": attempt}
+    said = friendly_reply(data.get("resposta"), "")
+    said = "" if CLAIM_DONE.search(said or "") else said
+    intro = (said.rstrip(".!") + ". ") if said else f"Certo! Vou {STRATEGY_LABEL[est]}. "
+    keep = (" Mantenho: " + ", ".join(p[:1].lower() + p[1:] for p in plano["preservar"][:3]) + ".")         if plano["preservar"] and est != "recriar" else ""
+    reply = f"{intro}{keep.strip()} Quando ficar pronto, eu confiro se ficou como você pediu.".replace("  ", " ")
+    if est == "so_texto":
+        if not plan:
+            return "perguntar", "Quais textos devem aparecer na arte? Me diga exatamente como escrever.", {**previous_spec}
+        return "ajustar_texto", reply, {"text_plan": plan, "pedido_ajuste": record}
+    visual = clean(data.get("prompt_visual"), 1200) or previous_spec.get("prompt_visual") or clean(text, 600)
+    style = (options.get("estilo") if options.get("estilo") in STYLES and options.get("estilo") != "auto"
+             else data.get("estilo") if data.get("estilo") in STYLES else previous_spec.get("style"))
+    aspect = ((options.get("proporcao") if options.get("proporcao") in ASPECTS else None)
+              or previous_spec.get("aspect_ratio") or DEFAULT_ASPECT)
+    common = dict(prompt_original=text, style=style, aspect=aspect, quality=options.get("qualidade"),
+                  user_texts=user_texts, parent_job_id=previous_spec.get("job_id"), fixed_plan=plan,
+                  notes=clean(data.get("descricao_referencias"), 300))
+    if est == "trocar_fundo" and previous_result_id:
+        background = plano["fundo"] or visual
+        spec = build_spec(prompt_visual=background, **common)
+        spec["prompt"] = final_prompt(background, "auto", plan["blocos"] if plan else [], people_ok=False)
+        spec["recompor"] = {"sujeito": previous_result_id, "prompt_completo": visual}
+    elif est in STRATEGY_DENOISE and previous_result_id:
+        spec = build_spec(prompt_visual=visual, init_asset_id=previous_result_id, denoise=STRATEGY_DENOISE[est], **common)
+    else:  # recriar (ou sem arte anterior): imagem nova, os textos continuam
+        spec = build_spec(prompt_visual=visual, **common)
+    spec["pedido_ajuste"] = record
+    return "gerar", reply, spec
+
+
+def escalated_plan(spec_used, missing):
+    """Segunda tentativa quando a avaliação reprovou: mesma intenção, ferramenta com mais liberdade."""
+    record = (spec_used or {}).get("pedido_ajuste") or {}
+    plano = dict(record.get("plano") or {})
+    if not plano and record.get("cena"):
+        # Ajuste sem plano (modelo antigo/regras): mesma intenção, com mais liberdade.
+        plano = {"entendimento": "", "estrategia": "reestilizar" if record["cena"] in ("pequena", "media") else "recriar",
+                 "preservar": [], "mudar": [], "fundo": "", "textos_finais": None, "criterios": []}
+        plano["estrategia"] = {"reestilizar": "editar_leve", "recriar": "reestilizar"}[plano["estrategia"]]
+    if not plano or plano.get("estrategia") not in STRATEGIES:
+        return None
+    plano["estrategia"] = ESCALATE[plano["estrategia"]]
+    if missing:
+        plano["criterios"] = list(dict.fromkeys((plano.get("criterios") or []) + list(missing)))[:5]
+    return plano
 
 
 def normalize_model_answer(data, text, options, previous_spec, previous_result_id, reference_ids, user_texts):
@@ -659,9 +796,13 @@ def normalize_model_answer(data, text, options, previous_spec, previous_result_i
         previous_result_id, previous_spec = None, None  # imagem anexada = nova base; nada da arte anterior é herdado
     if wants_commercial_redesign(text, reference_ids, data.get("descricao_referencias") or ""):
         return "encarte", REDESIGN_REPLY, None
+    plano = clean_plan(data.get("plano"))
+    if plano and previous_result_id and previous_spec and data.get("tipo_pedido") != "nova":
+        return plan_outcome(plano, data, text, options, previous_spec, previous_result_id, user_texts)
     adj = edits.model_adjustment(data) if previous_result_id and previous_spec else None
     if adj is not None or (previous_result_id and previous_spec and edits.COMPLAINT.search(text or "")):
         decision = edits.plan_adjustment(previous_spec, text, data, list(user_texts))
+        decision = prefer_final_texts(decision, data, text, previous_spec, user_texts)
         return adjustment_outcome(decision, previous_spec, previous_result_id, prompt_visual, data, options, text,
                                   user_texts)
     previous_plan = (previous_spec or {}).get("text_plan")

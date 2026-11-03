@@ -1,0 +1,34 @@
+[Unit]
+Description=SiteGenius Studio - ferramentas (analise de referencias e busca web)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sitegenius
+Group=sitegenius
+EnvironmentFile=/etc/sitegenius/interpreter.env
+Environment=PLAYWRIGHT_BROWSERS_PATH=/opt/sitegenius-tools/browsers
+Environment=HOME=/opt/sitegenius-tools/cache
+Environment=OMP_NUM_THREADS=1
+Environment=SG_POLL_SECONDS=3
+WorkingDirectory=/opt/sitegenius-tools/app
+ExecStart=/opt/sitegenius-tools/venv/bin/python -u -m workers.hostgator_tools
+Restart=always
+RestartSec=15
+# Limites: o servidor é compartilhado (WhatsApp, Ollama). Uma tarefa por vez, prioridade baixa.
+Nice=15
+CPUQuota=150%
+MemoryHigh=1200M
+MemoryMax=1600M
+TasksMax=256
+IOSchedulingClass=idle
+RuntimeMaxSec=1d
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/sitegenius-tools/cache
+
+[Install]
+WantedBy=multi-user.target

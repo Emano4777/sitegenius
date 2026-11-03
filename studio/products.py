@@ -29,11 +29,18 @@ SOURCES = [
     },
 ]
 FIELDS = "code,product_name,product_name_pt,brands,quantity,image_front_url,image_url"
+EXTRA_SOURCES = [
+    {"id": "openbeautyfacts", "nome": "Open Beauty Facts", "api": "https://world.openbeautyfacts.org",
+     "license": "CC BY-SA 3.0", "attribution": "Open Beauty Facts contributors"},
+    {"id": "openproductsfacts", "nome": "Open Products Facts", "api": "https://world.openproductsfacts.org",
+     "license": "CC BY-SA 3.0", "attribution": "Open Products Facts contributors"},
+]
 TIMEOUT = (4, 10)
 
 
 def _candidate(source, product):
-    image = product.get("image_front_url") or product.get("image_url")
+    # Só a FRENTE da embalagem: "image_url" pode ser o verso (código de barras, tabela nutricional).
+    image = product.get("image_front_url")
     if not image:
         return None
     try:
@@ -56,6 +63,33 @@ def _candidate(source, product):
         "attribution": source["attribution"],
         "pagina": f"{source['api']}/product/{code}" if code else source["api"],
     }
+
+
+def looks_like_barcode(data):
+    """Foto que é só o código de barras (bases abertas às vezes marcam o verso como "frente"): listras verticais
+    finas dominando a imagem. Usado para recusar a foto."""
+    from PIL import Image, ImageFilter  # noqa: PLC0415
+    import io  # noqa: PLC0415
+
+    try:
+        img = Image.open(io.BytesIO(data)).convert("L")
+    except Exception:  # noqa: BLE001
+        return False
+    img.thumbnail((240, 240))
+    w, h = img.size
+    px = img.load()
+    strong_x = strong_y = 0
+    for y in range(1, h - 1, 2):
+        for x in range(1, w - 1, 2):
+            gx = abs(px[x + 1, y] - px[x - 1, y])
+            gy = abs(px[x, y + 1] - px[x, y - 1])
+            if gx > 60 and gx > 4 * gy:
+                strong_x += 1
+            elif gy > 60 and gy > 4 * gx:
+                strong_y += 1
+    total = (w // 2) * (h // 2)
+    # Código de barras (horizontal ou girado 90°): muitas bordas numa só direção.
+    return max(strong_x, strong_y) > total * 0.12 and max(strong_x, strong_y) > 5 * max(1, min(strong_x, strong_y))
 
 
 def lookup_ean(ean, http=requests):
@@ -120,7 +154,20 @@ def search_name(query, http=requests, limit=12):
             results.append(candidate)
         if len(results) >= limit:
             break
-    return results
+    if len(results) < 3:  # farmácia/higiene: bases irmãs (mesma licença), pela API clássica
+        for extra in EXTRA_SOURCES:
+            try:
+                resp = http.get(f"{extra['api']}/cgi/search.pl", params={"search_terms": query, "search_simple": 1,
+                                "action": "process", "json": 1, "page_size": limit, "fields": FIELDS},
+                                headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT)
+                resp.raise_for_status()
+                for product in resp.json().get("products") or []:
+                    candidate = _candidate(extra, product)
+                    if candidate:
+                        results.append(candidate)
+            except (requests.RequestException, ValueError):
+                continue
+    return results[:limit]
 
 
 INTERNET_REQUEST = re.compile(r"(internet|google|web|online|pesquis|busc|procur|baix)\w*", re.I)
@@ -157,14 +204,20 @@ def find_photo(product, http=requests):
     if product.get("ean"):
         for cand in lookup_ean(product["ean"], http=http):
             return {**cand, "confianca": 1.0, "criterio": "EAN"}, []
+    from .productmatch import evaluate  # noqa: PLC0415
+
     name = product.get("nome", "")
-    matching = [c for c in search_name(name, http=http, limit=12) if match_score(name, c) >= 1.0]
+    # Tipo, marca, variante e apresentação: "Leite" nunca recebe "Leite condensado"/"Creme de leite".
+    matching = [c for c in search_name(name, http=http, limit=12) if match_score(name, c) >= 1.0
+                and evaluate(name, c.get("nome", ""), c.get("marca", ""), c.get("quantidade", ""))[0] != "descartar"]
     if not matching:
         return None, []
-    if len(_tokens(name)) < 2:
-        # Genérico: só sugere produtos cujo nome começa com o termo ("Leite …"), nunca "Doce de leite".
-        first = sorted(_tokens(name))[0]
-        starts = [c for c in matching if sorted(_tokens(c.get("nome", "").split(" ")[0]) or {""})[0] == first]
+    # Só vale produto do MESMO tipo: o nome começa com a mesma palavra ("Leite …"), nunca "Creme de leite"/"Doce de leite".
+    first = _tokens(name.split()[0]) if name.split() else set()
+    starts = [c for c in matching if first and _tokens((c.get("nome", "").split() or [""])[0]) == first]
+    branded = any(w[:1].isupper() for w in name.split()[1:]) or name.isupper()
+    if len(_tokens(name)) < 2 or not branded or not starts:
+        # Genérico (sem marca, ex.: "Leite integral"): não escolhe marca sozinho; sugere opções para o cliente.
         return None, starts[:3]
-    best = min(matching, key=lambda c: len(_tokens(c.get("nome", "")) - _tokens(name)))
+    best = min(starts, key=lambda c: len(_tokens(c.get("nome", "")) - _tokens(name)))
     return {**best, "confianca": 1.0, "criterio": "nome"}, []

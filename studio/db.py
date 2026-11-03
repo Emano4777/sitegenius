@@ -116,6 +116,26 @@ SCHEMA = {
             cold INTEGER NOT NULL DEFAULT 0,
             created_at BIGINT NOT NULL
         )""",
+    # Catálogo de fotos verificadas (origem e autorização de uso registradas). user_id 0 = licença aberta, compartilhável.
+    "sg_catalog": """
+        CREATE TABLE IF NOT EXISTS sg_catalog (
+            id VARCHAR(36) PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            ean VARCHAR(14),
+            nome VARCHAR(120) NOT NULL,
+            marca VARCHAR(80),
+            variante VARCHAR(80),
+            apresentacao VARCHAR(40),
+            asset_id VARCHAR(36) NOT NULL,
+            fonte VARCHAR(80),
+            pagina TEXT,
+            image_url TEXT,
+            licenca VARCHAR(80),
+            autorizacao VARCHAR(200),
+            usos INTEGER NOT NULL DEFAULT 0,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )""",
     "sg_password_resets": """
         CREATE TABLE IF NOT EXISTS sg_password_resets (
             token_hash VARCHAR(64) PRIMARY KEY,
@@ -139,7 +159,7 @@ ADDED_COLUMNS = {
         ("created_by", "INTEGER"),
         ("notes", "VARCHAR(300)"),
     ],
-    "sg_conversations": [("mode", "VARCHAR(16)"), ("spec", "TEXT")],
+    "sg_conversations": [("mode", "VARCHAR(16)"), ("spec", "TEXT"), ("encartes", "TEXT")],
     "sg_messages": [("job_id", "VARCHAR(36)")],
     "sg_jobs": [
         ("schema_version", "INTEGER"),
@@ -168,6 +188,7 @@ INDEXES = [
     "CREATE INDEX IF NOT EXISTS sg_jobs_user_idx ON sg_jobs (user_id, created_at)",
     "CREATE INDEX IF NOT EXISTS sg_resets_user_idx ON sg_password_resets (user_id)",
     "CREATE INDEX IF NOT EXISTS sg_jobs_conv_idx ON sg_jobs (conversation_id, created_at)",
+    "CREATE INDEX IF NOT EXISTS sg_catalog_user_idx ON sg_catalog (user_id, updated_at)",
 ]
 
 

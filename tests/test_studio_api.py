@@ -142,6 +142,8 @@ def prepared_conversation(user):
                 "validade": "01/11 a 05/11",
                 "logo_asset_id": logo,
                 "produtos": [{"nome": "Arroz 5kg", "preco": "24,90", "asset_id": photo}],
+                # Fundo gerado pelo Acer (Q3): o único caso em que o painel enfileira o gerador de imagens.
+                "layout": {"fundo_ia": True},
             }
         },
     )
@@ -180,6 +182,18 @@ def test_render_job_full_cycle(user, other_user, render_worker):
     assert download.status_code == 200
     assert "attachment" in download.headers["Content-Disposition"]
     assert other_user.get(f"/studio/api/jobs/{job_id}").status_code == 404
+
+
+def test_panel_button_composes_flyer_on_server(user, render_worker):
+    """Botão "Gerar encarte" = mesmo fluxo do chat: composição imediata no servidor, sem depender da fila."""
+    conv = new_conversation(user)
+    photo = upload(user, data=image_bytes(color=(250, 200, 0))).get_json()["asset"]["id"]
+    user.put(f"/studio/api/conversations/{conv}/briefing", json={"briefing": {
+        "formato": "quadrado", "loja": "Mercado Teste", "produtos": [{"nome": "Arroz 5kg", "preco": "24,90", "asset_id": photo}]}})
+    job = user.post(f"/studio/api/conversations/{conv}/jobs").get_json()["job"]
+    assert job["status"] == "done" and job["tipo"] == "flyer" and render_worker.claim() is None
+    again = user.post(f"/studio/api/conversations/{conv}/jobs").get_json()
+    assert again["job"] is None and "já está pronto" in again["mensagem"]  # sem duplicar
 
 
 def test_job_requires_prices(user):
@@ -306,7 +320,7 @@ def test_interpret_queue_flow_drops_invented_prices(queue_app):
 def test_interpret_timeout_falls_back_to_rules(queue_app):
     user = UserClient(queue_app, 10)
     conv = new_conversation(user)
-    user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": "Arroz 5kg 24,90"})
+    user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": "Arroz 5kg 24,90 e Feijão 1kg"})
     conn = Conn(queue_app.extensions["sg_studio"]["db"])
     conn.run("UPDATE sg_jobs SET created_at = created_at - 3600")
     conn.commit()

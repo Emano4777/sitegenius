@@ -249,7 +249,9 @@ COMPLAINT = re.compile(
     r"min[uú]scul\w*|mai[uú]scul\w*)|t[aá] igual|est[aá] igual|ficou igual|ainda (est[aá]|t[aá]|continua)|n[aã]o era isso|"
     r"mesma coisa|n[aã]o (deu|saiu) certo|errad\w* de novo|de novo errad|voc[eê] n[aã]o|n[aã]o atendeu", re.IGNORECASE)
 LEVELS = ("pequena", "media", "grande", "total")
-LEVEL_STRENGTH = {"pequena": 0.55, "media": 0.7, "grande": 0.85, "total": 1.0}
+# Força do img2img por nível de mudança da cena. Medido em produção (logo, 02/11/2026): 0,55-0,65 mal muda um fundo
+# liso; pedido "médio" precisa de liberdade real.
+LEVEL_STRENGTH = {"pequena": 0.6, "media": 0.8, "grande": 0.9, "total": 1.0}
 
 
 def normalize_ops(ops):

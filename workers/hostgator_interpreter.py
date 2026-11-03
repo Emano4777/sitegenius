@@ -59,8 +59,13 @@ Regras obrigatórias:
   NÃO pergunte de novo: decida o visual você mesmo. Pergunte só o que for indispensável (produto ou preço faltando).
 - Fotos: o Studio busca fotos na internet quando o cliente pede. Nunca diga que não pode buscar imagens.
 - Antes de perguntar algo, confira o "Briefing atual": não peça o que já está preenchido.
+- Promoção por quantidade: além de "observacoes", preencha "oferta" do produto, curta (ex.: "Leve 2 por R$ 45,00").
+- "gerar": true SOMENTE se o cliente pediu para criar/gerar/fazer a arte AGORA (qualquer forma de dizer). O Studio
+  executa a geração de verdade. NUNCA escreva em "resposta" que está gerando/criando: o Studio informa o andamento.
+- "layout": se o cliente descreveu como quer a arte organizada, resuma em "layout" (português, curto). Uma imagem de
+  referência anexada é analisada pelo Studio: não a transforme em descrição genérica de fundo.
 Responda SOMENTE com JSON no formato:
-{"resposta": "mensagem curta ao usuário", "briefing": {"formato": "", "loja": "", "titulo": "", "tema": "", "cenario": "", "validade": "", "observacoes": "", "produtos": [{"nome": "", "ean": "", "preco": "", "preco_de": "", "unidade": ""}]}}"""
+{"resposta": "mensagem curta ao usuário", "gerar": false, "layout": "", "briefing": {"formato": "", "loja": "", "titulo": "", "tema": "", "cenario": "", "validade": "", "observacoes": "", "produtos": [{"nome": "", "ean": "", "preco": "", "preco_de": "", "unidade": "", "oferta": ""}]}}"""
 
 
 CREATIVE_PROMPT = """Você é o diretor de arte do SiteGenius Studio. Fale em português do Brasil, curto e simpático.
@@ -133,7 +138,61 @@ Regras:
 - "resposta": uma frase curta e simpática em português, como "Entendi sua ideia! Vou preparar uma cena
   cinematográfica com um astronauta na floresta." Nunca fale de IA, modelos, prompts, servidores ou termos
   técnicos: fale como um designer conversando com o cliente.
-- estilo: um de {styles}. proporcao: um de {aspects}, ou "" para manter a atual."""
+- estilo: um de {styles}. proporcao: um de {aspects}, ou "" para manter a atual.
+PLANO (obrigatório quando existe imagem anterior; você a VÊ como a primeira imagem, "arte atual"):
+ Olhe a arte atual, leia o pedido e o histórico e decida livremente o que preservar, o que mudar e como. Inclua:
+ "plano": {"entendimento": "o que o cliente quer, em uma frase",
+   "preservar": ["o que fica igual (ex.: símbolo, cores, composição)"],
+   "mudar": [{"elemento": "fundo|simbolo|tipografia|texto|cores|composicao|estilo|objeto|luz", "como": "..."}],
+   "estrategia": "so_texto|editar_leve|trocar_fundo|reestilizar|recriar",
+   "fundo": "só se trocar_fundo: o novo fundo em INGLÊS, sem o assunto principal",
+   "textos_finais": [{"texto": "", "papel": "", "posicao": ""}],
+   "criterios": ["2 a 4 verificações VISUAIS objetivas do resultado, em português"]}
+ Estratégias (escolha pelo efeito visual necessário, não pelas palavras do cliente):
+  so_texto = só textos/tipografia mudam, a imagem fica; editar_leve = retoque sutil (luz, tom, detalhe pequeno);
+  trocar_fundo = o assunto principal (símbolo, produto, pessoa) fica e o fundo vira OUTRO, de verdade;
+  reestilizar = a ideia continua mas o visual muda bastante (cores, estilo, fundo, acabamento);
+  recriar = imagem nova do zero (só a marca/textos continuam) — use quando o cliente quer algo diferente, não
+  gostou do resultado ou a arte atual não serve. Se o cliente reclamar que nada mudou, use reestilizar ou recriar.
+ Pedido de mudança grande NUNCA é editar_leve. "textos_finais" = a lista COMPLETA de textos depois do pedido,
+ copiados do que o cliente escreveu (omita o campo se os textos não mudam). Se pedir outra fonte/tipografia,
+ escolha estilo_texto DIFERENTE do atual. Com plano, prompt_visual descreve a NOVA imagem completa."""
+
+
+ADJUST_PROMPT = """Você é o diretor de arte do SiteGenius Studio. Já existe uma arte (a PRIMEIRA imagem, "arte atual").
+O cliente mandou uma nova mensagem. Olhe a arte atual, leia o histórico e entenda LIVREMENTE o que ele quer.
+Decida o que preservar, o que mudar e a ferramenta certa. Responda SOMENTE com JSON compacto:
+{"tipo_pedido": "ajuste" ou "nova",
+ "resposta": "frase curta e simpática dizendo o que você VAI fazer (nunca diga que já fez)",
+ "prompt_visual": "a NOVA imagem completa em INGLÊS, 25-60 palavras, sem textos/letras/logotipos escritos",
+ "estilo": "", "estilo_texto": "", "proporcao": "",
+ "plano": {"entendimento": "o que o cliente quer, uma frase",
+   "preservar": ["o que fica igual"], "mudar": [{"elemento": "fundo|simbolo|tipografia|texto|cores|composicao|estilo|objeto|luz",
+   "como": "..."}],
+   "estrategia": "so_texto|editar_leve|trocar_fundo|reestilizar|recriar",
+   "fundo": "só em trocar_fundo: o novo fundo em INGLÊS, sem o elemento principal",
+   "textos_finais": [{"texto": "", "papel": "titulo|subtitulo|descricao|preco|cta|marca|contato", "posicao": "auto"}],
+   "criterios": ["2 a 4 verificações VISUAIS objetivas, em português"]}}
+Estratégias (escolha pelo efeito visual necessário):
+ so_texto = só textos/tipografia mudam; editar_leve = retoque sutil (luz, tom, detalhe pequeno);
+ trocar_fundo = o elemento principal fica e o fundo vira OUTRO de verdade; reestilizar = mesma ideia, visual bem
+ diferente (cores, estilo, fundo, acabamento); recriar = imagem nova do zero mantendo marca/textos (use quando o
+ cliente não gostou, reclamou que nada mudou ou pediu algo bem diferente). Mudança grande NUNCA é editar_leve.
+ Trocar as cores/paleta da arte é reestilizar (retoque leve não muda cores). Em reestilizar e recriar, o
+ prompt_visual descreve EXPLICITAMENTE cada elemento a preservar (ex.: "a blue cloud icon"), senão ele se perde.
+ Critérios: só o que o cliente pediu e o que você decidiu preservar; não invente elementos que não existem.
+Textos: o gerador não escreve letras; o Studio aplica os textos com fontes reais. "textos_finais" = a lista COMPLETA de
+textos depois do pedido, copiados do que o cliente escreveu (nunca invente). Se ele pediu outra fonte, escolha
+"estilo_texto" DIFERENTE do atual entre: moderno, minimalista, elegante, luxo, futurista, tecnologico, impacto,
+divertido, manuscrito. "tipo_pedido" "nova" só se ele pediu outra peça sobre outro assunto.
+estilo: um de {styles}. proporcao: um de {aspects}, ou "" para manter."""
+
+EVALUATE_PROMPT = """Você confere se uma arte atende ao pedido do cliente. Seja rigoroso e honesto.
+Você recebe: a imagem ANTES (se houver) e a imagem DEPOIS, o pedido e os critérios do plano.
+Compare de verdade as duas imagens. Uma mudança que não é visível NÃO aconteceu.
+Responda SOMENTE com JSON compacto:
+{"atendeu": true|false, "nota": 0-10, "mudou": ["o que mudou de fato, curto"], "faltou": ["o que foi pedido e não
+aparece, curto"], "resumo": "uma frase para o cliente, em português, sem termos técnicos"}"""
 
 
 def sign(secret, timestamp, nonce, method, path, body):
@@ -242,13 +301,19 @@ def build_messages(payload, images_b64):
 def build_creative_messages(payload, images_b64, vision):
     styles = ", ".join(payload.get("styles") or ["auto"])
     aspects = ", ".join(payload.get("aspects") or ["4:5"])
-    messages = [{"role": "system", "content": CREATIVE_PROMPT.replace("{styles}", styles).replace("{aspects}", aspects)}]
+    # Com arte anterior (e o modelo enxergando-a): prompt focado no plano de ajuste.
+    base = ADJUST_PROMPT if payload.get("current_image_id") and vision and images_b64 else CREATIVE_PROMPT
+    messages = [{"role": "system", "content": base.replace("{styles}", styles).replace("{aspects}", aspects)}]
     context = []
     previous = payload.get("previous_spec") or {}
     if previous.get("prompt_visual"):
         context.append("Prompt anterior: " + previous["prompt_visual"][:1200])
         context.append(f"Estilo anterior: {previous.get('style', 'auto')}; proporção anterior: {previous.get('aspect_ratio', '')}")
     context.append("Existe imagem anterior gerada: " + ("sim" if payload.get("previous_result_id") else "não"))
+    if payload.get("current_image_id") and vision and images_b64:
+        context.append("A PRIMEIRA imagem enviada é a ARTE ATUAL (resultado anterior); as demais são anexos do cliente.")
+    if previous.get("text_plan"):
+        context.append("Estilo de texto atual: " + str((previous.get("text_plan") or {}).get("estilo") or "moderno"))
     blocks = (previous.get("text_plan") or {}).get("blocos") or []
     if blocks:
         context.append("Textos atuais da peça: " + json.dumps(
@@ -276,6 +341,8 @@ def process(site, ollama, job, vision):
     payload = job["payload"]
     if payload.get("mode") == "creative":
         return process_creative(site, ollama, job, vision)
+    if payload.get("mode") == "evaluate":
+        return process_evaluate(site, ollama, job, vision)
     images = []
     if vision:
         for asset_id in (payload.get("image_asset_ids") or [])[:3]:
@@ -290,17 +357,46 @@ def process(site, ollama, job, vision):
     if not isinstance(data, dict):
         raise RuntimeError("resposta fora do formato")
     # O servidor revalida tudo (inclusive descarta preço não digitado pelo usuário).
-    site.call("POST", f"/jobs/{job['id']}/complete", {"resposta": data.get("resposta", ""), "briefing": data.get("briefing", {})})
+    site.call("POST", f"/jobs/{job['id']}/complete", {"resposta": data.get("resposta", ""), "briefing": data.get("briefing", {}),
+                                                     "gerar": data.get("gerar") is True, "layout": data.get("layout") or ""})
+
+
+def process_evaluate(site, ollama, job, vision):
+    """Avaliação visual do resultado: antes x depois x pedido. O servidor decide o que fazer com o veredito."""
+    payload = job["payload"]
+    if not vision:
+        site.call("POST", f"/jobs/{job['id']}/complete", {"avaliacao": None})
+        return
+    images = []
+    for key in ("before_id", "after_id"):
+        if payload.get(key):
+            images.append(base64.b64encode(site.call("GET", f"/assets/{payload[key]}/preview", raw=True)).decode())
+    order = "Imagem 1 = ANTES, imagem 2 = DEPOIS." if len(images) == 2 else "A imagem é o resultado (DEPOIS)."
+    content = (f"{order}\nPedido do cliente: {payload.get('pedido', '')[:800]}\n"
+               f"Critérios: {json.dumps(payload.get('criterios') or [], ensure_ascii=False)[:800]}\n"
+               f"Medição automática da mudança da imagem (0 a 1): {payload.get('mudanca', 'n/d')}")
+    started = time.time()
+    raw = ollama.chat([{"role": "system", "content": EVALUATE_PROMPT},
+                       {"role": "user", "content": content, "images": images}], temperature=0.1, num_predict=300)
+    log.info("avaliação em %.1fs", time.time() - started)
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        data = None
+    site.call("POST", f"/jobs/{job['id']}/complete", {"avaliacao": data if isinstance(data, dict) else None})
 
 
 def process_creative(site, ollama, job, vision):
     payload = job["payload"]
     images = []
     if vision:
+        if payload.get("current_image_id"):  # a arte atual primeiro: o modelo vê o que vai mudar
+            images.append(base64.b64encode(site.call("GET", f"/assets/{payload['current_image_id']}/preview",
+                                                     raw=True)).decode())
         for asset_id in (payload.get("image_asset_ids") or [])[:2]:
             images.append(base64.b64encode(site.call("GET", f"/assets/{asset_id}/preview", raw=True)).decode())
     started = time.time()
-    content = ollama.chat(build_creative_messages(payload, images, vision), temperature=0.3, num_predict=900)
+    content = ollama.chat(build_creative_messages(payload, images, vision), temperature=0.3, num_predict=1100)
     log.info("criação: inferência em %.1fs (%d imagem(ns))", time.time() - started, len(images))
     try:
         data = json.loads(content)

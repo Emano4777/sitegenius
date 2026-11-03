@@ -56,9 +56,10 @@ THEMES = {
     "futurista": {"title": ("orbitron", 800), "sub": ("montserrat", 500), "body": ("montserrat", 400),
                   "cta": ("orbitron", 700), "price": ("orbitron", 800), "effect": "brilho", "accent": (0, 214, 255),
                   "glow": (0, 190, 255), "tracking_sub": 0.12, "tracking_title": 0.03},
-    "tecnologico": {"title": ("montserrat", 800), "sub": ("montserrat", 500), "body": ("montserrat", 400),
-                    "cta": ("montserrat", 700), "price": ("montserrat", 800), "effect": "brilho",
-                    "accent": (64, 156, 255), "glow": (40, 130, 255), "tracking_sub": 0.06},
+    # Tecnológico precisa ser reconhecível como "fonte de TI" (Orbitron), mais sóbrio que o futurista.
+    "tecnologico": {"title": ("orbitron", 700), "sub": ("montserrat", 500), "body": ("montserrat", 400),
+                    "cta": ("orbitron", 600), "price": ("orbitron", 800), "effect": "brilho",
+                    "accent": (64, 156, 255), "glow": (40, 130, 255), "tracking_sub": 0.06, "tracking_title": 0.02},
     "impacto": {"title": ("anton", 400), "caps_title": ("bebas", 400), "sub": ("poppins", 700),
                 "body": ("poppins", 500), "cta": ("poppins", 800), "price": ("poppins", 800), "effect": "sombra",
                 "accent": (255, 204, 0), "price_bg": (226, 27, 35), "tracking_sub": 0.0, "tracking_title": 0.01},

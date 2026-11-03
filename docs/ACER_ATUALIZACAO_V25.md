@@ -42,8 +42,8 @@ A pasta `studio\` inteira e `workers\acer_agent.py`. Conferência (16 primeiros 
 | `studio\textplan.py` | `f2692028630775cc` |
 | `studio\edits.py` | `c553cb65b15954e6` |
 | `studio\creative.py` | `cde271046c54afed` |
-| `studio\routes.py` | `e7a74cc2c129fd00` |
-| `studio\products.py` | `c2c31f95ba487c36` |
+| `studio\routes.py` | `a664862b362bb4db` |
+| `studio\products.py` | `53eaa8ca51cdb539` |
 | `studio\briefing.py` | `133f9ea485a1bde9` |
 
 ```powershell

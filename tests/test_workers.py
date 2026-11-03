@@ -151,7 +151,7 @@ def test_interpreter_process_with_vision(tmp_path):
     user = UserClient(app, 21)
     ref = upload(user, kind="reference").get_json()["asset"]["id"]
     conv = new_conversation(user)
-    user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": "Story de bebidas: Guaraná 2L 7,99", "anexos": [ref]})
+    user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": "Story de bebidas: Guaraná 2L 7,99 e Água 500ml", "anexos": [ref]})
 
     site = FlaskSite(app)
     job = site.call("POST", "/claim", {})["job"]
@@ -175,7 +175,7 @@ def test_interpreter_failure_falls_back_to_rules(tmp_path):
     app = make_app(tmp_path, interpreter_mode="queue")
     user = UserClient(app, 22)
     conv = new_conversation(user)
-    user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": "Arroz 5kg 24,90"})
+    user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": "Arroz 5kg 24,90 e Feijão 1kg"})
     site = FlaskSite(app)
     job = site.call("POST", "/claim", {})["job"]
     with pytest.raises(RuntimeError):

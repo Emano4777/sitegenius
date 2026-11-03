@@ -214,7 +214,7 @@ def test_model_decides_adjustment_vs_new_and_server_validates(tmp_path):
             {"acao": "adicionar", "texto": "Ligue já", "papel": "cta"}]}})
     job = data["jobs"][0]
     payload = plan_of(job["id"])
-    assert payload["render_mode"] == "img2img" and payload["denoise"] == 0.55
+    assert payload["render_mode"] == "img2img" and payload["denoise"] == edits.LEVEL_STRENGTH["pequena"]
     assert textplan.plan_texts(payload["spec"]["text_plan"]) == ["Emanuel Tecnologia", "Suporte 24h"]
     render_all(worker, tmp_path)
 
@@ -319,17 +319,89 @@ def test_production_bug_capital_t_and_realistic_background(tmp_path):
     assert "fundo totalmente novo" in reply and "Não consegui" not in reply
     render_all(worker, tmp_path)
     data = user.get(f"/studio/api/conversations/{conv}").get_json()
-    # O gerador de teste devolve sempre a mesma imagem: a conferência visual precisa perceber e avisar (não fingir).
-    assert "O fundo mudou pouco" in data["mensagens"][-1]["texto"]
+    # Nada é dado como conferido antes do veredito visual.
+    assert data["mensagens"][-1]["status"] == "pending" and "Conferindo" in data["mensagens"][-1]["texto"]
+    # O gerador de teste devolve a mesma imagem: o avaliador reprova -> uma nova tentativa com mais liberdade.
+    verdict = {"atendeu": False, "nota": 2, "mudou": [], "faltou": ["o fundo continua igual"],
+               "resumo": "O fundo ficou praticamente igual."}
+    first = site.call("POST", "/claim", {})["job"]  # conferência da criação (aprovada)
+    hostgator_interpreter.process(site, FakeOllama(json.dumps({"atendeu": True, "nota": 8})), first, vision=True)
+    ev = site.call("POST", "/claim", {})["job"]
+    assert ev["payload"]["mode"] == "evaluate" and ev["payload"]["after_id"] and ev["payload"]["before_id"]
+    hostgator_interpreter.process(site, FakeOllama(json.dumps(verdict)), ev, vision=True)
+    data = user.get(f"/studio/api/conversations/{conv}").get_json()
+    msg = data["mensagens"][-1]["texto"]
+    assert "ainda não ficou" in msg and "o fundo continua igual" in msg and "Conferi o resultado:" not in msg
 
-    # "Você não mudou nada": recupera o pedido, não repete a mesma imagem e não finge.
-    data = say("Você não mudou nada")
+
+def test_creative_agent_plan_tools_and_honest_evaluation(tmp_path):
+    """Defeito da logo (02/11/2026): pedidos de mudança grande viravam retoque fraco e a resposta fingia a mudança.
+    Agora o modelo planeja (vendo a arte), o servidor escolhe a ferramenta e o resultado é conferido."""
+    from tests.conftest import RENDER_SECRET, FlaskSession, UserClient, make_app
+    from tests.test_workers import FakeOllama, FlaskSite
+    from studio.worker_client import WorkerClient
+    from workers import hostgator_interpreter
+
+    app = make_app(tmp_path, interpreter_mode="queue")
+    user = UserClient(app, 44)
+    worker = WorkerClient("http://localhost", "acer", RENDER_SECRET, session=FlaskSession(app))
+    site = FlaskSite(app)
+    conv = new_conversation(user)
+
+    def say(text, answer):
+        user.post(f"/studio/api/conversations/{conv}/messages", json={"texto": text, "anexos": [], "opcoes": {}})
+        job = site.call("POST", "/claim", {})["job"]
+        assert job["payload"].get("mode") == "creative"
+        hostgator_interpreter.process(site, FakeOllama(json.dumps(answer)), job, vision=False)
+        return job, user.get(f"/studio/api/conversations/{conv}").get_json()
+
+    def payload(job_id):
+        with app.app_context():
+            return json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job_id,))["payload"])
+
+    say("cria uma logo pra minha empresa Site Genius Studio", {
+        "acao": "gerar", "tipo_pedido": "nova", "resposta": "Vou criar!", "estilo": "logo", "proporcao": "1:1",
+        "prompt_visual": "Minimalist abstract logo symbol, blue geometric shapes, white background",
+        "textos": [{"texto": "Site Genius Studio", "papel": "titulo", "posicao": "auto"}]})
+    assert "plain background" not in payload(user.get(f"/studio/api/conversations/{conv}").get_json()["jobs"][0]["id"])["prompt"]
+    render_all(worker, tmp_path)
+    ev = site.call("POST", "/claim", {})["job"]  # conferência da criação
+    hostgator_interpreter.process(site, FakeOllama(json.dumps({"atendeu": True, "nota": 8, "resumo": "logo criada"})), ev,
+                                  vision=True)
+
+    # O modelo vê a arte atual (primeira imagem) e planeja: troca de fundo de verdade + texto e fonte novos.
+    plan = {"entendimento": "Fundo tecnológico moderno, fonte de TI e só o nome Site Genius",
+            "preservar": ["símbolo azul"], "mudar": [{"elemento": "fundo", "como": "circuitos escuros"},
+                                                    {"elemento": "tipografia", "como": "fonte tecnológica"}],
+            "estrategia": "reestilizar", "textos_finais": [{"texto": "Site Genius", "papel": "titulo"}],
+            "criterios": ["fundo escuro com circuitos", "texto é Site Genius", "fonte diferente"]}
+    job, data = say("melhore o fundo, não gostei, deixa mais tecnológico e muda a fonte, pode deixar só Site Genius", {
+        "acao": "gerar", "tipo_pedido": "ajuste", "resposta": "Ajustando!", "estilo": "logo", "plano": plan,
+        "prompt_visual": "Blue geometric logo symbol on a dark futuristic circuit board background with glowing lines"})
+    assert job["payload"]["current_image_id"]  # a arte atual vai para o modelo de visão
+    reply = data["mensagens"][-1]["texto"]
+    assert "confiro" in reply and "Ajustando!" not in reply  # diz o que vai fazer, não que já fez
+    render = data["jobs"][0]
+    p = payload(render["id"])
+    assert p["render_mode"] == "img2img" and p["denoise"] >= 0.85  # mudança grande = liberdade grande
+    assert textplan.plan_texts(p["spec"]["text_plan"]) == ["Site Genius"]
+    assert p["spec"]["text_plan"]["estilo"] != "moderno"  # a fonte muda de verdade
+    render_all(worker, tmp_path)
+    ev = site.call("POST", "/claim", {})["job"]
+    assert ev["payload"]["before_id"] and ev["payload"]["after_id"] and ev["payload"]["criterios"]
+    hostgator_interpreter.process(site, FakeOllama(json.dumps({"atendeu": False, "nota": 3, "faltou": ["fundo ainda branco"]})),
+                                  ev, vision=True)
+    data = user.get(f"/studio/api/conversations/{conv}").get_json()
     retry = data["jobs"][0]
-    assert retry["id"] != job["id"] and retry["tipo"] == "free_image"
     p2 = payload(retry["id"])
-    assert textplan.plan_texts(p2["spec"]["text_plan"]) == ["Tecnologia é aqui"]
-    assert p2["render_mode"] == "txt2img" and p2["seed"] != p["seed"]
-    assert data["mensagens"][-1]["texto"].startswith("Você tem razão")
+    assert retry["id"] != render["id"] and p2["render_mode"] == "txt2img"  # escalou para recriar
+    assert p2["spec"]["pedido_ajuste"]["tentativa"] == 2
+    render_all(worker, tmp_path)
+    ev = site.call("POST", "/claim", {})["job"]
+    hostgator_interpreter.process(site, FakeOllama(json.dumps({"atendeu": False, "nota": 4, "faltou": ["fundo ainda claro"],
+                                                               "resumo": "O fundo continua claro."})), ev, vision=True)
+    final = user.get(f"/studio/api/conversations/{conv}").get_json()["mensagens"][-1]["texto"]
+    assert "sincero" in final and "fundo ainda claro" in final  # na segunda reprovação, honestidade (sem loop)
 
 
 def test_text_only_requests_never_regenerate(user, render_worker, tmp_path):
@@ -589,6 +661,20 @@ def test_internet_photo_search_validates_match(monkeypatch):
     assert products.wants_internet_photos("Pega da internet a foto")
 
 
+def test_photo_search_needs_brand_and_same_product_type(monkeypatch):
+    from studio import products
+    base = {"image_url": "https://images.openfoodfacts.org/x.jpg", "license": "CC BY-SA 3.0", "attribution": "OFF"}
+    creme = {**base, "nome": "Creme de Leite Italac", "marca": "Italac"}
+    tirol = {**base, "nome": "Leite integral Tirol", "marca": "Tirol"}
+    italac = {**base, "nome": "Leite UHT Integral Italac", "marca": "Italac"}
+    monkeypatch.setattr(products, "search_name", lambda q, http=None, limit=12: [creme, tirol, italac])
+    chosen, options = products.find_photo({"nome": "Leite integral"})  # sem marca: o cliente escolhe
+    assert chosen is None and [o["nome"] for o in options] == ["Leite integral Tirol", "Leite UHT Integral Italac"]
+    chosen, _ = products.find_photo({"nome": "Leite Italac"})  # marca: escolhe, mas nunca "Creme de leite"
+    assert chosen["nome"] == "Leite UHT Integral Italac"
+    assert products._candidate("OFF", {"product_name": "X", "image_url": "https://images.openfoodfacts.org/v.jpg"}) is None
+
+
 def test_redesign_extract_fills_panel_with_real_data(user, render_worker, tmp_path):
     """Redesign: o Acer lê a arte e o painel recebe os produtos/preços/fotos originais (nada gerado por IA)."""
     import base64
@@ -623,3 +709,102 @@ def test_job_type_names_fit_database_column():
     src = Path("studio/routes.py").read_text(encoding="utf-8")
     names = set(_re.findall(r"'(free_image|text_edit|reference_\w+|ad_composite)'", src))
     assert names and all(len(n) <= 16 for n in names), names
+
+
+# ------------------------------------------------------------ encarte só pela conversa (designer conversacional)
+
+
+def _flyer(user, conv, text):
+    return send(user, conv, text)
+
+
+def test_flyer_entirely_by_chat_with_styles_choice_and_generation(user):
+    from tests.test_studio_api import upload
+    conv = new_conversation(user)
+    data = _flyer(user, conv, "Cria um encarte para a Drogarias PoupAqui.")
+    assert data["conversa"]["modo"] == "ad" and data["briefing"]["loja"] == "Drogarias PoupAqui"
+    data = _flyer(user, conv, "Coloca leite integral por R$ 4,99, arroz por R$ 31,90 e café Pilão por R$ 18,99.")
+    assert [(p["nome"], p["preco"]) for p in data["briefing"]["produtos"]] == [
+        ("Leite integral", "R$ 4,99"), ("Arroz", "R$ 31,90"), ("Café Pilão", "R$ 18,99")]
+    # Fotos: o cliente envia pelo chat (a busca externa é testada à parte).
+    for nome in ("leite", "arroz", "café"):
+        pid = upload(user, kind="product").get_json()["asset"]["id"]
+        b = user.get(f"/studio/api/conversations/{conv}").get_json()["briefing"]
+        for p in b["produtos"]:
+            if p["nome"].lower().startswith(nome):
+                p["asset_id"] = pid
+        user.put(f"/studio/api/conversations/{conv}/briefing", json={"briefing": b})  # painel: mesma fonte
+    data = _flyer(user, conv, "Quero formato Story.")
+    assert data["briefing"]["formato"] == "story"
+    data = _flyer(user, conv, "Me mostra alguns estilos.")
+    previews = data["mensagens"][-1]["anexos"]
+    # Prévias = composições livres (variações de verdade, não só modelos fixos).
+    assert len(previews) == 3 and data["briefing"]["layout"]["previas"] == ["criativo:1", "criativo:2", "criativo:3"]
+    data = _flyer(user, conv, "Gostei do segundo, mas quero o café maior e o fundo vermelho.")
+    lay = data["briefing"]["layout"]
+    assert lay["modelo"] == "criativo" and lay["semente"] == 2 and lay["destaque"] == "Café Pilão"
+    assert lay["cores"] == [[215, 25, 32]]
+    data = _flyer(user, conv, "Pode gerar.")
+    job = next(j for j in data["jobs"] if j["tipo"] == "flyer")
+    assert job["status"] == "done" and job["resultado_asset_id"]
+    with user.client.application.app_context():
+        payload = json.loads(get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job["id"],))["payload"])
+    # A arte usa exatamente os dados do briefing.
+    assert [(p["nome"], p["preco"]) for p in payload["briefing"]["produtos"]] == [
+        ("Leite integral", "R$ 4,99"), ("Arroz", "R$ 31,90"), ("Café Pilão", "R$ 18,99")]
+    img = Image.open(io.BytesIO(user.get(f"/studio/api/assets/{job['resultado_asset_id']}").data))
+    assert img.size == (1080, 1920)
+    # Edição depois de gerado, pelo chat; o painel vê o mesmo valor.
+    data = _flyer(user, conv, "Troca o preço do arroz para R$ 29,90.")
+    assert next(p for p in data["briefing"]["produtos"] if p["nome"] == "Arroz")["preco"] == "R$ 29,90"
+    data = _flyer(user, conv, "Remove o leite.")
+    assert [p["nome"] for p in data["briefing"]["produtos"]] == ["Arroz", "Café Pilão"]
+    data = _flyer(user, conv, "Coloca o café primeiro")
+    assert [p["nome"] for p in data["briefing"]["produtos"]] == ["Café Pilão", "Arroz"]
+
+
+def test_uncertain_price_confirmed_by_chat_and_panel_sync(user):
+    conv = new_conversation(user)
+    _flyer(user, conv, "Cria um encarte para a Loja Teste.")
+    _flyer(user, conv, "Coloca arroz por 27,90")
+    b = user.get(f"/studio/api/conversations/{conv}").get_json()["briefing"]
+    b["produtos"][0]["preco_de"] = ""
+    b["confirmar"] = [{"produto": "Arroz", "campo": "preco_de", "lido": "R$ 31,00"}]
+    with user.client.application.app_context():
+        get_conn().run("UPDATE sg_conversations SET briefing = ? WHERE id = ?", (json.dumps(b), conv))
+    data = user.get(f"/studio/api/conversations/{conv}").get_json()
+    assert not data["pode_gerar"]  # preço incerto bloqueia a geração
+    data = _flyer(user, conv, "31,90")
+    produto = data["briefing"]["produtos"][0]
+    assert produto["preco_de"] == "R$ 31,90" and data["briefing"]["confirmar"] == []
+    # Painel altera o preço; a conversa enxerga o novo valor.
+    b = data["briefing"]
+    b["produtos"][0]["preco"] = "R$ 26,90"
+    user.put(f"/studio/api/conversations/{conv}/briefing", json={"briefing": b})
+    data = _flyer(user, conv, "Quero formato quadrado")
+    assert data["briefing"]["produtos"][0]["preco"] == "R$ 26,90" and data["briefing"]["formato"] == "quadrado"
+
+
+def test_context_switch_keeps_flyer_and_free_art_separate(user, render_worker, tmp_path):
+    conv = new_conversation(user)
+    _flyer(user, conv, "Cria um encarte para a Drogarias PoupAqui.")
+    _flyer(user, conv, "Coloca leite integral por R$ 4,99")
+    data = send(user, conv, "agora cria uma arte de um astronauta na lua")
+    assert data["conversa"]["modo"] == "free"
+    job = next(j for j in data["jobs"] if j["tipo"] == "free_image")
+    with user.client.application.app_context():
+        payload = get_conn().one("SELECT payload FROM sg_jobs WHERE id = ?", (job["id"],))["payload"]
+    assert "Leite" not in payload and "4,99" not in payload  # nada do encarte na arte nova
+    data = send(user, conv, "volta pro encarte")
+    assert data["conversa"]["modo"] == "ad" and data["briefing"]["produtos"][0]["nome"] == "Leite integral"
+
+
+def test_no_control_characters_in_source():
+    """Um '\b' escrito errado vira backspace e quebra regex sem erro visível (já aconteceu)."""
+    from pathlib import Path
+    bad = []
+    for path in list(Path("studio").glob("*.py")) + list(Path("workers").glob("*.py")):
+        text = path.read_text(encoding="utf-8")
+        if any(ord(c) < 32 and c not in "\n\r\t" for c in text):
+            bad.append(str(path))
+    assert bad == []

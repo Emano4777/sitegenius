@@ -241,6 +241,29 @@ def interpret_rules(text, previous=None):
 # ---------------------------------------------------------------- validação
 
 
+COMPOSITION_VALUES = {
+    "arranjo": {"tabloide", "grade", "destaque", "diagonal", "zigue", "assimetrica", "livre"},
+    "fundo": {"solido", "gradiente", "diagonal", "raios", "listras", "bolhas"},
+    "preco": {"numeros", "selo", "explosao", "circulo", "etiqueta"},
+    "cabecalho": {"reto", "diagonal", "onda"},
+    "produto_forma": {"livre", "circulo"},
+}
+
+
+def _clean_composition(value):
+    """Escolhas de composição pedidas pelo cliente (só valores conhecidos)."""
+    value = value if isinstance(value, dict) else {}
+    out = {k: value[k] for k, allowed in COMPOSITION_VALUES.items() if value.get(k) in allowed}
+    try:
+        if value.get("angulo") is not None:
+            out["angulo"] = max(-25, min(25, int(value["angulo"])))
+    except (TypeError, ValueError):
+        pass
+    if value.get("cartao") is False:
+        out["cartao"] = None
+    return out
+
+
 def normalize_briefing(data, user_texts=None, owned_asset_ids=None, trust_prices=False):
     """Valida um briefing vindo do cliente ou da IA.
 
@@ -283,6 +306,8 @@ def normalize_briefing(data, user_texts=None, owned_asset_ids=None, trust_prices
                 cents = None
             if de_cents and de_cents not in grounded:
                 de_cents = None
+        if de_cents and not cents:
+            cents, de_cents = de_cents, None  # "preço antigo" sem preço atual: é o preço (o modelo trocou o campo)
         if de_cents and cents and de_cents <= cents:
             de_cents = None
         asset = _clean_id(raw.get("asset_id"))
@@ -292,6 +317,7 @@ def normalize_briefing(data, user_texts=None, owned_asset_ids=None, trust_prices
             "preco": format_brl(cents) if cents else "",
             "preco_de": format_brl(de_cents) if de_cents else "",
             "unidade": _clean_text(raw.get("unidade"), 12),
+            "oferta": _grounded_offer(raw.get("oferta"), grounded, trust_prices),
             "asset_id": asset if asset in owned else None,
         }
         if not cents:
@@ -302,8 +328,78 @@ def normalize_briefing(data, user_texts=None, owned_asset_ids=None, trust_prices
 
     if not out["produtos"]:
         pendencias.insert(0, "Liste os produtos com preço (ex.: “Arroz 5kg 24,90”).")
+    names = {p["nome"] for p in out["produtos"]}
+    # Layout escolhido pela conversa (estilo, cores, destaque, prévias): validado, nunca inventado.
+    lay = data.get("layout") if isinstance(data.get("layout"), dict) else {}
+    modelos = ("jornal", "farmacia", "premium", "relampago", "catalogo", "referencia", "criativo")
+    cores = []
+    for c in (lay.get("cores") or [])[:2]:
+        if isinstance(c, (list, tuple)) and len(c) == 3:
+            cores.append([max(0, min(255, int(v))) for v in c])
+    out["layout"] = {"modelo": lay.get("modelo") if lay.get("modelo") in modelos else None, "cores": cores,
+                     "destaque": lay.get("destaque") if lay.get("destaque") in names else None,
+                     "fundo_ia": lay.get("fundo_ia") is True,
+                     "previas": [m for m in (lay.get("previas") or []) if isinstance(m, str) and
+                                 (m in modelos or re.fullmatch(r"criativo:\d{1,6}", m))][:5],
+                     "instrucoes": _clean_text(lay.get("instrucoes"), 300),
+                     "composicao": _clean_composition(lay.get("composicao")),
+                     "semente": int(lay.get("semente")) if str(lay.get("semente") or "").isdigit() else 1,
+                     "gerar_apos_analise": lay.get("gerar_apos_analise") is True}
+    ref = lay.get("referencia") if isinstance(lay.get("referencia"), dict) else None
+    if ref and _clean_id(ref.get("asset_id")) and (not owned_asset_ids or _clean_id(ref.get("asset_id")) in owned
+                                                   or ref.get("estado") == "pronta"):
+        from .refstyle import sanitize  # noqa: PLC0415
+
+        spec = sanitize(ref.get("spec")) if ref.get("spec") else None
+        estado = ref.get("estado") if ref.get("estado") in ("analisando", "pronta", "falhou") else "analisando"
+        specs = [x for x in (sanitize(v) for v in (ref.get("specs") or [])[:3]) if x]
+        ids = [a for a in (_clean_id(v) for v in (ref.get("asset_ids") or [])[:3]) if a]
+        papeis = ref.get("papeis") if isinstance(ref.get("papeis"), dict) else {}
+        out["layout"]["referencia"] = {"asset_id": _clean_id(ref["asset_id"]), "estado": "pronta" if spec else estado,
+                                       "spec": spec, "resumo": _clean_text(ref.get("resumo"), 300),
+                                       "specs": specs, "asset_ids": ids or [_clean_id(ref["asset_id"])],
+                                       "papeis": {k: int(papeis[k]) for k in ("estrutura", "cores")
+                                                  if isinstance(papeis.get(k), int) and 0 <= papeis[k] < 3}}
+    if out["layout"]["modelo"] == "referencia" and not (out["layout"].get("referencia") or {}).get("spec"):
+        out["layout"]["modelo"] = None if not out["layout"].get("referencia") else "referencia"
+    # Valores que precisam de confirmação do cliente (leitura incerta): só enquanto o campo estiver vazio.
+    by_name = {p["nome"]: p for p in out["produtos"]}
+    out["confirmar"] = [{"produto": c["produto"], "campo": c["campo"], "lido": _clean_text(c.get("lido"), 20)}
+                        for c in (data.get("confirmar") or []) if isinstance(c, dict) and c.get("campo") in ("preco", "preco_de")
+                        and c.get("produto") in by_name and not by_name[c["produto"]][c["campo"]]][:12]
+    for c in out["confirmar"]:
+        pendencias.append(f"Confirme {'o preço' if c['campo'] == 'preco' else 'o preço antigo'} de “{c['produto']}”"
+                          + (f" (li {c['lido']})." if c["lido"] else "."))
+    out["gerado"] = data.get("gerado") is True
+    # Opções de foto aguardando a escolha do cliente (só de produtos do encarte e imagens dele).
+    opcoes = {}
+    for name, opts in (data.get("opcoes_foto") or {}).items() if isinstance(data.get("opcoes_foto"), dict) else []:
+        if name in names and isinstance(opts, list):
+            keep = [{k: (_clean_text(o.get(k), 400) if isinstance(o.get(k), str) else o.get(k)) for k in
+                     ("asset_id", "nome", "fonte", "pagina", "licenca", "autorizacao", "marca", "ean", "apresentacao",
+                      "web", "catalogo") if o.get(k) not in (None, "")}
+                    for o in opts[:3] if isinstance(o, dict) and _clean_id(o.get("asset_id")) and
+                    (not owned_asset_ids or _clean_id(o.get("asset_id")) in owned)]
+            if keep and not any(p["nome"] == name and p["asset_id"] for p in out["produtos"]):
+                opcoes[name] = keep
+    out["opcoes_foto"] = opcoes
+    out["encarte_id"] = _clean_id(data.get("encarte_id")) or None
     out["pendencias"] = pendencias
     return out
+
+
+def _grounded_offer(text, grounded, trusted):
+    """Oferta curta ("Leve 2 por R$ 45,00"): todo valor em reais precisa ter sido dito pelo cliente."""
+    text = _clean_text(text, 40)
+    if not text:
+        return ""
+    for m in re.finditer(r"(r\$\s*)?(\d{1,5}(?:[.,]\d{1,2})?)(\s*reais)?", text, re.IGNORECASE):
+        if not (m.group(1) or m.group(3) or "," in m.group(2)):
+            continue  # "Leve 2", "3 unidades": quantidade, não preço
+        cents = price_to_cents(m.group(2))
+        if cents and not trusted and cents not in grounded:
+            return ""
+    return text
 
 
 def ready_for_render(briefing):
@@ -313,6 +409,10 @@ def ready_for_render(briefing):
     missing = [p["nome"] for p in briefing["produtos"] if not p["preco"]]
     if missing:
         return False, "Sem preço: " + ", ".join(missing[:5])
+    unconfirmed = [p["nome"] for p in briefing["produtos"] if any(
+        c["produto"] == p["nome"] for c in briefing.get("confirmar") or [])]
+    if unconfirmed:
+        return False, "Preço a confirmar: " + ", ".join(unconfirmed[:5])
     return True, ""
 
 

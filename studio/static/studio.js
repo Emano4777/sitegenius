@@ -608,8 +608,10 @@
   async function generate() {
     await saveBriefing(false);
     try {
-      await api(`/conversations/${state.conversationId}/jobs`, { method: "POST" });
-      toast("Pronto! Vou criar o seu encarte.");
+      const data = await api(`/conversations/${state.conversationId}/jobs`, { method: "POST" });
+      // Só confirma o que aconteceu de verdade (pode ser "já está pronto" ou "aguardando a análise da referência").
+      toast(data.job ? (data.job.status === "done" ? "Encarte pronto!" : "Seu encarte está sendo criado.")
+        : (data.mensagem || "Veja a resposta na conversa."));
       await refresh(false);
     } catch (err) {
       toast(err.message);
