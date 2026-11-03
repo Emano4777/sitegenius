@@ -1,0 +1,11 @@
+{
+ "id": "04_imobiliaria_B",
+ "abordagem": "B",
+ "prompt": "Editorial photography style, featuring a subtle, aspirational mood. The color palette leans towards warm earth tones—deep browns, muted beiges, and soft terracotta accents. Lighting should be diffused, evoking the golden hour, providing a sense of established warmth and quality. The composition should feel expansive yet intimate, suggesting a perfect living space. Shot with a medium format camera for rich depth and fine detail, aiming for an elevated, timeless look., imagem de fundo publicitário, formato quadrado 1080x1080, Interior de uma sala de estar moderna, com grandes janelas voltadas para uma paisagem arborizada suavemente iluminada ao entardecer. Tons quentes de madeira e pedra clara dominam o fundo., vaso com folhagem minimalista no centro, no meio (x 13-87%, y 30-54%), mesa de centro de madeira maciça no centro, no meio (x 13-87%, y 30-54%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no alto (x 4-96%, y 4-23%); no centro, no alto (x 18-82%, y 24-28%); no centro, embaixo (x 20-80%, y 67-84%), luz dominante #FFDAB9, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 1024,
+ "gen_h": 1024,
+ "final_w": 1080,
+ "final_h": 1080,
+ "fator": 1.05,
+ "seed": 1518
+}

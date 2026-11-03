@@ -321,3 +321,24 @@ def _price_aside(price, prod, solved):
             price["b"][0], price["b"][1] = nb[0], nb[1]
             return True
     return False
+
+
+def light(img):
+    """Direção da luz e tom de sombra medidos na imagem gerada (para sombras coerentes com a cena).
+    dx, dy: vetor unitário do centro da peça para a região mais iluminada; tom: cor escura dominante da cena."""
+    g = np.asarray(img.convert("L").resize((60, 75)), dtype=np.float32)
+    thr = np.percentile(g, 92)
+    ys, xs = np.nonzero(g >= thr)
+    if not len(xs):
+        return None
+    vx, vy = xs.mean() / 60 - 0.5, ys.mean() / 75 - 0.5
+    n = (vx * vx + vy * vy) ** 0.5
+    if n < 0.06:
+        dx, dy = 0.0, -1.0  # luz difusa/frontal: sombra para baixo
+    else:
+        dx, dy = vx / n, vy / n
+    small = np.asarray(img.convert("RGB").resize((60, 75)), dtype=np.float32).reshape(-1, 3)
+    lum = small @ np.array([0.299, 0.587, 0.114])
+    dark = small[lum <= np.percentile(lum, 12)].mean(axis=0) * 0.6
+    tom = "#%02x%02x%02x" % tuple(int(max(0, min(255, c))) for c in dark)
+    return {"dx": round(float(dx), 2), "dy": round(float(dy), 2), "tom": tom}

@@ -37,6 +37,27 @@ def photo_info(data):
     return {"aspecto": w / h, "qualidade": quality, "uri": uri}
 
 
+def scene_accents(img, n=4):
+    """Cores de destaque da PRÓPRIA imagem gerada (saturadas e distintas): o reparo de legibilidade escolhe primeiro
+    entre elas, então o texto conversa com a direção artística da imagem em vez de uma cor fixa."""
+    small = img.convert("RGB").resize((96, 120))
+    q = small.quantize(colors=12, method=Image.Quantize.MEDIANCUT)
+    pal = q.getpalette()[:36]
+    counts = sorted(q.getcolors() or [], reverse=True)
+    out = []
+    for _, idx in counts:
+        r, g, b = pal[idx * 3: idx * 3 + 3]
+        mx, mn = max(r, g, b), min(r, g, b)
+        if mx - mn < 60 or mx < 90:
+            continue  # neutros e escuros não são destaque
+        hx = f"#{r:02x}{g:02x}{b:02x}"
+        if all(abs(r - int(o[1:3], 16)) + abs(g - int(o[3:5], 16)) + abs(b - int(o[5:7], 16)) > 90 for o in out):
+            out.append(hx)
+        if len(out) >= n:
+            break
+    return out
+
+
 def _cover(img, size):
     W, H = size
     r = max(W / img.width, H / img.height)
@@ -58,7 +79,7 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
     t_all = time.time()
     tm = {}
     log = log or (lambda *a: None)
-    size = htmlflyer.SIZES.get(briefing.get("formato") or "feed_4x5", (1080, 1350))
+    size = tuple(briefing["tamanho"]) if briefing.get("tamanho") else htmlflyer.SIZES.get(briefing.get("formato") or "feed_4x5", (1080, 1350))
     info = {}
     t = time.time()
     for i, data in (photos or {}).items():
@@ -126,11 +147,12 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
     # leitura do cenário: o cabeçalho procura a região mais calma perto do planejado (antes de desenhar)
     t = time.time()
     smap = estetica.scene_map(scene)
+    plan["_luz"] = estetica.light(scene)  # sombras dos textos e produtos coerentes com a luz da imagem
     try:  # layout dinâmico: os grupos procuram a melhor solução espacial no cenário real
         moves = otimiza.refine(solved, smap, size, seed=plano._seed(briefing))
     except Exception:  # noqa: BLE001 — sem otimizador, o reposicionamento simples do cabeçalho continua valendo
         moves = estetica.place(solved, smap)
-    solved["paleta"] = [plan["titulo"]["cor"], plan["titulo"].get("cor2"), (plan["chamada"] or {}).get("cor"),
+    solved["paleta"] = scene_accents(scene) + [plan["titulo"]["cor"], plan["titulo"].get("cor2"), (plan["chamada"] or {}).get("cor"),
                         (plan["chamada"] or {}).get("cor2"), plan["preco"]["bg"], plan["preco"]["fg"],
                         (plan["selo"] or {}).get("cor"), plan["cenario"]["luz"], "#ffffff", "#1e1e22"]
     tm["leitura_cenario_s"] = round(time.time() - t, 2)

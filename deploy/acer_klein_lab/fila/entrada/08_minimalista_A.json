@@ -1,0 +1,11 @@
+{
+ "id": "08_minimalista_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical 1080x1350. Editorial, high-key lighting, minimalist aesthetic. The scene should evoke quiet luxury and timeless elegance. Use a muted, sophisticated color palette dominated by warm greys, deep charcoal, and soft gold accents. The texture should feel like matte stone or fine brushed metal. Cinematography should be sharp, focusing on negative space and clean composition. The mood is serene and exclusive. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Nova Coleção\" (large bold headline); \"Aurum Joias\" (small brand name). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1518
+}

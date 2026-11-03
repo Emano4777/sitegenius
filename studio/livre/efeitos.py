@@ -81,7 +81,7 @@ def preset(name, col, c2, seed=0):
     return normalize(recipes.get(name, recipes["sombra"]), col, c2)
 
 
-def css(fx, hpx):
+def css(fx, hpx, luz=None):
     """CSS do efeito para um texto HTML (letra ~ hpx*0.86 px). Gradiente e metal usam background-clip; contornos,
     profundidade, sombras e brilho vão numa cadeia de drop-shadow (funciona com qualquer preenchimento)."""
     size = hpx * 0.86
@@ -110,7 +110,12 @@ def css(fx, hpx):
         for _ in range(min(p["camadas"], 6)):  # cadeia: cada cópia empurra a anterior (extrusão)
             filters.append(f"drop-shadow({dx:.1f}px {dy:.1f}px 0 {p['cor']})")
     for s in fx["sombras"]:
-        filters.append(f"drop-shadow({s['x'] * size:.1f}px {s['y'] * size:.1f}px {s['desfoque'] * size:.1f}px {_rgba(s['cor'], s['opacidade'])})")
+        sx, sy, col = s["x"], s["y"], s["cor"]
+        if luz:  # sombra cai para o lado oposto à luz MEDIDA na imagem, com o tom escuro da própria cena
+            mag = max(0.03, math.hypot(sx, sy))
+            sx, sy = -luz["dx"] * mag, -luz["dy"] * mag
+            col = luz["tom"] if s["cor"].lower() in ("#000000", "#111111", "#111114") else col
+        filters.append(f"drop-shadow({sx * size:.1f}px {sy * size:.1f}px {s['desfoque'] * size:.1f}px {_rgba(col, s['opacidade'])})")
     b = fx.get("brilho")
     if b:
         filters += [f"drop-shadow(0 0 {size * 0.04 * b['intensidade']:.1f}px {b['cor']})",

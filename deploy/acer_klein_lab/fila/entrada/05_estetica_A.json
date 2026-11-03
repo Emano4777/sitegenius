@@ -1,0 +1,11 @@
+{
+ "id": "05_estetica_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical 1080x1350.  The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Clínica Bella Pele\" (large bold headline); \"Limpeza de pele\" (main product name); \"R$ 149,00\" (main product price, big and clear); \"Drenagem linfática\" (product name); \"R$ 120,00\" (product price, big and clear). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1407
+}

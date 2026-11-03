@@ -1,0 +1,11 @@
+{
+ "id": "07_restaurante_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical 1080x1350. Editorial photography style, warm and inviting palette dominated by earthy tones of terracotta, cream, and deep browns. Soft, diffused sunlight simulating mid-day glow spills onto the scene, creating a comforting atmosphere. High-angle shot, shallow depth of field focusing on the rich texture of the food presentation. Materials evoke rustic warmth, like aged wood and linen. The overall mood is cozy and satisfying, suggesting homemade comfort food. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Sabor da Casa\" (large bold headline); \"Sabor caseiro, preço justo\" (short tagline); \"Prato executivo\" (main product name); \"R$ 29,90\" (main product price, big and clear); \"Promoção Semana\" (badge). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1518
+}

@@ -1,0 +1,11 @@
+{
+ "id": "01_blackfriday_tech_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical alto 1080x1920.  The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Black Friday\" (large bold headline); \"TechPoint\" (small brand name); \"Fone Bluetooth\" (main product name); \"R$ 299,00\" (main product price, big and clear); \"Smartwatch\" (product name); \"R$ 499,00\" (product price, big and clear). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 768,
+ "gen_h": 1344,
+ "final_w": 1080,
+ "final_h": 1920,
+ "fator": 1.43,
+ "seed": 1703
+}

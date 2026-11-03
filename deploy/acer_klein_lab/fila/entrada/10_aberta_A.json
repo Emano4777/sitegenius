@@ -1,0 +1,11 @@
+{
+ "id": "10_aberta_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical 1080x1350. A warm, editorial style photography featuring soft focus and golden hour lighting. The color palette is dominated by earthy tones—creams, soft browns, and muted greens—to evoke comfort and nature. The composition is gentle, focusing on the feeling of care. Shot with a shallow depth of field, creating a dreamy, inviting atmosphere. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Patas & Cia\" (large bold headline). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1333
+}

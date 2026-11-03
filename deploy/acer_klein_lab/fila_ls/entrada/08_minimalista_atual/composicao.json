@@ -1,0 +1,109 @@
+{
+ "tamanho": [
+  1080,
+  1350
+ ],
+ "cenario": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\nosso_atual\\08_minimalista\\cenario.jpg",
+ "elementos": [
+  {
+   "tipo": "texto",
+   "papel": "titulo",
+   "b": [
+    4.0,
+    27.18955699958108,
+    92.0,
+    24.64
+   ],
+   "z": 40,
+   "texto": "Nova Coleção",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes_cache\\playfairdisplaysc\\PlayfairDisplaySC-Black.ttf",
+   "familia": "Playfair Display SC",
+   "peso": 400,
+   "cor": "#C5B358",
+   "efeito": {
+    "preenchimento": {
+     "tipo": "gradiente",
+     "cores": [
+      "#C5B358",
+      "#D4AF37"
+     ],
+     "angulo": 45.0
+    },
+    "contornos": [
+     {
+      "espessura": 0.02,
+      "cor": "#000000"
+     }
+    ],
+    "sombras": [
+     {
+      "x": -0.1,
+      "y": -0.1,
+      "desfoque": 0.1,
+      "cor": "#000000",
+      "opacidade": 0.2
+     }
+    ],
+    "profundidade": {
+     "camadas": 3,
+     "direcao": 90.0,
+     "cor": "#C5B358"
+    },
+    "brilho": {
+     "cor": "#FFFFFF",
+     "intensidade": 0.4
+    },
+    "inclinacao": -2.0,
+    "rotacao": 0.0,
+    "curva": 0,
+    "espacamento": 0.05
+   },
+   "arco": false,
+   "halo": false
+  },
+  {
+   "tipo": "texto",
+   "papel": "loja",
+   "b": [
+    17.799999999999997,
+    53.5480755180996,
+    64.39999999999999,
+    4.6
+   ],
+   "z": 40,
+   "texto": "Aurum Joias",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Poppins-ExtraBold.ttf",
+   "familia": "PoppinsX",
+   "peso": null,
+   "cor": "#1e1e22",
+   "efeito": {
+    "preenchimento": {
+     "tipo": "solido",
+     "cores": [
+      "#1e1e22"
+     ],
+     "angulo": 180
+    },
+    "contornos": [],
+    "sombras": [
+     {
+      "x": 0.0,
+      "y": 0.055,
+      "desfoque": 0.16,
+      "cor": "#000000",
+      "opacidade": 0.627
+     }
+    ],
+    "profundidade": null,
+    "brilho": null,
+    "inclinacao": 0,
+    "rotacao": 0,
+    "curva": 0,
+    "espacamento": 0
+   },
+   "arco": false,
+   "halo": false
+  }
+ ],
+ "luz": "#F5F5DC"
+}

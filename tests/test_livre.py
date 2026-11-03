@@ -409,3 +409,26 @@ def test_scene_with_blank_band_is_regenerated():
     d.rectangle((0, 1000, 1080, 1350), fill=(255, 255, 255))  # quarto de baixo branco chapado
     r = cena.verify(img, {"cenario": {"objetos": []}}, {"elementos": [], "zonas_objetos": []})
     assert any(p[0] == "area_vazia" for p in r["problemas"]) and cena.decide(r, 1) == "regerar"
+
+
+# ------------------------------------------------ resolução pedida no chat
+from studio.livre import formato  # noqa: E402
+
+
+def test_resolution_from_natural_language():
+    assert formato.parse("Crie uma arte para o feed do Instagram em 1080 × 1350.")[:2] == (1080, 1350)
+    assert formato.parse("Quero um Story em 1080 x 1920")[:2] == (1080, 1920)
+    assert formato.parse("banner horizontal de 1920 por 1080")[:2] == (1920, 1080)
+    assert formato.parse("Quero uma imagem em 4K.")[:2] == (3840, 2160)
+    assert formato.parse("story em 4k")[:2] == (2160, 3840)
+    assert formato.parse("faz uma arte do meu petshop")[2] == "escolhida pelo contexto"
+    assert formato.parse("imagem de 20000 x 10000")[:2] == (4096, 2048)  # limite do produto final
+
+
+def test_generation_plan_never_stretches():
+    for final in [(1080, 1350), (1080, 1920), (1920, 1080), (1024, 1024), (3840, 2160), (2480, 3508)]:
+        g = formato.generation_plan(final)
+        gw, gh = g["geracao"]
+        assert gw * gh <= formato.GEN_MAX_PIXELS and gw % 64 == 0 and gh % 64 == 0
+        assert abs(gw / gh - final[0] / final[1]) < 0.08  # mesma proporção (sem deformar)
+        assert g["metodo"] == ("nativo" if g["fator"] <= 1.05 else "super_resolucao_2x" if g["fator"] <= 2.05 else "super_resolucao_4x")

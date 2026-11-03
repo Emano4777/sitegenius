@@ -1,0 +1,11 @@
+{
+ "id": "02_supermercado_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical 1080x1350. Editorial, high-contrast product photography style, focusing on the texture of the groceries against a vibrant, energetic background. The lighting should be sharp, almost dramatic, using strong spotlights to highlight the product packaging and the price callouts. The color palette is saturated—deep reds, oranges, and bright yellows—to convey urgency and value. The composition is dynamic, utilizing a grid structure to present the items, giving the overall feel of a high-energy, essential shopping guide. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Ofertas da Semana\" (large bold headline); \"Mercado Bom Preço\" (small brand name); \"Café Pilão Tradicional 500g\" (product name); \"R$ 17,90\" (product price, big and clear); \"Arroz Tio João 5kg\" (main product name); \"R$ 27,90\" (main product price, big and clear); \"Leite Integral Piracanjuba 1L\" (product name); \"R$ 5,49\" (product price, big and clear); \"Feijão Camil Carioca 1kg\" (product name); \"R$ 8,99\" (product price, big and clear); \"Açúcar União Refinado 1kg\" (product name); \"R$ 4,79\" (product price, big and clear); \"Super Oferta\" (badge). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1555
+}

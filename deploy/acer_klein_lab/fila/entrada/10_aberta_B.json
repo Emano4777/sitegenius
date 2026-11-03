@@ -1,0 +1,11 @@
+{
+ "id": "10_aberta_B",
+ "abordagem": "B",
+ "prompt": "A warm, editorial style photography featuring soft focus and golden hour lighting. The color palette is dominated by earthy tones—creams, soft browns, and muted greens—to evoke comfort and nature. The composition is gentle, focusing on the feeling of care. Shot with a shallow depth of field, creating a dreamy, inviting atmosphere., imagem de fundo publicitário, formato vertical 1080x1350, Um ambiente luminoso e suave, com texturas orgânicas como linho claro e madeira clara, sugerindo um refúgio aconchegante., folhas secas delicadas no centro, no meio (x 22-78%, y 27-68%), uma tigela de madeira rústica no centro, no meio (x 22-78%, y 27-68%), uma manta de tricô suave no centro, no meio (x 22-78%, y 27-68%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no meio (x 4-96%, y 30-55%), luz dominante #FFFACD, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1333
+}

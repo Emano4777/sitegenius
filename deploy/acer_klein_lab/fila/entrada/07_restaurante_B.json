@@ -1,0 +1,11 @@
+{
+ "id": "07_restaurante_B",
+ "abordagem": "B",
+ "prompt": "Editorial photography style, warm and inviting palette dominated by earthy tones of terracotta, cream, and deep browns. Soft, diffused sunlight simulating mid-day glow spills onto the scene, creating a comforting atmosphere. High-angle shot, shallow depth of field focusing on the rich texture of the food presentation. Materials evoke rustic warmth, like aged wood and linen. The overall mood is cozy and satisfying, suggesting homemade comfort food., imagem de fundo publicitário, formato vertical 1080x1350, Interior de um restaurante com decoração rústica e acolhedora, com luz suave de fundo e toques de madeira escura., um guardanapo de linho dobrado no centro, no meio (x 13-87%, y 29-53%), um garfo de prata antigo no centro, no meio (x 13-87%, y 29-53%), um pequeno ramo de ervas aromáticas no centro, no meio (x 13-87%, y 29-53%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no alto (x 4-96%, y 4-21%); no centro, no alto (x 20-80%, y 23-29%); no centro, embaixo (x 20-80%, y 64-81%), luz dominante #FFDAB9, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1518
+}

@@ -1,0 +1,11 @@
+{
+ "id": "09_futurista_3d_B",
+ "abordagem": "B",
+ "prompt": "Futuristic, high-contrast editorial style. The palette should revolve around electric blues, cyan, and deep blacks, evoking a digital mainframe aesthetic. Lighting must be sharp, utilizing strong neon glows and volumetric light rays cutting through a dark environment. Materials suggest polished chrome and holographic interfaces. The camera angle is dramatic, low-angle, emphasizing verticality and power. The atmosphere is highly advanced and limitless., imagem de fundo publicitário, formato horizontal panorâmico 3840x2160, Um espaço digital abstrato, composto por linhas de circuito luminosas e grade tridimensional infinita. Tons de preto profundo, azul elétrico e ciano vibrante., fragmentos de dados holográficos no centro, no meio (x 22-78%, y 27-68%), linhas de código flutuantes no centro, no meio (x 22-78%, y 27-68%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no meio (x 4-96%, y 30-55%), luz dominante #00FFFF, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 1344,
+ "gen_h": 768,
+ "final_w": 3840,
+ "final_h": 2160,
+ "fator": 2.86,
+ "seed": 1555
+}

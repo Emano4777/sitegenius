@@ -1,0 +1,11 @@
+{
+ "id": "06_farmacia_fotos_B",
+ "abordagem": "B",
+ "prompt": "Editorial, high-key lighting, soft focus, natural daylight, clean aesthetic. The overall mood should be trustworthy and inviting, emphasizing wellness. High contrast between product names and background, with a gentle, organic color palette dominated by soft greens and whites. Shot with a shallow depth of field to keep focus on the textual information., imagem de fundo publicitário, formato vertical alto 1080x1920, Fundo suavemente desfocado, com tons de verde menta e branco cremoso, remetendo a um spa minimalista., folhas de eucalipto estilizadas no centro, no alto (x 13-87%, y 25-43%), ramo de lavanda no centro, no alto (x 13-87%, y 25-43%), gota d'água estilizada no centro, no alto (x 13-87%, y 25-43%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no alto (x 4-96%, y 4-18%); no centro, no alto (x 16-81%, y 19-24%); no centro, no meio (x 20-80%, y 53-67%); no centro, embaixo (x 9-91%, y 76-96%), luz dominante #E0FFFF, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 768,
+ "gen_h": 1344,
+ "final_w": 1080,
+ "final_h": 1920,
+ "fator": 1.43,
+ "seed": 1629
+}

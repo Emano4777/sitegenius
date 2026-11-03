@@ -1,0 +1,11 @@
+{
+ "id": "06_farmacia_fotos_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, vertical alto 1080x1920. Editorial, high-key lighting, soft focus, natural daylight, clean aesthetic. The overall mood should be trustworthy and inviting, emphasizing wellness. High contrast between product names and background, with a gentle, organic color palette dominated by soft greens and whites. Shot with a shallow depth of field to keep focus on the textual information. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Ofertas de Cuidado\" (large bold headline); \"Drogaria Saúde+\" (small brand name); \"Protetor solar isdin\" (main product name); \"R$ 69,90\" (main product price, big and clear); \"Shampoo Anticaspa com Eucalipto e Melale\" (product name); \"R$ 18,90\" (product price, big and clear); \"Sabonete de glicerina Granado\" (product name); \"R$ 7,49\" (product price, big and clear); \"Sorriso Fresh Gel Menthol Impact\" (product name); \"R$ 4,99\" (product price, big and clear); \"Promoção\" (badge). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 768,
+ "gen_h": 1344,
+ "final_w": 1080,
+ "final_h": 1920,
+ "fator": 1.43,
+ "seed": 1629
+}

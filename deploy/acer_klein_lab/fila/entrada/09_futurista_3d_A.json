@@ -1,0 +1,11 @@
+{
+ "id": "09_futurista_3d_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, horizontal panorâmico 3840x2160. Futuristic, high-contrast editorial style. The palette should revolve around electric blues, cyan, and deep blacks, evoking a digital mainframe aesthetic. Lighting must be sharp, utilizing strong neon glows and volumetric light rays cutting through a dark environment. Materials suggest polished chrome and holographic interfaces. The camera angle is dramatic, low-angle, emphasizing verticality and power. The atmosphere is highly advanced and limitless. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Chegou o FinX\" (large bold headline). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 1344,
+ "gen_h": 768,
+ "final_w": 3840,
+ "final_h": 2160,
+ "fator": 2.86,
+ "seed": 1555
+}

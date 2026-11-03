@@ -1,0 +1,58 @@
+{
+ "tamanho": [
+  3840,
+  2160
+ ],
+ "cenario": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\nosso_atual\\09_futurista_3d\\cenario.jpg",
+ "elementos": [
+  {
+   "tipo": "texto",
+   "papel": "titulo",
+   "b": [
+    4.0,
+    4.984445702245445,
+    92.0,
+    24.64
+   ],
+   "z": 40,
+   "texto": "Chegou o FinX",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes_cache\\tomorrow\\Tomorrow-Black.ttf",
+   "familia": "Tomorrow",
+   "peso": 800,
+   "cor": "#00FFFF",
+   "efeito": {
+    "preenchimento": {
+     "tipo": "solido",
+     "cores": [
+      "#00FFFF"
+     ],
+     "angulo": 180
+    },
+    "contornos": [
+     {
+      "espessura": 0.062,
+      "cor": "#FFFFFF"
+     }
+    ],
+    "sombras": [
+     {
+      "x": 0.0,
+      "y": 0.049,
+      "desfoque": 0.066,
+      "cor": "#000000",
+      "opacidade": 0.45
+     }
+    ],
+    "profundidade": null,
+    "brilho": null,
+    "inclinacao": 0,
+    "rotacao": 0.099,
+    "curva": 0,
+    "espacamento": 0
+   },
+   "arco": false,
+   "halo": false
+  }
+ ],
+ "luz": "#00FFFF"
+}

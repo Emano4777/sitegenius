@@ -72,6 +72,24 @@ def _price_html(p, st, emphasis):
             + (f'<span class="suf">{html.escape(suffix)}</span>' if suffix else "") + f'</div>{offer}')
 
 
+def _lx(plan, d):
+    luz = plan.get("_luz")
+    return round(-luz["dx"] * d, 1) if luz else 0
+
+
+def _ly(plan, d):
+    luz = plan.get("_luz")
+    return round(max(0.35, -luz["dy"]) * d, 1) if luz else d  # sombra de produto sempre um pouco para baixo (apoio)
+
+
+def _tone(plan, a):
+    luz = plan.get("_luz")
+    if not luz:
+        return f"rgba(0,0,0,{a})"
+    h = luz["tom"]
+    return f"rgba({int(h[1:3], 16)},{int(h[3:5], 16)},{int(h[5:7], 16)},{a + 0.1})"
+
+
 def _scrim(text_color):
     """Suporte visual suave SEM caixa: halo difuso que acompanha as letras (escuro atrás de letra clara, claro atrás
     de letra escura). Separa o texto do fundo sem placa nem retângulo."""
@@ -124,7 +142,7 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
                 out.append(f'<div class="l" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}">{inner}</div>')
             else:
                 plate = _scrim(st.get("cor") if e["papel"] != "titulo" else e.get("cor_forcada") or st["cor"]) if e.get("placa") else ""
-                fx = efeitos.css(efx, e["b"][3] * size[1] / 100) if efx else _text_fx(ef, st["cor"], st["cor2"])
+                fx = efeitos.css(efx, e["b"][3] * size[1] / 100, plan.get("_luz")) if efx else _text_fx(ef, st["cor"], st["cor2"])
                 fx += weight
                 if ring:
                     fx += f"-webkit-text-stroke:calc(var(--hpx)*.05) {ring};paint-order:stroke fill;"
@@ -189,7 +207,7 @@ body{{width:{W}px;height:{H}px;overflow:hidden;position:relative;background:#111
 .cartao .foto{{width:100%;height:100%;object-fit:cover;border-radius:22px;border:7px solid #fff;box-sizing:border-box;
   box-shadow:0 22px 46px rgba(0,0,0,.45),0 4px 10px rgba(0,0,0,.25);transform:rotate(-2deg)}}
 .prod .foto{{position:relative;width:100%;height:100%;object-fit:contain;object-position:bottom;z-index:2;
-  filter:drop-shadow(0 18px 18px rgba(0,0,0,.45)) drop-shadow(0 0 24px {luz}55)}}
+  filter:drop-shadow({_lx(plan, 18)}px {_ly(plan, 18)}px 18px {_tone(plan, .45)}) drop-shadow(0 0 24px {luz}55)}}
 .prod .luz{{position:absolute;inset:0;z-index:3;mix-blend-mode:soft-light;opacity:.5;-webkit-mask-size:contain;mask-size:contain;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:bottom;mask-position:bottom}}
 .prod .contato{{position:absolute;left:6%;right:6%;bottom:-3%;height:8%;z-index:1;border-radius:50%;

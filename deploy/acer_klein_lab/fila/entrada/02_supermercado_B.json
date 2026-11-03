@@ -1,0 +1,11 @@
+{
+ "id": "02_supermercado_B",
+ "abordagem": "B",
+ "prompt": "Editorial, high-contrast product photography style, focusing on the texture of the groceries against a vibrant, energetic background. The lighting should be sharp, almost dramatic, using strong spotlights to highlight the product packaging and the price callouts. The color palette is saturated—deep reds, oranges, and bright yellows—to convey urgency and value. The composition is dynamic, utilizing a grid structure to present the items, giving the overall feel of a high-energy, essential shopping guide., imagem de fundo publicitário, formato vertical 1080x1350, Mesa de mercado estilizada, com fundo borrado em tons de vermelho e laranja vibrantes, evocando movimento e transação., um bancada vazio com o topo na altura y 65% e centralizado em x 21% (largura de uns 58%), para apoiar um produto, áreas lisas, escuras ou desfocadas (sem objetos) no centro, no alto (x 4-96%, y 4-18%); no centro, no alto (x 18-82%, y 16-21%); no centro, no meio (x 38-86%, y 42-59%); à esquerda, embaixo (x 12-42%, y 76-80%), espaço vazio à esquerda, no meio (x 5-37%, y 26-65%) para o produto (não desenhe nenhum produto ali), luz dominante #FF9800, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1555
+}

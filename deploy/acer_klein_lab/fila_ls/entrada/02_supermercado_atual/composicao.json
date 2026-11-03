@@ -1,0 +1,355 @@
+{
+ "tamanho": [
+  1080,
+  1350
+ ],
+ "cenario": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\nosso_atual\\02_supermercado\\cenario.jpg",
+ "elementos": [
+  {
+   "tipo": "produto",
+   "papel": "heroi",
+   "b": [
+    9.980672531568157,
+    25.127860170520215,
+    32.024016038000454,
+    39.02461489281916
+   ],
+   "z": 20,
+   "foto": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\export_atual\\02_supermercado\\produto1.png",
+   "cartao": false
+  },
+  {
+   "tipo": "produto",
+   "papel": "produto",
+   "b": [
+    6.829285899176314,
+    77.23059501348409,
+    6.393691689857534,
+    8.452677149303181
+   ],
+   "z": 20,
+   "foto": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\export_atual\\02_supermercado\\produto0.png",
+   "cartao": false
+  },
+  {
+   "tipo": "produto",
+   "papel": "produto",
+   "b": [
+    50.41119155731841,
+    81.66587995109259,
+    6.827162312898724,
+    8.452677149303181
+   ],
+   "z": 20,
+   "foto": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\export_atual\\02_supermercado\\produto3.png",
+   "cartao": false
+  },
+  {
+   "tipo": "produto",
+   "papel": "produto",
+   "b": [
+    4.285402971983847,
+    87.2352002316731,
+    7.631900497979268,
+    8.731792040335105
+   ],
+   "z": 20,
+   "foto": "C:\\Users\\windows\\AppData\\Local\\Temp\\claude\\C--Users-windows-Downloads-sitegenius-rebuild\\bf29e511-e568-4d8f-af51-6cc897b0dba5\\scratchpad\\compositores\\export_atual\\02_supermercado\\produto4.png",
+   "cartao": false
+  },
+  {
+   "tipo": "lista",
+   "papel": "lista",
+   "b": [
+    11.619023384119114,
+    67.46639984982386,
+    82.0,
+    8.0
+   ],
+   "z": 35,
+   "linhas": [
+    [
+     "Leite Integral Piracanjuba 1L",
+     "R$ 5,49"
+    ]
+   ],
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Poppins-ExtraBold.ttf",
+   "familia": "PoppinsX",
+   "fonte_preco": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes\\Bangers-Regular.ttf",
+   "familia_preco": "Bangers",
+   "bg": "#FF0000",
+   "fg": "#FFFFFF"
+  },
+  {
+   "tipo": "texto",
+   "papel": "titulo",
+   "b": [
+    4.0,
+    3.1116934303987662,
+    92.0,
+    14.5
+   ],
+   "z": 40,
+   "texto": "Ofertas da Semana",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes_cache\\luckiestguy\\LuckiestGuy-Regular.ttf",
+   "familia": "Luckiest Guy",
+   "peso": 400,
+   "cor": "#FF5722",
+   "efeito": {
+    "preenchimento": {
+     "tipo": "gradiente",
+     "cores": [
+      "#FF5722",
+      "#E64A19"
+     ],
+     "angulo": 45.0
+    },
+    "contornos": [
+     {
+      "espessura": 0.08,
+      "cor": "#000000"
+     }
+    ],
+    "sombras": [
+     {
+      "x": 0.1,
+      "y": 0.1,
+      "desfoque": 0.3,
+      "cor": "#000000",
+      "opacidade": 0.7
+     }
+    ],
+    "profundidade": {
+     "camadas": 5,
+     "direcao": 180.0,
+     "cor": "#AAAAAA"
+    },
+    "brilho": {
+     "cor": "#FFFF00",
+     "intensidade": 0.5
+    },
+    "inclinacao": -5.0,
+    "rotacao": 0.0,
+    "curva": 0.1,
+    "espacamento": 0.15
+   },
+   "arco": false,
+   "halo": false
+  },
+  {
+   "tipo": "texto",
+   "papel": "loja",
+   "b": [
+    17.799999999999997,
+    18.99312861558395,
+    64.39999999999999,
+    4.6
+   ],
+   "z": 40,
+   "texto": "Mercado Bom Preço",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Poppins-ExtraBold.ttf",
+   "familia": "PoppinsX",
+   "peso": null,
+   "cor": "#FF5722",
+   "efeito": {
+    "preenchimento": {
+     "tipo": "solido",
+     "cores": [
+      "#FF5722"
+     ],
+     "angulo": 180
+    },
+    "contornos": [
+     {
+      "espessura": 0.04,
+      "cor": "#111114"
+     }
+    ],
+    "sombras": [
+     {
+      "x": 0.0,
+      "y": 0.065,
+      "desfoque": 0.199,
+      "cor": "#000000",
+      "opacidade": 0.638
+     }
+    ],
+    "profundidade": null,
+    "brilho": null,
+    "inclinacao": 0,
+    "rotacao": 0,
+    "curva": 0,
+    "espacamento": 0
+   },
+   "arco": false,
+   "halo": false
+  },
+  {
+   "tipo": "nome",
+   "papel": "nome",
+   "b": [
+    14.142977589033848,
+    82.00893358813568,
+    34.08630831014247,
+    3.306338574651591
+   ],
+   "z": 41,
+   "texto": "Café Pilão Tradicional 500g",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Montserrat-VF.ttf",
+   "familia": "Montserrat",
+   "cor": "#1e1e22",
+   "halo": false
+  },
+  {
+   "tipo": "nome",
+   "papel": "nome",
+   "b": [
+    58.15835387021714,
+    86.44421852574418,
+    33.652837687101275,
+    3.306338574651591
+   ],
+   "z": 41,
+   "texto": "Feijão Camil Carioca 1kg",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Montserrat-VF.ttf",
+   "familia": "Montserrat",
+   "cor": "#ffffff",
+   "halo": false
+  },
+  {
+   "tipo": "nome",
+   "papel": "nome",
+   "b": [
+    12.867682685354124,
+    92.17132378107524,
+    34.18478497922527,
+    3.41551680477654
+   ],
+   "z": 41,
+   "texto": "Açúcar União Refinado 1kg",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Montserrat-VF.ttf",
+   "familia": "Montserrat",
+   "cor": "#ffffff",
+   "halo": false
+  },
+  {
+   "tipo": "preco",
+   "papel": "preco",
+   "b": [
+    14.142977589033848,
+    77.23059501348409,
+    27.6,
+    4.2263385746515905
+   ],
+   "z": 42,
+   "inteiro": "17",
+   "centavos": ",90",
+   "sufixo": "",
+   "de": "",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes\\Bangers-Regular.ttf",
+   "familia": "Bangers",
+   "estilo": "explosao",
+   "bg": "#FF0000",
+   "fg": "#FFFFFF",
+   "principal": false
+  },
+  {
+   "tipo": "preco",
+   "papel": "preco",
+   "b": [
+    58.15835387021714,
+    81.66587995109259,
+    27.6,
+    4.2263385746515905
+   ],
+   "z": 42,
+   "inteiro": "8",
+   "centavos": ",99",
+   "sufixo": "",
+   "de": "",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes\\Bangers-Regular.ttf",
+   "familia": "Bangers",
+   "estilo": "explosao",
+   "bg": "#FF0000",
+   "fg": "#FFFFFF",
+   "principal": false
+  },
+  {
+   "tipo": "preco",
+   "papel": "preco",
+   "b": [
+    12.867682685354124,
+    87.2352002316731,
+    28.511376461730368,
+    4.365896020167552
+   ],
+   "z": 42,
+   "inteiro": "4",
+   "centavos": ",79",
+   "sufixo": "",
+   "de": "",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes\\Bangers-Regular.ttf",
+   "familia": "Bangers",
+   "estilo": "explosao",
+   "bg": "#FF0000",
+   "fg": "#FFFFFF",
+   "principal": false
+  },
+  {
+   "tipo": "nome",
+   "papel": "nome",
+   "b": [
+    43.004688569568614,
+    32.170860462541285,
+    48.0,
+    5.2
+   ],
+   "z": 44,
+   "texto": "Arroz Tio João 5kg",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\fonts\\Montserrat-VF.ttf",
+   "familia": "Montserrat",
+   "cor": "#000000",
+   "halo": false
+  },
+  {
+   "tipo": "preco",
+   "papel": "preco_principal",
+   "b": [
+    43.004688569568614,
+    41.51819842550426,
+    48.0,
+    16.896000000000004
+   ],
+   "z": 45,
+   "inteiro": "27",
+   "centavos": ",90",
+   "sufixo": "",
+   "de": "R$ 31,90",
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes\\Bangers-Regular.ttf",
+   "familia": "Bangers",
+   "estilo": "explosao",
+   "bg": "#FF0000",
+   "fg": "#FFFFFF",
+   "principal": true
+  },
+  {
+   "tipo": "selo",
+   "papel": "selo",
+   "b": [
+    31.470608964839393,
+    24.90544032520627,
+    17.0,
+    13.600000000000001
+   ],
+   "z": 46,
+   "texto": "SUPER OFERTA",
+   "forma": "fita",
+   "cor": "#FFEB3B",
+   "cor2": "#D32F2F",
+   "giro": 9,
+   "fonte": "C:\\Users\\windows\\Downloads\\sitegenius-rebuild\\studio\\livre\\fontes\\Bangers-Regular.ttf",
+   "familia": "Bangers"
+  }
+ ],
+ "luz": "#FF9800"
+}

@@ -41,6 +41,7 @@ Responda SOMENTE com JSON compacto (sem espaços):
  "preco":{"estilo":"faixa|etiqueta|explosao|circulo|bloco","fonte":"<chave>","bg":"#hex","fg":"#hex"},
  "nomes":{"fonte":"<chave>","cor":"#hex"},
  "icones":["até 3 da lista"],
+ "direcao_visual":"em INGLÊS, 40-80 palavras: estilo artístico (3D, foto, ilustração, minimalista, futurista, editorial...), paleta, luz, materiais, câmera e clima. Decida livremente a partir do pedido (se o cliente pediu um estilo, siga-o). Nunca descreva letras ou textos",
  "cenario":{"ambiente":"descrição visual do fundo (cores, luz, clima, materiais)","superficie":"pedestal|bancada|mesa|prateleira|nenhuma",
   "objetos":["até 3 objetos decorativos ligados ao tema/produto, SEM embalagens, marcas ou textos"],"luz":"#hex da luz dominante"}}
 "tom" = a personalidade desta campanha, lida do pedido (não do segmento): a fonte do título deve combinar com ele.
@@ -295,6 +296,7 @@ def normalize(raw, briefing, photo_quality, recent=None):
         title_zone = "topo"  # com produtos, o centro é do herói
     return {
         "ideia": str(raw.get("ideia") or "")[:200], "tom": tone, "heroi": hero, "prioridades": prio,
+        "direcao_visual": _visual(raw.get("direcao_visual")),
         "layout": {"titulo": title_zone, "heroi": _enum(lay.get("heroi"), ZONES_HERO, "centro"),
                    "preco": _enum(lay.get("preco"), PRICE_REL, "abaixo_heroi"),
                    "demais": _enum(lay.get("demais"), OTHERS_REL, "fila_base"), "objetos": props},
@@ -305,6 +307,17 @@ def normalize(raw, briefing, photo_quality, recent=None):
                     "objetos": objetos, "luz": htmlflyer._hex(cen.get("luz"), "#ffd27a")},
         "textos": list(reg.seen),
     }
+
+
+_TEXTY = re.compile(r"\b(text|texts|letter\w*|word\w*|typograph\w*|headline|caption|title|logo\w*|label\w*|sign\w*|"
+                    r"font\w*|writing|written|price tag\w*)\b", re.I)
+
+
+def _visual(v):
+    """Direção visual livre do diretor (inglês), sem pedidos de texto para o gerador de imagem."""
+    v = re.sub(r"\s+", " ", str(v or "")).strip()[:700]
+    parts = [p_ for p_ in re.split(r"(?<=[.;,])\s+", v) if p_ and not _TEXTY.search(p_)]
+    return " ".join(parts).strip(" ,;")
 
 
 def _hue(hx):

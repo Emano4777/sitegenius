@@ -1,0 +1,11 @@
+{
+ "id": "03_servicos_ti_B",
+ "abordagem": "B",
+ "prompt": "Futuristic, high-tech editorial style. Dominant palette of deep blues, electric cyan, and stark white against dark charcoal. Lighting should be sharp, focused spotlights emphasizing precision and digital flow. Materials evoke polished metal and illuminated circuit boards. Camera is a wide, dynamic shot, conveying immediate problem resolution and advanced capability. The mood is professional, reliable, and cutting-edge., imagem de fundo publicitário, formato horizontal panorâmico 1920x1080, Interior of a highly organized, dark server room with subtle glowing blue lines tracing pathways, abstract circuit board patterns no centro, no meio (x 13-87%, y 27-46%), glowing data streams no centro, no meio (x 13-87%, y 27-46%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no alto (x 4-96%, y 4-20%); no centro, no alto (x 16-81%, y 21-25%); no centro, no meio (x 20-80%, y 57-71%); no centro, embaixo (x 9-91%, y 82-96%), luz dominante #007bff, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 1344,
+ "gen_h": 768,
+ "final_w": 1920,
+ "final_h": 1080,
+ "fator": 1.43,
+ "seed": 1518
+}

@@ -1,0 +1,11 @@
+{
+ "id": "08_minimalista_B",
+ "abordagem": "B",
+ "prompt": "Editorial, high-key lighting, minimalist aesthetic. The scene should evoke quiet luxury and timeless elegance. Use a muted, sophisticated color palette dominated by warm greys, deep charcoal, and soft gold accents. The texture should feel like matte stone or fine brushed metal. Cinematography should be sharp, focusing on negative space and clean composition. The mood is serene and exclusive., imagem de fundo publicitário, formato vertical 1080x1350, Interior museológico, com paredes em mármore polido cinza claro, banhado por luz natural difusa de uma grande janela fora de quadro., Um pequeno arranjo de folhas secas e douradas no centro, no meio (x 22-78%, y 27-68%), Um bloco de obsidiana polida no centro, no meio (x 22-78%, y 27-68%), áreas lisas, escuras ou desfocadas (sem objetos) no centro, no meio (x 4-96%, y 30-55%); no centro, no meio (x 18-82%, y 55-60%), luz dominante #F5F5DC, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1518
+}

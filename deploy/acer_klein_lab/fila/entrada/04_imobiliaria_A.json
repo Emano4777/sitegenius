@@ -1,0 +1,11 @@
+{
+ "id": "04_imobiliaria_A",
+ "abordagem": "A",
+ "prompt": "Professional advertising poster, quadrado 1080x1080. Editorial photography style, featuring a subtle, aspirational mood. The color palette leans towards warm earth tones—deep browns, muted beiges, and soft terracotta accents. Lighting should be diffused, evoking the golden hour, providing a sense of established warmth and quality. The composition should feel expansive yet intimate, suggesting a perfect living space. Shot with a medium format camera for rich depth and fine detail, aiming for an elevated, timeless look. The poster shows these exact texts, spelled exactly as written, with correct Portuguese accents: \"Seu Novo Refúgio Aguarda\" (large bold headline); \"Lar Ideal Imóveis\" (small brand name); \"Apartamento 2 quartos, 62 m², Vila Nova\" (main product name); \"R$ 1.800/mês\" (main product price, big and clear); \"Creci: 12345-J\" (small footer info). Clear hierarchy, legible typography, products and prices well highlighted.",
+ "gen_w": 1024,
+ "gen_h": 1024,
+ "final_w": 1080,
+ "final_h": 1080,
+ "fator": 1.05,
+ "seed": 1518
+}

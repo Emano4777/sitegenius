@@ -1,0 +1,11 @@
+{
+ "id": "05_estetica_B",
+ "abordagem": "B",
+ "prompt": "imagem de fundo publicitário, formato vertical 1080x1350, áreas lisas, escuras ou desfocadas (sem objetos) no centro, no alto (x 4-96%, y 4-20%); no centro, no meio (x 20-80%, y 56-70%); no centro, embaixo (x 9-91%, y 88-96%), luz dominante #ffd27a, sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos",
+ "gen_w": 896,
+ "gen_h": 1152,
+ "final_w": 1080,
+ "final_h": 1350,
+ "fator": 1.21,
+ "seed": 1407
+}

@@ -14,6 +14,15 @@ from PIL import Image, ImageFilter
 FORMAT_WORDS = {"feed_4x5": "vertical 4:5", "story": "vertical 9:16", "quadrado": "quadrado 1:1", "a4": "vertical A4"}
 
 
+def _format_words(briefing):
+    if briefing.get("tamanho"):
+        w, h = briefing["tamanho"]
+        r = w / h
+        return ("horizontal panorâmico" if r > 1.6 else "horizontal" if r > 1.1 else "quadrado" if r > 0.9
+                else "vertical alto" if r < 0.62 else "vertical") + f" {w}x{h}"
+    return FORMAT_WORDS.get(briefing.get("formato"), "vertical 4:5")
+
+
 def _where(box):
     x, y, w, h = box
     cx, cy = x + w / 2, y + h / 2
@@ -26,7 +35,9 @@ def prompt(plan, solved, briefing):
     """Prompt do cenário a partir do plano semântico + geometria resolvida."""
     cen = plan["cenario"]
     els = solved["elementos"]
-    parts = [f"imagem de fundo publicitário, formato {FORMAT_WORDS.get(briefing.get('formato'), 'vertical 4:5')}"]
+    parts = [f"imagem de fundo publicitário, formato {_format_words(briefing)}"]
+    if plan.get("direcao_visual"):
+        parts.insert(0, plan["direcao_visual"])  # direção artística livre do diretor (estilo, paleta, luz, câmera)
     if cen["ambiente"]:
         parts.append(cen["ambiente"])
     hero = next((e for e in els if e["papel"] == "heroi"), None)
@@ -56,6 +67,30 @@ def prompt(plan, solved, briefing):
         if name and len(name) > 3:
             text = re.sub(re.escape(name), "", text, flags=re.I)
     return re.sub(r"\s{2,}", " ", text).strip()
+
+
+def full_prompt(plan, briefing):
+    """Abordagem A (geração completa): o gerador tenta desenhar a arte INTEIRA, com os textos exatos entre aspas.
+    Só para comparação: a fidelidade dos textos é medida depois por OCR."""
+    texts = [(plan["titulo"]["txt"], "large bold headline")]
+    if plan.get("loja"):
+        texts.append((plan["loja"], "small brand name"))
+    if plan.get("chamada"):
+        texts.append((plan["chamada"]["txt"], "short tagline"))
+    for i, p in enumerate(briefing.get("produtos") or []):
+        role = "main product" if i == plan.get("heroi") else "product"
+        texts.append((p["nome"], f"{role} name"))
+        if p.get("preco"):
+            texts.append((p["preco"], f"{role} price, big and clear"))
+    if plan.get("selo"):
+        texts.append((plan["selo"]["txt"], "badge"))
+    for k, v in (briefing.get("info") or {}).items():
+        texts.append((f"{k.capitalize()}: {v}", "small footer info"))
+    quoted = "; ".join(f'"{t}" ({role})' for t, role in texts if t)
+    head = plan.get("direcao_visual") or plan["cenario"].get("ambiente") or ""
+    return (f"Professional advertising poster, {_format_words(briefing)}. {head} The poster shows these exact texts, spelled exactly "
+            f"as written, with correct Portuguese accents: {quoted}. Clear hierarchy, legible typography, products and prices "
+            f"well highlighted.")
 
 
 def _saliency(img):
