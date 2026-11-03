@@ -75,7 +75,8 @@ def check(items, solved, size, bg_img=None, n_products=0):
             probs.append(("texto_cortado", k, None))
         if papel not in ("produto", "heroi", "icone") and it.get("visivel", 1) < 0.75:
             probs.append(("escondido", k, round(it.get("visivel", 0), 2)))
-        if papel in MIN_FONT and it.get("fonte") and it["fonte"] < MIN_FONT[papel] * W / 1080:
+        need_font = MIN_FONT[papel] * (0.78 if papel == "preco_principal" and n_products > 1 else 1.0) if papel in MIN_FONT else 0
+        if need_font and it.get("fonte") and not it.get("arco") and it["fonte"] < need_font * W / 1080:
             probs.append(("fonte_pequena", k, round(it["fonte"])))
         if papel in MIN_AREA:
             area = it["w"] * it["h"] * 100 / (W * H) * 100 / 100
@@ -83,10 +84,10 @@ def check(items, solved, size, bg_img=None, n_products=0):
             if area < need:
                 probs.append(("hierarquia_fraca", k, round(area, 1)))
         el = by.get(k)
-        if bg_img is not None and el and el["tipo"] in ("nome", "texto", "info") and el.get("cor", el.get("cor")) is not None:
-            col = el.get("cor") or "#ffffff"
-            if el["papel"] in ("titulo", "chamada"):
-                continue  # títulos/chamadas levam sombra, neon ou contorno próprios
+        if bg_img is not None and el and el["tipo"] in ("nome", "texto", "info"):
+            col = el.get("cor") or el.get("_cor_plano") or "#ffffff"
+            if el["papel"] == "titulo":
+                continue  # o título leva neon/metal/contorno/sombra fortes; chamada e empresa são conferidas
             crop = bg_img.crop((max(0, int(it["x"])), max(0, int(it["y"])), max(1, int(it["x"] + it["w"])), max(1, int(it["y"] + it["h"])))).convert("L")
             px = sorted(crop.get_flattened_data())
             if px and not el.get("placa"):
@@ -148,26 +149,23 @@ def repair(solved, probs, items, size):
 
 
 def _move_to_free(e, solved, rects, size, step=1.5):
-    """Procura, em espiral, a posição livre mais próxima (sem colidir com outros textos/produtos de outros itens)."""
+    """Procura, em espiral, a posição livre mais próxima. Usa o desenho MEDIDO no navegador (sombra, inclinação e
+    efeitos aumentam o desenho além da caixa) e aplica o mesmo deslocamento na caixa."""
     k_ = size[0] / size[1]
-    x, y, w, h = e["b"]
-    others = [o["b"] for o in solved["elementos"] if o is not e and not (o.get("produto") is not None and o.get("produto") == e.get("produto"))
-              and o["tipo"] not in ("icone",)]
+    key = f'{e["papel"]}:{e.get("produto", "")}'
+    x, y, w, h = rects.get(key, e["b"])
+    others = [rects.get(f'{o["papel"]}:{o.get("produto", "")}', o["b"]) for o in solved["elementos"]
+              if o is not e and not (o.get("produto") is not None and o.get("produto") == e.get("produto")) and o["tipo"] not in ("icone",)]
     others += [z for z in solved.get("zonas_objetos") or []] if e["tipo"] in ("produto", "preco", "nome", "lista") else []
-    best = None
     for r in range(1, 40):
-        for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r), (r, r), (-r, r), (r, -r), (-r, -r)):
+        for dx, dy in ((0, r), (0, -r), (r, 0), (-r, 0), (r, r), (-r, r), (r, -r), (-r, -r)):
             nx, ny = x + dx * step, y + dy * step * k_
-            if nx < 3 or ny < 3 or nx + w > 97 or ny + h > 97:
+            if nx < 2 or ny < 2 or nx + w > 98 or ny + h > 98:
                 continue
             if all(min(nx + w, o[0] + o[2]) - max(nx, o[0]) <= 0.3 or min(ny + h, o[1] + o[3]) - max(ny, o[1]) <= 0.3 for o in others):
-                best = (nx, ny)
-                break
-        if best:
-            break
-    if best:
-        e["b"][0], e["b"][1] = best
-        return True
+                e["b"][0] += nx - x
+                e["b"][1] += ny - y
+                return True
     return False
 
 

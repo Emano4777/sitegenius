@@ -39,8 +39,18 @@ def _text_fx(ef, col, c2):
     }.get(ef, f"color:{col};text-shadow:0 6px 16px rgba(0,0,0,.6);")
 
 
+def _split_price(text):
+    """'R$ 17,90' -> ('17', ',90', ''); 'R$ 1.800/mês' -> ('1.800', '', '/mês'); nunca inventa centavos."""
+    import re  # noqa: PLC0415
+    t = (text or "").replace("R$", "").strip()
+    m = re.match(r"^([\d.]+)(,\d{1,2})?\s*(.*)$", t)
+    if not m:
+        return t, "", ""
+    return m.group(1), m.group(2) or "", m.group(3).strip()
+
+
 def _price_html(p, st, emphasis):
-    whole, _, cents = (p.get("preco") or "").replace("R$", "").strip().partition(",")
+    whole, cents, suffix = _split_price(p.get("preco"))
     bg, fg = st["bg"], st["fg"]
     shape = {
         "faixa": f"background:linear-gradient(180deg,{bg},{_shade(bg, .82)});border-radius:22px;transform:skewX(-8deg);"
@@ -56,7 +66,8 @@ def _price_html(p, st, emphasis):
     offer = f'<div class="oferta">{html.escape(p["oferta"])}</div>' if p.get("oferta") else ""
     return (f'{burst}{old}<div class="preco{" pm" if emphasis else ""}" style="{shape}color:{fg};font-family:\'{_fam(st["fonte"])}\'">'
             f'<span class="rs">R$</span><span class="int">{html.escape(whole or "")}</span>'
-            f'<span class="cts">,{html.escape(cents or "00")}</span></div>{offer}')
+            + (f'<span class="cts">{html.escape(cents)}</span>' if cents else "")
+            + (f'<span class="suf">{html.escape(suffix)}</span>' if suffix else "") + f'</div>{offer}')
 
 
 def _shade(hx, f):
@@ -82,7 +93,7 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
         t = e["tipo"]
         if t == "texto":
             txt = {"titulo": plan["titulo"]["txt"], "loja": plan["loja"], "chamada": (plan["chamada"] or {}).get("txt", "")}[e["papel"]]
-            st = plan["titulo"] if e["papel"] == "titulo" else plan["chamada"] if e["papel"] == "chamada" else e
+            st = plan["titulo"] if e["papel"] == "titulo" else e  # chamada/empresa: valores do elemento (o reparo de contraste atua nele)
             font = st.get("fonte", "poppins")
             if recursos.FONTS.get(font, ("", "", "", False))[3]:
                 txt = txt.upper()
@@ -95,11 +106,13 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
                          f'</textPath></text></svg>')
                 out.append(f'<div class="l" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}">{inner}</div>')
             else:
+                plate = "background:rgba(10,10,14,.6);border-radius:16px;padding:0 .4em;" if e.get("placa") else ""
                 out.append(f'<div class="l txt fit" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}font-family:\'{_fam(font)}\';'
-                           f'{_text_fx(ef, st["cor"], st["cor2"])}font-size:calc(var(--hpx)*.86)">{html.escape(txt)}</div>')
+                           f'{_text_fx(ef, st["cor"], st["cor2"])}{plate}font-size:calc(var(--hpx)*.86)">{html.escape(txt)}</div>')
         elif t == "produto":
             src = photos_uri[e["produto"]]
-            refl = f'<img class="refl" src="{src}">' if dark_scene and plan["cenario"]["superficie"] in ("pedestal", "bancada", "mesa") else ""
+            # reflexo só em superfície brilhante (pedestal em cena escura); madeira/tecido não refletem
+            refl = f'<img class="refl" src="{src}">' if dark_scene and plan["cenario"]["superficie"] == "pedestal" else ""
             out.append(f'<div class="l prod" data-k="{key}" style="{box}"><div class="contato"></div>{refl}<img class="foto" src="{src}">'
                        f'<div class="luz" style="background:linear-gradient(180deg,{luz}cc 0%,transparent 55%,rgba(0,0,0,.35) 100%);'
                        f'-webkit-mask-image:url({src});mask-image:url({src})"></div></div>')
@@ -162,6 +175,7 @@ body{{width:{W}px;height:{H}px;overflow:hidden;position:relative;background:#111
 .preco.pm .cts{{align-self:flex-start;margin-top:.12em}}
 .preco .rs{{font-size:.3em;margin:.55em .12em 0 0}}
 .preco .cts{{font-size:.45em;margin-top:.08em}}
+.preco .suf{{font-size:.32em;align-self:flex-end;margin:0 0 .12em .12em}}
 .de{{font-family:'PoppinsX';font-size:calc(var(--hpx)*.17);color:#fff;text-decoration:line-through;text-shadow:0 2px 6px #000}}
 .oferta{{font-family:'PoppinsX';font-size:calc(var(--hpx)*.15);background:#ffd400;color:#111;padding:2px 12px;border-radius:99px;margin-top:4px}}
 .lista{{flex-direction:column;justify-content:space-evenly;background:rgba(255,255,255,.93);border-radius:22px;padding:1.2% 3%;
@@ -186,9 +200,11 @@ function fit(){document.querySelectorAll('.fit').forEach(e=>{let s=parseFloat(ge
  document.querySelectorAll('.lista .ln').forEach(e=>{let s=parseFloat(getComputedStyle(e).fontSize);while(e.scrollWidth>e.clientWidth+1&&s>14){s-=1;e.style.fontSize=s+'px';}});}
 function qa(){const pg=document.body.getBoundingClientRect();const BW=pg.width,BH=pg.height;const out=[];
  for(const e of document.querySelectorAll('[data-k]')){const r=e.getBoundingClientRect();const k=e.dataset.k;const t=k.split(':')[0];
-  let vis=e.querySelector('.precobox>i')||e.querySelector('.preco')||e;const rr=vis.getBoundingClientRect();
+  let vis=e.querySelector('.precobox>i')||e.querySelector('.preco')||e;let rr=vis.getBoundingClientRect();
+  if((e.classList.contains('txt')||e.classList.contains('nome'))&&!e.style.background&&e.textContent.trim()){
+   const rg=document.createRange();rg.selectNodeContents(e);const g=rg.getBoundingClientRect();if(g.width>0)rr=g;}
   const it={k,x:rr.left,y:rr.top,w:rr.width,h:rr.height,bx:r.left,by:r.top,bw:r.width,bh:r.height};
-  const f=e.querySelector('.preco')||e;it.fonte=parseFloat(getComputedStyle(f).fontSize);
+  const f=e.querySelector('.preco')||e;it.fonte=parseFloat(getComputedStyle(f).fontSize);it.arco=!!e.querySelector('textPath');
   if(e.classList.contains('fit'))it.corta=e.scrollWidth>e.clientWidth+3||e.scrollHeight>e.clientHeight*1.12;
   let v=0,tot=0;for(let i=1;i<=4;i++)for(let j=1;j<=3;j++){const px=rr.left+rr.width*i/5,py=rr.top+rr.height*j/4;tot++;
    if(px<0||py<0||px>BW||py>BH)continue;const top=document.elementFromPoint(px,py);if(top&&(top===e||e.contains(top)))v++;}

@@ -203,15 +203,20 @@ def normalize(raw, briefing, photo_quality):
     nomes = {"fonte": _enum(nm.get("fonte"), recursos.BODY_FONTS, "poppins"), "cor": htmlflyer._hex(nm.get("cor"), "#ffffff")}
 
     cen = raw.get("cenario") if isinstance(raw.get("cenario"), dict) else {}
-    brand_words = {w for p in prods for w in _norm(p["nome"]).split()[:2] if len(w) > 3}
+    # objeto que repete o produto (ex.: "pacote de Café Pilão") seria uma embalagem inventada; palavra comum ("café") pode
+    name_heads = {" ".join(_norm(p["nome"]).split()[:2]) for p in prods if len(_norm(p["nome"]).split()) >= 2}
     objetos = []
     for o in (cen.get("objetos") or [])[:3]:
         o = re.sub(r"\s+", " ", str(o or "")).strip()[:60]
-        if o and not _PROP_BAD.search(o) and not (set(_norm(o).split()) & brand_words):
+        if o and not _PROP_BAD.search(o) and not any(h and h in _norm(o) for h in name_heads):
             objetos.append(o)
-    props = _enum(lay.get("objetos"), PROPS_SIDE, "direita" if objetos else "nenhum")
+    props = _enum(lay.get("objetos"), PROPS_SIDE, "nenhum")
     if not objetos:
         props = "nenhum"
+    elif props == "nenhum":
+        # o diretor pediu objetos mas não disse onde: ficam do lado oposto ao herói (ou atrás, se o herói é central)
+        hz = _enum(lay.get("heroi"), ZONES_HERO, "centro")
+        props = {"esquerda": "direita", "direita": "esquerda"}.get(hz, "ambos" if n else "atras")
     icones = [i for i in (raw.get("icones") or []) if isinstance(i, str) and i in recursos.ICONS][:3]
 
     title_zone = _enum(lay.get("titulo"), ZONES_TITLE, "topo" if n else "centro")

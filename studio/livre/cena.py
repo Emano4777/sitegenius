@@ -37,7 +37,9 @@ def prompt(plan, solved, briefing):
                          f"x {hb[0] + hb[2] / 2:.0f}% (largura de uns {min(90, hb[2] * 1.8):.0f}%), para apoiar um produto")
         else:
             parts.append(f"um {cen['superficie']} vazio na parte de baixo, com o topo em y {solved['superficie']:.0f}%")
-    for obj, zone in zip(cen["objetos"], solved["zonas_objetos"] or [None] * len(cen["objetos"])):
+    zones = solved["zonas_objetos"] or []
+    for j, obj in enumerate(cen["objetos"]):  # cada objeto numa zona prevista (alternando se houver mais objetos que zonas)
+        zone = zones[j % len(zones)] if zones else None
         parts.append(f"{obj} {_where(zone)}" if zone else obj)
     free = [e for e in els if e["tipo"] in ("texto", "preco", "lista", "info")]
     if free:
@@ -48,9 +50,11 @@ def prompt(plan, solved, briefing):
     parts.append("sem nenhum texto, sem letras, sem números, sem logotipos, sem marcas, sem embalagens e sem produtos")
     text = ", ".join(parts)
     # nomes de produtos/empresa nunca vão para o gerador (evita embalagens e letreiros inventados)
-    for word in {w for p in briefing.get("produtos") or [] for w in p["nome"].split() if len(w) > 3} | {briefing.get("loja") or ""}:
-        if word:
-            text = re.sub(re.escape(word), "", text, flags=re.I)
+    # nome completo dos produtos e da empresa nunca vão para o gerador (evita embalagens e letreiros inventados);
+    # palavras comuns (café, arroz, casa) continuam, porque descrevem o tema
+    for name in sorted({p["nome"] for p in briefing.get("produtos") or []} | {briefing.get("loja") or ""}, key=len, reverse=True):
+        if name and len(name) > 3:
+            text = re.sub(re.escape(name), "", text, flags=re.I)
     return re.sub(r"\s{2,}", " ", text).strip()
 
 

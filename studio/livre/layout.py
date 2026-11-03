@@ -107,6 +107,14 @@ def solve(plan, briefing, photos, size):
                 frac = 0.24
             rest_area = [cx0, cy0 + ch * (1 - frac), cw, ch * frac] if photo_others else None
             hero_area = [cx0, cy0, cw, ch * (1 - frac) - (1.0 if photo_others else 0)]
+        # orçamento vertical: se o herói (foto boa) não alcança o piso de área, os secundários cedem altura primeiro
+        if hero in good and rest_area and rel != "coluna_lateral":
+            ar_h = photos[hero]["aspecto"]
+            floor_h = ((9.5 if n_items > 1 else 16.0) * 100 * k / ar_h) ** 0.5  # altura da foto que dá o piso de área
+            need = floor_h + (5.2 if len(prods[hero]["nome"]) <= 22 else 8.0) + (6.0 * len(text_items) + 2.0 if text_items else 0) + 2
+            if hero_area[3] < need:
+                take = min(need - hero_area[3], rest_area[3] * 0.4)
+                rest_area[1] += take; rest_area[3] -= take; hero_area[3] += take
         list_area = None
         if text_items:  # itens sem foto boa: faixa própria (nunca sobre os produtos)
             lh_ = 6.0 * len(text_items) + 2.0

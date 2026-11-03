@@ -169,8 +169,8 @@ def test_scene_prompt_planned_with_layout(cat):
     b, _, plan, solved = solve_case(cat, "varios", PLANS[cat])
     p = cena.prompt(plan, solved, b)
     assert "sem nenhum texto" in p and "sem embalagens" in p
-    for prod in b["produtos"]:  # marcas/nomes de produtos nunca vão para o gerador
-        assert prod["nome"].split()[0].lower() not in p.lower() or len(prod["nome"].split()[0]) <= 3
+    for prod in b["produtos"]:  # nomes completos de produtos nunca vão para o gerador
+        assert prod["nome"].lower() not in p.lower()
     assert b["loja"].lower() not in p.lower()
     for obj in plan["cenario"]["objetos"]:
         assert obj in p
@@ -229,3 +229,19 @@ def test_end_to_end_objective_validation(cat, count, tmp_path):
     critical = [p for p in r["problemas_finais"] if p[0] in ("escondido", "fora_da_peca", "sobreposicao", "texto_cortado", "hierarquia_fraca")]
     assert not critical, critical
     assert r["avaliacao_estetica"] is None  # nenhuma nota subjetiva decide a aprovação
+
+
+def test_objects_without_side_get_a_free_side():
+    b, _ = briefing("supermercado", "um")
+    raw = {"layout": {"heroi": "centro", "objetos": "nenhum"}, "cenario": {"objetos": ["xícara de café fumegante"]}}
+    plan = plano.normalize(raw, b, {0: "boa"})
+    assert plan["layout"]["objetos"] != "nenhum" and plan["cenario"]["objetos"]
+    p = cena.prompt(plan, layout.solve(plan, b, {0: {"aspecto": 0.7, "qualidade": "boa"}}, SIZE), b)
+    assert "café fumegante" in p  # palavra comum do tema não é apagada
+
+
+def test_price_never_invents_cents():
+    from studio.livre import render
+    assert render._split_price("R$ 17,90") == ("17", ",90", "")
+    assert render._split_price("R$ 1.800/mês") == ("1.800", "", "/mês")
+    assert render._split_price("R$ 420.000") == ("420.000", "", "")
