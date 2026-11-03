@@ -270,7 +270,9 @@ def test_real_model_answers_are_accepted():
 # ------------------------------------------------------------ reprodução do defeito de produção (02/11/2026)
 
 
-def test_production_bug_capital_t_and_realistic_background(tmp_path):
+def test_production_bug_capital_t_and_realistic_background(tmp_path, monkeypatch):
+    import studio.routes as routes_mod
+    monkeypatch.setattr(routes_mod, "POST_EVALUATION", True)  # testa o mecanismo opcional (desligado por padrão)
     """Conversa real: o modelo pediu 'mudar' para 'Tecnologia é aqui' e o servidor descartava; o fundo mal mudava;
     'Você não mudou nada' repetia a mesma imagem. Respostas do modelo copiadas do banco de produção."""
     from tests.conftest import RENDER_SECRET, FlaskSession, UserClient, make_app
@@ -334,7 +336,9 @@ def test_production_bug_capital_t_and_realistic_background(tmp_path):
     assert "ainda não ficou" in msg and "o fundo continua igual" in msg and "Conferi o resultado:" not in msg
 
 
-def test_creative_agent_plan_tools_and_honest_evaluation(tmp_path):
+def test_creative_agent_plan_tools_and_honest_evaluation(tmp_path, monkeypatch):
+    import studio.routes as routes_mod
+    monkeypatch.setattr(routes_mod, "POST_EVALUATION", True)  # testa o mecanismo opcional (desligado por padrão)
     """Defeito da logo (02/11/2026): pedidos de mudança grande viravam retoque fraco e a resposta fingia a mudança.
     Agora o modelo planeja (vendo a arte), o servidor escolhe a ferramenta e o resultado é conferido."""
     from tests.conftest import RENDER_SECRET, FlaskSession, UserClient, make_app
@@ -808,3 +812,9 @@ def test_no_control_characters_in_source():
         if any(ord(c) < 32 and c not in "\n\r\t" for c in text):
             bad.append(str(path))
     assert bad == []
+
+
+def test_no_post_delivery_evaluation_by_default(tmp_path):
+    """Decisão do produto (03/11/2026): depois de entregue, a imagem não passa por conferência ("Conferi o resultado")."""
+    import studio.routes as routes_mod
+    assert routes_mod.POST_EVALUATION is False

@@ -3174,11 +3174,18 @@ def maybe_favicon(job, result):
         current_app.logger.exception("kit de favicon falhou no job %s", job.get("id"))
 
 
+# Conferência visual depois da entrega ("Conferi o resultado…"). Desligada por decisão do produto (03/11/2026);
+# SG_POST_EVALUATION=1 religa sem mudar código.
+POST_EVALUATION = os.environ.get("SG_POST_EVALUATION") == "1"
+
+
 def schedule_evaluation(job, result):
     """Depois de gerar: o modelo de visão compara antes x depois x pedido. Até o veredito, nada é dado como conferido."""
     if (loads(job["payload"], {}) or {}).get("gen_type") in ("free_image", "text_edit", "art_edit") and \
             job.get("conversation_id"):
         maybe_favicon(job, result)
+    if not POST_EVALUATION:  # decisão do produto: sem conferência depois de entregue (a qualidade é cuidada antes)
+        return
     try:
         payload_job = loads(job["payload"], {}) or {}
         spec = payload_job.get("spec") or {}
