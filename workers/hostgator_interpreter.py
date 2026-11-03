@@ -197,6 +197,33 @@ Responda SOMENTE com JSON compacto:
 aparece, curto"], "resumo": "uma frase para o cliente, em português, sem termos técnicos"}"""
 
 
+OLLAMA_LOCK = os.getenv("SG_OLLAMA_LOCK", "/opt/sitegenius/ollama.lock")
+
+
+class ollama_turn:
+    """Uma chamada do Studio ao Ollama por vez (intérprete + ferramentas): protege o WhatsApp de chamadas simultâneas.
+    flock funciona com o arquivo aberto só para leitura (as units têm o disco protegido)."""
+
+    def __enter__(self):
+        self.fd = None
+        try:
+            import fcntl  # noqa: PLC0415
+
+            self.fd = open(OLLAMA_LOCK, "r")
+            fcntl.flock(self.fd, fcntl.LOCK_EX)
+        except (OSError, ImportError):
+            self.fd = None
+        return self
+
+    def __exit__(self, *exc):
+        if self.fd is not None:
+            import fcntl  # noqa: PLC0415
+
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            self.fd.close()
+        return False
+
+
 def sign(secret, timestamp, nonce, method, path, body):
     """Mesmo formato de studio/security.py (canonical_request)."""
     body_hash = hashlib.sha256(body or b"").hexdigest()
@@ -274,7 +301,8 @@ class Ollama:
         # Com imagem, a análise visual na CPU leva mais: tempo maior (a imagem já chega reduzida a 768 px).
         has_images = any(m.get("images") for m in messages)
         timeout = max(self.timeout, int(os.getenv("SG_VISION_TIMEOUT", "240"))) if has_images else self.timeout
-        data = self._post("/api/chat", payload, timeout)
+        with ollama_turn():
+            data = self._post("/api/chat", payload, timeout)
         ns = 1e9
         # Métricas reais do Ollama (só log): carga do modelo, leitura do prompt e geração.
         log.info("métricas: carga=%.1fs prompt=%d tok em %.1fs (%.0f tok/s) geração=%d tok em %.1fs (%.1f tok/s)%s",

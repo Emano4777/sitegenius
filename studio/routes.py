@@ -356,7 +356,13 @@ def workers_online(kind):
         return False
     marks = ",".join("?" for _ in ids)
     row = get_conn().one(f"SELECT MAX(last_seen) AS t FROM sg_worker_status WHERE worker_id IN ({marks})", ids)
-    return bool(row and row["t"] and now() - row["t"] <= WORKER_ONLINE_S)
+    if row and row["t"] and now() - row["t"] <= WORKER_ONLINE_S:
+        return True
+    if kind == "tools":  # ocupado com uma análise/encarte longos: não pede tarefa, mas está vivo
+        busy = get_conn().one("SELECT id FROM sg_jobs WHERE gen_type IN ('layout_ref', 'websearch', 'flyer_ai') AND "
+                              "status IN ('claimed', 'running') AND updated_at > ?", (now() - FLYER_AI_TIMEOUT_S,))
+        return bool(busy)
+    return False
 
 
 def interpreter_available():
@@ -1014,8 +1020,9 @@ def flyer_chat(conv, texto, previous, assistant_id):
     if "gerar" in actions:
         text, job_id = generate_flyer(conv, g.user_id, normalized)
         replies.append(text)
-    add_message(conv["id"], "assistant", " ".join(r for r in replies if r), attachments or None,
-                message_id=assistant_id, job_id=job_id)
+    text = " ".join(r for r in replies if r)
+    if text or attachments or job_id:
+        add_message(conv["id"], "assistant", text, attachments or None, message_id=assistant_id, job_id=job_id)
     return jsonify({"ok": True}), 201
 
 
@@ -1489,14 +1496,19 @@ def side_job_failed(payload):
     return True
 
 
+FLYER_AI_TIMEOUT_S = 900  # direção de arte: plano + montagem + até 2 avaliações, com o modelo compartilhado
+
+
 def resolve_stale_interpretation(conv):
     """Se o worker HostGator não respondeu a tempo, interpreta por regras e avisa."""
     conn = get_conn()
     timeout = cfg().interpret_timeout_s
     stale = conn.all(
         "SELECT * FROM sg_jobs WHERE conversation_id = ? AND kind = 'interpret' AND "
-        "((status = 'queued' AND created_at < ?) OR (status IN ('claimed', 'running') AND created_at < ?))",
-        (conv["id"], now() - timeout, now() - 3 * timeout),
+        "((COALESCE(gen_type, '') <> 'flyer_ai' AND ((status = 'queued' AND created_at < ?) OR "
+        "  (status IN ('claimed', 'running') AND created_at < ?))) OR "
+        " (gen_type = 'flyer_ai' AND created_at < ?))",
+        (conv["id"], now() - timeout, now() - 3 * timeout, now() - FLYER_AI_TIMEOUT_S),
     )
     for job in stale:
         changed = conn.run(

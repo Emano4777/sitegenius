@@ -45,6 +45,33 @@ Responda SOMENTE com JSON compacto:
  "descricao": "uma frase sobre como os elementos estão organizados (cabeçalho, faixas, produtos, preços, selos)"}"""
 
 
+OLLAMA_LOCK = os.getenv("SG_OLLAMA_LOCK", "/opt/sitegenius/ollama.lock")
+
+
+class ollama_turn:
+    """Uma chamada do Studio ao Ollama por vez (intérprete + ferramentas): protege o WhatsApp de chamadas simultâneas.
+    flock funciona com o arquivo aberto só para leitura (as units têm o disco protegido)."""
+
+    def __enter__(self):
+        self.fd = None
+        try:
+            import fcntl  # noqa: PLC0415
+
+            self.fd = open(OLLAMA_LOCK, "r")
+            fcntl.flock(self.fd, fcntl.LOCK_EX)
+        except (OSError, ImportError):
+            self.fd = None
+        return self
+
+    def __exit__(self, *exc):
+        if self.fd is not None:
+            import fcntl  # noqa: PLC0415
+
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            self.fd.close()
+        return False
+
+
 def sign(secret, timestamp, nonce, method, path, body):
     body_hash = hashlib.sha256(body or b"").hexdigest()
     message = f"{timestamp}\n{nonce}\n{method.upper()}\n{path}\n{body_hash}".encode()
@@ -92,7 +119,7 @@ def ollama_vision(image_bytes, prompt):
         raise SystemExit("SG_OLLAMA_URL deve ser local")
     req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
+    with ollama_turn(), urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
         data = json.loads(resp.read())
     try:
         out = json.loads(data["message"]["content"])
@@ -116,7 +143,7 @@ def ollama_chat(messages, images=None, num_predict=500, temperature=0.4):
     url = os.getenv("SG_OLLAMA_URL", "http://127.0.0.1:11434")
     req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
+    with ollama_turn(), urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
         data = json.loads(resp.read())
     try:
         out = json.loads(data["message"]["content"])
@@ -172,7 +199,7 @@ def process_flyer_design(site, job):
         browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-zygote", "--disable-gpu"])
         try:
             page = browser.new_page()
-            for round_no in range(3):
+            for round_no in range(2):  # no máximo 2 avaliações estéticas (o modelo é compartilhado)
                 image = render_html(page, htmlflyer.build(briefing, photos, design), size)
                 critique = None
                 try:
@@ -191,7 +218,7 @@ def process_flyer_design(site, job):
                     score = 6.0
                 if best is None or score > best[0]:
                     best = (score, image, dict(design), critique)
-                if score >= 8 or round_no == 2 or not (critique or {}).get("ajustes"):
+                if score >= 8 or round_no == 1 or not (critique or {}).get("ajustes"):
                     break
                 design = artdirector.merge(design, critique["ajustes"], names)
         finally:
