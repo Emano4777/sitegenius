@@ -12,7 +12,7 @@ from PIL import Image, ImageOps
 
 from studio import composer, htmlflyer
 
-from . import cena, layout, plano, render, valida
+from . import cena, estetica, layout, plano, render, valida
 
 
 def photo_info(data):
@@ -20,11 +20,21 @@ def photo_info(data):
     img = ImageOps.exif_transpose(Image.open(io.BytesIO(data)))
     cut, ok = composer.cutout(img)
     w, h = cut.size
-    quality = "boa" if ok and min(w, h) >= 180 and max(w, h) >= 300 else "fraca"
+    if ok:
+        quality = "boa" if min(w, h) >= 180 and max(w, h) >= 300 else "fraca"
+    else:
+        # fundo não uniforme (foto amadora, cenário): o produto aparece num cartão, nunca some do anúncio
+        quality = "cartao" if min(w, h) >= 300 else "fraca"
+        cut = cut.convert("RGB")
     cut.thumbnail((900, 900))
     buf = io.BytesIO()
-    cut.save(buf, "PNG", optimize=True)
-    return {"aspecto": w / h, "qualidade": quality, "uri": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()}
+    if quality == "cartao":
+        cut.save(buf, "JPEG", quality=88)
+        uri = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+    else:
+        cut.save(buf, "PNG", optimize=True)
+        uri = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+    return {"aspecto": w / h, "qualidade": quality, "uri": uri}
 
 
 def _cover(img, size):
@@ -43,7 +53,7 @@ def _lum_under(img, box):
     return sum(px) / len(px)
 
 
-def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene=2, max_repair=4, log=None):
+def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene=2, max_repair=6, log=None, recent=None):
     """photos: {indice: bytes}. director(messages) -> texto. scene_gen(prompt, tentativa) -> PIL.Image ou None."""
     t_all = time.time()
     tm = {}
@@ -61,11 +71,14 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
     quality = {i: v["qualidade"] for i, v in info.items()}
 
     t = time.time()
-    raw_text = director(plano.plan_messages(briefing, quality))
+    raw_text = director(plano.plan_messages(briefing, quality, recent))
     tm["plano_s"] = round(time.time() - t, 1)
-    plan = plano.normalize(plano.parse(raw_text), briefing, quality)
+    plan = plano.normalize(plano.parse(raw_text), briefing, quality, recent)
     t = time.time()
     solved = layout.solve(plan, briefing, info, size)
+    for e in solved["elementos"]:
+        if e["tipo"] == "produto" and (info.get(e["produto"]) or {}).get("qualidade") == "cartao":
+            e["cartao"] = True
     tm["resolver_s"] = round(time.time() - t, 3)
 
     # cenário planejado junto: prompt a partir das zonas; confere; corrige ou regera com limite
@@ -110,6 +123,14 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
             st = plan["titulo"] if e["papel"] == "titulo" else e
             e["ef_plano"] = st.get("ef")
             e["_reforco_cor"] = "#111114" if htmlflyer._luma(st.get("cor") or "#ffffff") >= 128 else "#ffffff"
+    # leitura do cenário: o cabeçalho procura a região mais calma perto do planejado (antes de desenhar)
+    t = time.time()
+    smap = estetica.scene_map(scene)
+    moves = estetica.place(solved, smap)
+    solved["paleta"] = [plan["titulo"]["cor"], plan["titulo"].get("cor2"), (plan["chamada"] or {}).get("cor"),
+                        (plan["chamada"] or {}).get("cor2"), plan["preco"]["bg"], plan["preco"]["fg"],
+                        (plan["selo"] or {}).get("cor"), plan["cenario"]["luz"], "#ffffff", "#1e1e22"]
+    tm["leitura_cenario_s"] = round(time.time() - t, 2)
     t = time.time()
     history = []
     items = []
@@ -129,8 +150,13 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
             with Image.open(shot) as a, Image.open(bare) as b:
                 legivel = valida.ink(a, b, items, size, keys)
         probs = valida.check(items, solved, size, scene, len(briefing.get("produtos") or []), legivel)
+        probs += estetica.check(items, solved, size, smap, plan)
         history.append([list(p) for p in probs])
-        if not probs or rnd == max_repair or not valida.repair(solved, probs, items, size):
+        if not probs or rnd == max_repair:
+            break
+        fixed = valida.repair(solved, [p for p in probs if p[0] in valida.CODES], items, size, scene)
+        fixed += estetica.repair(solved, [p for p in probs if p[0] not in valida.CODES], items, size, smap, plan)
+        if not fixed:
             break
     tm["validacao_s"] = round(time.time() - t, 1)
     png = None
@@ -147,5 +173,5 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
     return {"plano": plan, "geometria": solved, "prompt_cenario": cena.prompt(plan, solved, briefing),
             "cenario": scene_report, "decisoes_cenario": decisions, "problemas_por_rodada": history,
             "problemas_finais": history[-1] if history else [], "metricas": valida.metrics(items, size, len(briefing.get("produtos") or [])),
-            "tempos": tm, "png": png, "plano_bruto": raw_text,
+            "tempos": tm, "png": png, "plano_bruto": raw_text, "posicionamento_cenario": moves,
             "avaliacao_estetica": valida.aesthetic_hook(png, plan)}

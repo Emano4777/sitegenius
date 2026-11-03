@@ -70,6 +70,13 @@ def _price_html(p, st, emphasis):
             + (f'<span class="suf">{html.escape(suffix)}</span>' if suffix else "") + f'</div>{offer}')
 
 
+def _scrim(text_color):
+    """Suporte visual suave SEM caixa: halo difuso que acompanha as letras (escuro atrás de letra clara, claro atrás
+    de letra escura). Separa o texto do fundo sem placa nem retângulo."""
+    c = "10,10,14" if htmlflyer._luma(htmlflyer._hex(text_color, "#ffffff")) > 128 else "255,255,255"
+    return (f"filter:drop-shadow(0 0 6px rgba({c},.95)) drop-shadow(0 0 16px rgba({c},.8)) drop-shadow(0 0 34px rgba({c},.6));")
+
+
 def _shade(hx, f):
     h = htmlflyer._hex(hx, "#888888")
     return "#%02x%02x%02x" % tuple(max(0, min(255, int(int(h[i:i + 2], 16) * f))) for i in (1, 3, 5))
@@ -94,6 +101,8 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
         if t == "texto":
             txt = {"titulo": plan["titulo"]["txt"], "loja": plan["loja"], "chamada": (plan["chamada"] or {}).get("txt", "")}[e["papel"]]
             st = plan["titulo"] if e["papel"] == "titulo" else e  # chamada/empresa: valores do elemento (o reparo de contraste atua nele)
+            if e["papel"] == "titulo" and e.get("cor_forcada"):
+                st = {**st, "cor": e["cor_forcada"]}  # cor da própria paleta escolhida pelo reparo de legibilidade
             font = st.get("fonte", "poppins")
             if recursos.FONTS.get(font, ("", "", "", False))[3]:
                 txt = txt.upper()
@@ -108,12 +117,15 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
                          f'</textPath></text></svg>')
                 out.append(f'<div class="l" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}">{inner}</div>')
             else:
-                plate = "background:rgba(10,10,14,.6);border-radius:16px;padding:0 .4em;" if e.get("placa") else ""
+                plate = _scrim(st.get("cor") if e["papel"] != "titulo" else e.get("cor_forcada") or st["cor"]) if e.get("placa") else ""
                 fx = _text_fx(ef, st["cor"], st["cor2"])
                 if ring:
                     fx += f"-webkit-text-stroke:calc(var(--hpx)*.05) {ring};paint-order:stroke fill;"
                 out.append(f'<div class="l txt fit" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}font-family:\'{_fam(font)}\';'
                            f'{fx}{plate}font-size:calc(var(--hpx)*.86)">{html.escape(txt)}</div>')
+        elif t == "produto" and e.get("cartao"):
+            src = photos_uri[e["produto"]]
+            out.append(f'<div class="l prod cartao" data-k="{key}" style="{box}"><img class="foto" src="{src}"></div>')
         elif t == "produto":
             src = photos_uri[e["produto"]]
             # reflexo só em superfície brilhante (pedestal em cena escura); madeira/tecido não refletem
@@ -128,7 +140,7 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
         elif t == "nome":
             p = prods[e["produto"]]
             col = e.get("cor") or plan["nomes"]["cor"]
-            plate = "background:rgba(10,10,14,.62);border-radius:14px;padding:0 12px;" if e.get("placa") else ""
+            plate = _scrim(col) if e.get("placa") else ""
             big = 0.7 if e.get("destaque") else 0.6
             out.append(f'<div class="l nome fit" data-k="{key}" data-cor="{col}" style="{box}{hidden}{plate}color:{col};'
                        f'font-family:\'{_fam(plan["nomes"]["fonte"])}\';font-size:calc(var(--hpx)*{big});'
@@ -162,6 +174,9 @@ body{{width:{W}px;height:{H}px;overflow:hidden;position:relative;background:#111
 .l{{position:absolute;display:flex;align-items:center;justify-content:center}}
 .txt{{line-height:.95;text-align:center;white-space:normal}}
 .prod{{align-items:flex-end}}
+.cartao{{align-items:center}}
+.cartao .foto{{width:100%;height:100%;object-fit:cover;border-radius:22px;border:7px solid #fff;box-sizing:border-box;
+  box-shadow:0 22px 46px rgba(0,0,0,.45),0 4px 10px rgba(0,0,0,.25);transform:rotate(-2deg)}}
 .prod .foto{{position:relative;width:100%;height:100%;object-fit:contain;object-position:bottom;z-index:2;
   filter:drop-shadow(0 18px 18px rgba(0,0,0,.45)) drop-shadow(0 0 24px {luz}55)}}
 .prod .luz{{position:absolute;inset:0;z-index:3;mix-blend-mode:soft-light;opacity:.5;-webkit-mask-size:contain;mask-size:contain;
@@ -199,10 +214,12 @@ body{{width:{W}px;height:{H}px;overflow:hidden;position:relative;background:#111
 QA_JS = """
 function natw(t,fs){const c=document.createElement('canvas').getContext('2d');c.font=fs+'px '+getComputedStyle(t).fontFamily;
  return c.measureText(t.textContent).width||1;}
+function over(e){if(!e.textContent.trim())return false;const rg=document.createRange();rg.selectNodeContents(e);
+ const g=rg.getBoundingClientRect(),b=e.getBoundingClientRect();return g.width>b.width+2||g.height>b.height*1.08;}
 function fit(){document.querySelectorAll('svg text').forEach(t=>{if(!t.querySelector('textPath'))return;
   t.setAttribute('font-size',Math.min(200,170*880/natw(t,170)).toFixed(1));});
  document.querySelectorAll('.fit').forEach(e=>{let s=parseFloat(getComputedStyle(e).fontSize);
-  while((e.scrollWidth>e.clientWidth+2||e.scrollHeight>e.clientHeight*1.06)&&s>10){s-=1;e.style.fontSize=s+'px';}});
+  while((e.scrollWidth>e.clientWidth+2||e.scrollHeight>e.clientHeight*1.06||over(e))&&s>10){s-=1;e.style.fontSize=s+'px';}});
  document.querySelectorAll('.preco').forEach(e=>{let s=parseFloat(getComputedStyle(e).fontSize);const b=e.parentElement;
   if(e.classList.contains('pm')){while((e.scrollWidth>e.clientWidth+1||e.scrollHeight>e.clientHeight+1)&&s>14){s-=2;e.style.fontSize=s+'px';}return;}
   while(e.getBoundingClientRect().width>b.clientWidth*1.04&&s>14){s-=2;e.style.fontSize=s+'px';}});
@@ -210,14 +227,18 @@ function fit(){document.querySelectorAll('svg text').forEach(t=>{if(!t.querySele
 function qa(){const pg=document.body.getBoundingClientRect();const BW=pg.width,BH=pg.height;const out=[];
  for(const e of document.querySelectorAll('[data-k]')){const r=e.getBoundingClientRect();const k=e.dataset.k;const t=k.split(':')[0];
   let vis=e.querySelector('.precobox>i')||e.querySelector('.preco')||e;let rr=vis.getBoundingClientRect();
-  if((e.classList.contains('txt')||e.classList.contains('nome'))&&!e.style.background&&e.textContent.trim()){
+  const clip=e.style.backgroundClip==='text'||e.style.webkitBackgroundClip==='text';
+  if((e.classList.contains('txt')||e.classList.contains('nome'))&&(!e.style.background||clip)&&e.textContent.trim()){
    const rg=document.createRange();rg.selectNodeContents(e);const g=rg.getBoundingClientRect();if(g.width>0)rr=g;}
+  const im=e.classList.contains('prod')&&!e.classList.contains('cartao')?e.querySelector('.foto'):null;
+  if(im&&im.naturalWidth){const s=Math.min(r.width/im.naturalWidth,r.height/im.naturalHeight);const iw=im.naturalWidth*s,ih=im.naturalHeight*s;
+   rr={left:r.left+(r.width-iw)/2,top:r.bottom-ih,width:iw,height:ih,right:r.left+(r.width+iw)/2,bottom:r.bottom};}
   const it={k,x:rr.left,y:rr.top,w:rr.width,h:rr.height,bx:r.left,by:r.top,bw:r.width,bh:r.height};
   const f=e.querySelector('.preco')||e;it.fonte=parseFloat(getComputedStyle(f).fontSize);it.arco=!!e.querySelector('textPath');
   if(it.arco){const tx=e.querySelector('text'),sv=e.querySelector('svg').getBoundingClientRect();
    const fs=parseFloat(tx.getAttribute('font-size'));const sy=sv.height/320;
    it.arco_escala=(880/natw(tx,fs))*((sv.width/1000)/sy);it.fonte=fs*sy;}
-  if(e.classList.contains('fit'))it.corta=e.scrollWidth>e.clientWidth+3||e.scrollHeight>e.clientHeight*1.12;
+  if(e.classList.contains('fit'))it.corta=e.scrollWidth>e.clientWidth+3||e.scrollHeight>e.clientHeight*1.12||(clip&&over(e));
   let v=0,tot=0;for(let i=1;i<=4;i++)for(let j=1;j<=3;j++){const px=rr.left+rr.width*i/5,py=rr.top+rr.height*j/4;tot++;
    if(px<0||py<0||px>BW||py>BH)continue;const top=document.elementFromPoint(px,py);if(top&&(top===e||e.contains(top)))v++;}
   it.visivel=tot?v/tot:0;it.fora=rr.left<-2||rr.top<-2||rr.right>BW+2||rr.bottom>BH+2;out.push(it);}

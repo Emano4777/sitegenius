@@ -21,6 +21,8 @@ CHROME_CANDIDATES = [os.environ.get("SG_CHROME") or "", r"C:\Program Files\Googl
 MIN_FONT = {"nome": 20, "nome_heroi": 30, "preco": 44, "preco_principal": 90, "titulo": 60, "chamada": 26, "loja": 20}
 # pisos medidos (% da peça: 1 produto, vários); o resolvedor mira acima deles (6,0/3,8 e 16/9,5)
 MIN_AREA = {"preco_principal": (4.6, 3.0), "heroi": (14.0, 7.5)}
+CODES = {"fora_da_peca", "texto_cortado", "escondido", "fonte_pequena", "hierarquia_fraca", "contraste", "sobreposicao",
+         "legibilidade", "letras_deformadas"}  # o resto é da conferência estética (estetica.py)
 LEGIBLE_INK = 0.45  # fração mínima da tinta do texto com contraste >= 3:1 contra o fundo (WCAG, texto grande)
 
 
@@ -170,7 +172,30 @@ def check(items, solved, size, bg_img=None, n_products=0, legivel=None):
     return probs
 
 
-def repair(solved, probs, items, size):
+def _palette_pick(palette, scene, rect, e):
+    """Cor da paleta do plano com o maior contraste contra o fundo REAL sob o texto (pior caso entre claros e escuros)."""
+    if scene is None or not rect or not palette:
+        return None
+    W, H = scene.size
+    x, y, w, h = rect
+    crop = scene.crop((int(max(0, x) * W / 100), int(max(0, y) * H / 100), max(1, int(min(100, x + w) * W / 100)),
+                       max(1, int(min(100, y + h) * H / 100)))).convert("L")
+    px = sorted(crop.get_flattened_data())
+    if not px:
+        return None
+    lo, hi = px[len(px) // 10], px[len(px) * 9 // 10]
+    current = (e.get("cor_forcada") or e.get("cor") or "").lower()
+    best, score = None, 0.0
+    for c in dict.fromkeys(x.lower() for x in palette if x):
+        if c == current:
+            continue
+        sc = min(_contrast(c, lo), _contrast(c, hi))
+        if sc > score:
+            best, score = c, sc
+    return best if score >= 3.2 else None
+
+
+def repair(solved, probs, items, size, scene=None):
     """Aplica reparos que preservam a hierarquia. Devolve quantos reparos foram feitos."""
     W, H = size
     by = {f'{e["papel"]}:{e.get("produto", "")}': e for e in solved["elementos"]}
@@ -191,21 +216,32 @@ def repair(solved, probs, items, size):
             # texto longo demais para o arco: em linha reta ele cabe maior e sem deformar (vale para qualquer título)
             e["ef_forcado"] = "adesivo"; e["_saiu_do_arco"] = True
             done += 1
-        elif code == "legibilidade" and e:
-            if not e.get("reforco"):
-                e["reforco"] = e.get("_reforco_cor") or "#111114"  # contorno largo que separa a letra do fundo
+        elif code in ("legibilidade", "contraste") and e:
+            # escada que preserva a estética: 1) outra cor da PRÓPRIA paleta que funcione no fundo real; 2) contorno e
+            # sombra; 3) suporte visual suave (halo difuso, nunca retângulo). Mover para região calma é do reparo estético.
+            step = e.get("_leg", 0)
+            if step == 0:
+                e["_leg"] = 1
+                col = _palette_pick(solved.get("paleta") or [], scene, rects.get(k), e)
+                if col:
+                    if e["papel"] == "titulo":
+                        e["cor_forcada"] = col
+                    else:
+                        e["cor"] = col
+                    e["_reforco_cor"] = "#111114" if htmlflyer._luma(col) >= 128 else "#ffffff"
+                    done += 1
+                    continue
+                step = 1
+            if step == 1:
+                e["_leg"] = 2
+                e["reforco"] = e.get("_reforco_cor") or "#111114"
                 done += 1
-            elif not e.get("placa"):
+            elif step == 2 and not e.get("placa"):
+                e["_leg"] = 3
                 if _ef(e) == "arco":
                     e["ef_forcado"] = "adesivo"; e["_saiu_do_arco"] = True
                 e["placa"] = True
                 done += 1
-        elif code == "contraste" and e:
-            if e.get("_tentou_cor"):
-                e["placa"] = True; e["cor"] = "#ffffff"
-            else:
-                e["cor"] = "#ffffff" if htmlflyer._luma(e.get("cor") or "#000000") < 128 else "#1e1e22"; e["_tentou_cor"] = True
-            done += 1
         elif code == "sobreposicao":
             a, b = by.get(k), by.get(det)
             if not a or not b:

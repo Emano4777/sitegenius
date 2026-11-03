@@ -122,7 +122,7 @@ def test_geometry_invariants_any_art(cat, count, kind):
         assert len(mains) == 1
         assert mains[0]["b"][2] * mains[0]["b"][3] / 100 >= (4.5 if n == 1 else 3.0)  # preço principal grande (% da peça)
         hero = [e for e in els if e["papel"] == "heroi"]
-        if plan["heroi"] in {i for i, v in info.items() if v["qualidade"] == "boa"}:
+        if plan["heroi"] in {i for i, v in info.items() if v["qualidade"] in ("boa", "cartao")}:
             assert hero and hero[0]["b"][2] * hero[0]["b"][3] / 100 >= (12 if n == 1 else 6)
             others = [e for e in els if e["papel"] == "produto"]
             for o in others:
@@ -132,10 +132,10 @@ def test_geometry_invariants_any_art(cat, count, kind):
     # todo item aparece exatamente uma vez (foto+preço+nome, ou na lista)
     shown = [e.get("produto") for e in els if e["tipo"] == "preco"] + [i for e in els if e["tipo"] == "lista" for i in e["itens"]]
     assert sorted(shown) == list(range(n))
-    # foto fraca nunca vira foto na arte
+    # foto fraca nunca vira foto na arte (sem recorte, mas com resolução, entra em cartão)
     for e in els:
         if e["tipo"] == "produto":
-            assert info[e["produto"]]["qualidade"] == "boa"
+            assert info[e["produto"]]["qualidade"] in ("boa", "cartao")
     # produtos e preços não invadem as zonas reservadas aos objetos do cenário
     for z in solved["zonas_objetos"]:
         for e in els:
@@ -274,3 +274,79 @@ def test_unreadable_title_gets_outline_then_plate_and_arc_never_deforms():
     assert e["ef_forcado"] != "arco" and e["reforco"] == "#111114"  # sai do arco e ganha contorno
     valida.repair(solved, [("legibilidade", "titulo:", 0.2)], items, (1080, 1350))
     assert e["placa"]  # ainda ilegível: placa atrás do texto
+
+
+# ------------------------------------------------ leitura do cenário, estética e variedade
+from studio.livre import estetica, recursos  # noqa: E402
+
+
+def _scene_with_object(box):
+    img = Image.new("RGB", (1080, 1350), (232, 228, 220))
+    d = ImageDraw.Draw(img)
+    x, y, w, h = box
+    for i in range(0, int(w * 10.8), 18):  # objeto com textura (bordas fortes)
+        d.rectangle((x * 10.8 + i, y * 13.5, x * 10.8 + i + 9, (y + h) * 13.5), fill=(40, 30, 20))
+    return img
+
+
+def test_header_moves_off_scene_object_to_calm_area():
+    smap = estetica.scene_map(_scene_with_object((10, 2, 80, 26)))  # objeto grande no alto
+    solved = {"elementos": [{"tipo": "texto", "papel": "titulo", "b": [4, 4, 92, 18], "prio": 0, "min": 1, "z": 40},
+                            {"tipo": "texto", "papel": "loja", "b": [18, 23, 64, 4.6], "prio": 5, "min": 0.8, "z": 40}],
+              "zonas_objetos": []}
+    before = estetica.busy(smap, solved["elementos"][0]["b"])
+    moves = estetica.place(solved, smap)
+    after = estetica.busy(smap, solved["elementos"][0]["b"])
+    assert moves and after < before - 0.3
+    t, lj = solved["elementos"]
+    assert lj["b"][1] > t["b"][1]  # a ordem do cabeçalho é preservada (empresa continua abaixo do título)
+
+
+def test_price_never_hides_product_or_name():
+    items = [{"k": "heroi:0", "x": 300, "y": 300, "w": 400, "h": 500}, {"k": "preco_principal:0", "x": 320, "y": 450, "w": 380, "h": 250},
+             {"k": "nome:0", "x": 300, "y": 640, "w": 400, "h": 60}]
+    solved = {"elementos": [{"tipo": "produto", "papel": "heroi", "produto": 0, "b": [27.8, 22.2, 37, 37], "prio": 1, "min": 1, "z": 20},
+                            {"tipo": "preco", "papel": "preco_principal", "produto": 0, "b": [29.6, 33.3, 35, 18.5], "prio": 0, "min": 1, "z": 45},
+                            {"tipo": "nome", "papel": "nome", "produto": 0, "b": [27.8, 47.4, 37, 4.4], "prio": 4, "min": 0.75, "z": 44}],
+              "zonas_objetos": []}
+    probs = estetica.check(items, solved, (1080, 1350))
+    codes = {p[0] for p in probs}
+    assert {"preco_sobre_produto", "preco_sobre_nome"} <= codes
+    assert estetica.repair(solved, probs, items, (1080, 1350))
+    pb, hb = solved["elementos"][1]["b"], solved["elementos"][0]["b"]
+    ox, oy = layout.overlap(pb, hb)
+    assert ox * oy <= 0.18 * hb[2] * hb[3] + 1e-6 and pb[2] == 35  # saiu de cima da foto sem encolher
+
+
+def test_typography_follows_declared_tone_and_avoids_recent_repeats():
+    b = {"loja": "X", "titulo": "Grande Liquidação", "produtos": []}
+    raw = {"tom": "impacto", "titulo": {"fonte": "playfair", "ef": "arco"}}
+    n = plano.normalize(raw, b, {}, recent={"fontes": [], "efeitos": []})
+    assert n["titulo"]["fonte"] in recursos.TONES["impacto"] and n["titulo"]["ef"] != "arco"  # título longo não vai em arco
+    first = n["titulo"]["fonte"]
+    n2 = plano.normalize({"tom": "impacto", "titulo": {"fonte": first, "ef": "neon"}}, b, {},
+                         recent={"fontes": [first], "efeitos": ["neon"]})
+    assert n2["titulo"]["fonte"] != first and n2["titulo"]["fonte"] in recursos.TONES["impacto"] and n2["titulo"]["ef"] != "neon"
+    n3 = plano.normalize({"tom": "elegante", "titulo": {"fonte": "dmserif", "ef": "sombra"}}, b, {}, recent=None)
+    assert n3["titulo"]["fonte"] == "dmserif"  # escolha coerente e nova: a decisão do diretor fica
+
+
+def test_combined_plan_takes_structure_from_one_and_creativity_from_other():
+    q = {"heroi": 1, "prioridades": ["preco", "produto"], "layout": {"heroi": "esquerda", "preco": "ao_lado_heroi", "objetos": "nenhum"},
+         "preco": {"estilo": "bloco"}, "titulo": {"fonte": "playfair"}}
+    g = {"heroi": 0, "titulo": {"fonte": "bangers", "ef": "3d"}, "chamada": {"txt": "Seu café"}, "layout": {"objetos": "direita"},
+         "cenario": {"ambiente": "balcão"}}
+    c = plano.combine(q, g)
+    assert c["heroi"] == 1 and c["preco"]["estilo"] == "bloco" and c["layout"]["preco"] == "ao_lado_heroi"
+    assert c["titulo"]["fonte"] == "bangers" and c["chamada"]["txt"] == "Seu café" and c["layout"]["objetos"] == "direita"
+
+
+def test_photo_without_clean_background_becomes_card_not_text():
+    img = Image.new("RGB", (800, 800), (90, 120, 60))
+    ImageDraw.Draw(img).ellipse((200, 200, 600, 600), fill=(200, 40, 40))
+    buf = io.BytesIO()
+    img.save(buf, "JPEG")
+    assert pipeline.photo_info(buf.getvalue())["qualidade"] == "cartao"
+    small = io.BytesIO()
+    img.resize((200, 200)).save(small, "JPEG")
+    assert pipeline.photo_info(small.getvalue())["qualidade"] == "fraca"  # pequena demais: continua texto

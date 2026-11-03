@@ -29,7 +29,7 @@ def solve(plan, briefing, photos, size):
     k = W / H                      # 1% de largura vale k% de altura
     prods = briefing.get("produtos") or []
     lay = plan["layout"]
-    good = {i for i, p in photos.items() if p.get("qualidade") == "boa"}
+    good = {i for i, p in photos.items() if p.get("qualidade") in ("boa", "cartao")}  # cartão: foto sem recorte
     hero = plan["heroi"]
     others = [i for i in range(len(prods)) if i != hero]
     photo_others = [i for i in others if i in good]

@@ -41,6 +41,21 @@ FONTS = {
 # fontes boas para números grandes (preço) e para textos pequenos (nomes, informações)
 PRICE_FONTS = ("anton", "bebas", "bungee", "russo", "titan", "luckiest", "kanit", "archivo", "blackops", "bangers", "poppins")
 BODY_FONTS = ("poppins", "montserrat", "archivo", "russo", "dmserif", "playfair")
+# tom da campanha (decidido pelo diretor a partir do briefing) -> fontes coerentes. Uma fonte serve a vários tons;
+# nenhum segmento tem fonte fixa: o tom vem da interpretação do pedido e a variedade vem da rotação entre as coerentes.
+TONES = {
+    "impacto": ("anton", "bebas", "archivo", "bungee", "blackops", "bangers", "kanit", "luckiest", "russo", "titan"),
+    "urgente": ("kanit", "bangers", "blackops", "anton", "archivo", "bungee"),
+    "sofisticado": ("cinzel", "playfair", "dmserif", "abril", "montserrat"),
+    "elegante": ("playfair", "dmserif", "cinzel", "abril", "greatvibes", "satisfy"),
+    "moderno": ("montserrat", "bebas", "poppins", "righteous", "russo", "archivo"),
+    "tecnologico": ("orbitron", "russo", "bebas", "monoton", "archivo", "kanit"),
+    "divertido": ("titan", "luckiest", "shrikhand", "lobster", "bangers", "righteous", "pacifico"),
+    "acolhedor": ("poppins", "lobster", "pacifico", "righteous", "satisfy", "montserrat", "dmserif"),
+    "natural": ("pacifico", "marker", "satisfy", "dmserif", "montserrat", "righteous"),
+    "festivo": ("shrikhand", "berkshire", "lobster", "luckiest", "titan", "greatvibes"),
+    "artesanal": ("marker", "pacifico", "lobster", "berkshire", "satisfy"),
+}
 EFFECTS = ("neon", "metal", "3d", "adesivo", "gradiente", "contorno", "faixa", "arco", "italico", "sombra")
 
 
@@ -81,8 +96,12 @@ def font_css(keys):
     return "\n".join(out)
 
 
-def font_menu():
-    return "; ".join(f"{k} ({v[2]})" for k, v in FONTS.items())
+def font_menu(seed=0):
+    """Menu de fontes em ordem embaralhada por briefing (o modelo tende a escolher as primeiras da lista)."""
+    import random  # noqa: PLC0415
+    keys = list(FONTS)
+    random.Random(seed).shuffle(keys)
+    return "; ".join(f"{k} ({FONTS[k][2]})" for k in keys)
 
 
 def icon_svg(name, color):

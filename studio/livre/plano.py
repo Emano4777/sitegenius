@@ -27,7 +27,7 @@ PLAN_PROMPT = """Você é o diretor criativo de uma agência. Planeje um anúnci
 briefing abaixo. Você decide a IDEIA, a hierarquia, o estilo, as relações entre os elementos e o CENÁRIO que será gerado
 por IA; um resolvedor calcula a geometria. NÃO dê coordenadas.
 Responda SOMENTE com JSON compacto (sem espaços):
-{"ideia":"1 frase","heroi":N ou null,"prioridades":["preco","produto","titulo","chamada","selo","loja"] (ordem de importância),
+{"ideia":"1 frase","tom":"{TONS}","heroi":N ou null,"prioridades":["preco","produto","titulo","chamada","selo","loja"] (ordem de importância),
  "layout":{"titulo":"topo|base|esquerda|direita|centro","heroi":"centro|esquerda|direita",
   "preco":"abaixo_heroi|ao_lado_heroi|sobre_heroi|base","demais":"fila_base|coluna_lateral|grade|arco",
   "objetos":"esquerda|direita|ambos|atras|nenhum"},
@@ -39,7 +39,8 @@ Responda SOMENTE com JSON compacto (sem espaços):
  "icones":["até 3 da lista"],
  "cenario":{"ambiente":"descrição visual do fundo (cores, luz, clima, materiais)","superficie":"pedestal|bancada|mesa|prateleira|nenhuma",
   "objetos":["até 3 objetos decorativos ligados ao tema/produto, SEM embalagens, marcas ou textos"],"luz":"#hex da luz dominante"}}
-Fontes (escolha pela personalidade do tema; combine 2-3 contrastantes e varie): {FONTES}
+"tom" = a personalidade desta campanha, lida do pedido (não do segmento): a fonte do título deve combinar com ele.
+Fontes (escolha pela personalidade do tom; combine 2-3 contrastantes; título e chamada com fontes diferentes): {FONTES}
 Estilos de escrita: neon, metal, 3d, adesivo, gradiente, contorno, faixa, arco, italico, sombra (título e chamada com estilos diferentes).
 Ícones: {ICONES}
 Princípios: hierarquia forte (no varejo o preço principal e o produto herói dominam; em serviços/institucional, o título e a
@@ -89,12 +90,18 @@ def _style(d, default_font, default_ef, default_color, default_c2):
             "cor": htmlflyer._hex(d.get("cor"), default_color), "cor2": htmlflyer._hex(d.get("cor2"), default_c2)}
 
 
-def plan_messages(briefing, photo_quality):
-    """Mensagens para o diretor criativo. photo_quality: {indice: 'boa'|'fraca'|None}."""
+def _seed(briefing):
+    return sum(ord(c) for c in json.dumps(briefing, ensure_ascii=False, sort_keys=True, default=str)) % 100003
+
+
+def plan_messages(briefing, photo_quality, recent=None):
+    """Mensagens para o diretor criativo. photo_quality: {indice: 'boa'|'fraca'|'cartao'|None}.
+    recent: {"fontes": [...], "efeitos": [...]} das últimas artes (mais recente primeiro), para variar."""
     lines = []
     for i, p in enumerate(briefing.get("produtos") or []):
         q = photo_quality.get(i)
-        foto = {"boa": "foto recortada boa", "fraca": "foto fraca (vira texto)"}.get(q, "sem foto")
+        foto = {"boa": "foto recortada boa", "cartao": "foto sem recorte (vai em cartão)",
+                "fraca": "foto fraca (vira texto)"}.get(q, "sem foto")
         extra = f" (de {p['preco_de']})" if p.get("preco_de") else ""
         lines.append(f"{i}: {p['nome']} — {p.get('preco') or 'sem preço'}{extra} — {foto}")
     user = "\n".join(x for x in [
@@ -104,7 +111,11 @@ def plan_messages(briefing, photo_quality):
         ("Itens:\n" + "\n".join(lines)) if lines else "Sem produtos: peça institucional/serviço.",
         f"Informações oficiais extras: {json.dumps(briefing.get('info'), ensure_ascii=False)}" if briefing.get("info") else "",
     ] if x)
-    system = PLAN_PROMPT.replace("{FONTES}", recursos.font_menu()).replace("{ICONES}", ", ".join(sorted(recursos.ICONS)))
+    if recent and (recent.get("fontes") or recent.get("efeitos")):
+        user += ("\nVarie: as últimas artes já usaram as fontes " + ", ".join(recent.get("fontes", [])[:4])
+                 + " e os estilos " + ", ".join(recent.get("efeitos", [])[:3]) + "; escolha outros que combinem com o tom.")
+    system = (PLAN_PROMPT.replace("{FONTES}", recursos.font_menu(_seed(briefing)))
+              .replace("{ICONES}", ", ".join(sorted(recursos.ICONS))).replace("{TONS}", "|".join(recursos.TONES)))
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
@@ -137,12 +148,49 @@ def parse(text):
     return {}
 
 
-def normalize(raw, briefing, photo_quality):
-    """Plano canônico e seguro, com padrões sensatos para o que faltar. Nunca altera dados comerciais."""
+def _vary_type(raw, briefing, recent):
+    """Tipografia coerente com o tom declarado e sem repetir as últimas artes. A intenção do diretor (o tom) fica;
+    só a família muda, para outra do MESMO tom (nunca uma regra por segmento)."""
+    tit = raw.get("titulo") if isinstance(raw.get("titulo"), dict) else {}
+    tone = raw.get("tom") if raw.get("tom") in recursos.TONES else None
+    used = list((recent or {}).get("fontes") or [])[:3]
+    used_fx = list((recent or {}).get("efeitos") or [])[:2]
+    font = tit.get("fonte") if tit.get("fonte") in recursos.FONTS else None
+    if tone:
+        pool = list(recursos.TONES[tone])
+    else:  # sem tom declarado: o tom implícito é o da fonte escolhida
+        pool = next((list(g) for g in recursos.TONES.values() if font in g), [])
+    seed = _seed(briefing)
+    if font and (font in used or (pool and font not in pool)):
+        free = [f for f in pool if f not in used and f != font] or [f for f in pool if f != font]
+        if free:
+            font = free[seed % len(free)]
+    elif not font and pool:
+        font = pool[seed % len(pool)]
+    ef = tit.get("ef") if tit.get("ef") in recursos.EFFECTS else None
+    title_len = len((briefing.get("titulo") or tit.get("txt") or "").strip())
+    if ef == "arco" and title_len > 16:
+        ef = None  # arco só para títulos curtos (texto longo no arco deforma ou fica pequeno)
+    if ef is None or ef in used_fx:
+        # substituto nunca é "faixa" (caixa atrás do texto): só o diretor escolhe esse estilo de propósito
+        options = [x for x in recursos.EFFECTS if x not in used_fx and x != ef and x != "faixa" and (x != "arco" or title_len <= 16)]
+        ef = options[(seed // 7) % len(options)] if options else ef
+    out = {**tit, "fonte": font or tit.get("fonte"), "ef": ef}
+    ch = raw.get("chamada") if isinstance(raw.get("chamada"), dict) else None
+    if ch and ch.get("fonte") == out["fonte"]:  # título e chamada com fontes diferentes (contraste tipográfico)
+        alt = [f for f in recursos.BODY_FONTS + ("satisfy", "righteous", "bebas") if f != out["fonte"]]
+        ch = {**ch, "fonte": alt[seed % len(alt)]}
+    return {**raw, "titulo": out, **({"chamada": ch} if ch else {})}, tone
+
+
+def normalize(raw, briefing, photo_quality, recent=None):
+    """Plano canônico e seguro, com padrões sensatos para o que faltar. Nunca altera dados comerciais.
+    recent: fontes/efeitos das últimas artes (variedade entre peças)."""
     raw = raw if isinstance(raw, dict) else {}
+    raw, tone = _vary_type(raw, briefing, recent)
     prods = briefing.get("produtos") or []
     n = len(prods)
-    good = [i for i in range(n) if photo_quality.get(i) == "boa"]
+    good = [i for i in range(n) if photo_quality.get(i) in ("boa", "cartao")]
     lay = raw.get("layout") if isinstance(raw.get("layout"), dict) else {}
 
     hero = raw.get("heroi")
@@ -151,7 +199,7 @@ def normalize(raw, briefing, photo_quality):
         # padrão: oferta com "de/por" ou com foto boa; senão o primeiro
         hero = next((i for i in good if prods[i].get("preco_de")), None)
         hero = hero if hero is not None else (good[0] if good else 0)
-    if hero is not None and good and hero not in good and photo_quality.get(hero) != "boa":
+    if hero is not None and good and hero not in good and photo_quality.get(hero) not in ("boa", "cartao"):
         # herói sem foto boa: se houver outro com foto e o modelo não insistiu em oferta, usa a foto boa
         if not prods[hero].get("preco_de"):
             hero = good[0]
@@ -223,7 +271,7 @@ def normalize(raw, briefing, photo_quality):
     if n and title_zone == "centro":
         title_zone = "topo"  # com produtos, o centro é do herói
     return {
-        "ideia": str(raw.get("ideia") or "")[:200], "heroi": hero, "prioridades": prio,
+        "ideia": str(raw.get("ideia") or "")[:200], "tom": tone, "heroi": hero, "prioridades": prio,
         "layout": {"titulo": title_zone, "heroi": _enum(lay.get("heroi"), ZONES_HERO, "centro"),
                    "preco": _enum(lay.get("preco"), PRICE_REL, "abaixo_heroi"),
                    "demais": _enum(lay.get("demais"), OTHERS_REL, "fila_base"), "objetos": props},
@@ -245,3 +293,24 @@ def _contrast_hex(a, b):
         return 0.2126 * out[0] + 0.7152 * out[1] + 0.0722 * out[2]
     la, lb = rel(a), rel(b)
     return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+
+STRUCTURE_KEYS = ("heroi", "prioridades", "layout", "preco")
+
+
+def combine(structure, creative):
+    """Plano híbrido: a ESTRUTURA (herói, prioridades, relações, estilo do preço) de um diretor e a parte CRIATIVA
+    (ideia, tom, textos, tipografia, selo, ícones, cenário) de outro. Os dois brutos passam depois pelo normalize."""
+    structure = structure if isinstance(structure, dict) else {}
+    creative = creative if isinstance(creative, dict) else {}
+    out = {k: v for k, v in creative.items() if k not in STRUCTURE_KEYS}
+    for k in STRUCTURE_KEYS:
+        if k in structure:
+            out[k] = structure[k]
+        elif k in creative:
+            out[k] = creative[k]
+    lay = dict(out.get("layout") or {}) if isinstance(out.get("layout"), dict) else {}
+    if isinstance(creative.get("layout"), dict) and creative["layout"].get("objetos"):
+        lay["objetos"] = creative["layout"]["objetos"]  # objetos do cenário pertencem à ideia criativa
+    out["layout"] = lay
+    return out
