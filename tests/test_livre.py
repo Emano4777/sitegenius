@@ -350,3 +350,62 @@ def test_photo_without_clean_background_becomes_card_not_text():
     small = io.BytesIO()
     img.resize((200, 200)).save(small, "JPEG")
     assert pipeline.photo_info(small.getvalue())["qualidade"] == "fraca"  # pequena demais: continua texto
+
+
+# ------------------------------------------------ motor dinâmico: fontes, efeitos por propriedades, layout
+from studio.livre import efeitos, fontes_google, otimiza  # noqa: E402
+
+CAT = [
+    {"f": "Bold Shout", "c": "Display", "w": [400, 900], "lar": 6, "esp": 9, "pop": 50, "t": {"/Expressive/Loud": 0.9, "/Expressive/Excited": 0.7}},
+    {"f": "Loud Two", "c": "Display", "w": [800], "lar": 5, "esp": 8, "pop": 80, "t": {"/Expressive/Loud": 0.8}},
+    {"f": "Calm Serif", "c": "Serif", "w": [400, 700], "lar": 7, "esp": 4, "pop": 30, "t": {"/Expressive/Sophisticated": 0.9}},
+    {"f": "Calm Serif Display", "c": "Serif", "w": [400], "lar": 7, "esp": 4, "pop": 40, "t": {"/Expressive/Sophisticated": 0.85}},
+    {"f": "Thin Loud", "c": "Display", "w": [200], "lar": 7, "esp": 2, "pop": 10, "t": {"/Expressive/Loud": 0.9}},
+]
+
+
+def test_font_catalog_follows_described_personality_and_varies():
+    pick = fontes_google.choose({"classe": "display", "peso": "ultra", "personalidade": ["impacto"]}, cat=CAT)
+    assert pick["familia"] in ("Bold Shout", "Loud Two")  # pesada e expressiva; a fina não serve para "ultra"
+    other = fontes_google.choose({"classe": "display", "peso": "ultra", "personalidade": ["impacto"]}, recent=[pick["familia"]], cat=CAT)
+    assert other and other["familia"] != pick["familia"]  # não repete a última arte
+    ele = [fontes_google.choose({"classe": "serifa", "personalidade": ["elegante"]}, seed=s, cat=CAT)["familia"] for s in range(4)]
+    assert set(ele) == {"Calm Serif"}  # variantes da mesma família-base contam como uma só
+
+
+def test_effect_properties_are_validated_and_compiled():
+    fx = efeitos.normalize({"contornos": [{"espessura": 9, "cor": "javascript:alert(1)"}] * 5, "inclinacao": 80,
+                            "profundidade": {"camadas": 99, "direcao": 135}, "preenchimento": {"tipo": "gradiente", "cores": ["#ff0000", "#220000"]}})
+    assert len(fx["contornos"]) == 3 and fx["contornos"][0]["espessura"] == 0.12 and fx["inclinacao"] == 14
+    assert fx["profundidade"]["camadas"] == 14 and fx["contornos"][0]["cor"].startswith("#")
+    c = efeitos.css(fx, 200)
+    assert "linear-gradient(" in c and "skewX(14.0deg)" in c and c.count("drop-shadow") <= efeitos.MAX_FILTERS
+    a, b = efeitos.css(efeitos.preset("neon", "#00e5ff", "#000", seed=1), 200), efeitos.css(efeitos.preset("neon", "#00e5ff", "#000", seed=2), 200)
+    assert a != b  # o mesmo estilo nomeado varia entre artes
+
+
+def test_dynamic_layout_removes_overlaps_and_avoids_scene_objects():
+    smap = estetica.scene_map(_scene_with_object((5, 2, 90, 11)))  # objeto no alto, espaço livre logo abaixo
+    solved = {"elementos": [
+        {"tipo": "texto", "papel": "titulo", "b": [4, 4, 92, 12], "prio": 0, "min": 1, "z": 40},
+        {"tipo": "produto", "papel": "heroi", "produto": 0, "b": [30, 30, 36, 34], "prio": 1, "min": 1, "z": 20},
+        {"tipo": "preco", "papel": "preco_principal", "produto": 0, "b": [52, 55, 34, 12], "prio": 0, "min": 1, "z": 45},
+        {"tipo": "nome", "papel": "nome", "produto": 0, "b": [30, 65, 36, 5], "prio": 4, "min": 0.75, "z": 44},
+        {"tipo": "lista", "papel": "lista", "b": [10, 66, 80, 12], "prio": 3, "min": 0.8, "z": 35, "itens": [1]}],
+        "zonas_objetos": []}
+    rep = otimiza.refine(solved, smap, (1080, 1350), seed=3)
+    assert rep["custo_depois"] < rep["custo_antes"] and rep["depois"]["sobreposicao"] < rep["antes"]["sobreposicao"]
+    t = solved["elementos"][0]["b"]
+    assert estetica.busy(smap, t) < 0.4  # o título saiu de cima do objeto do cenário
+    hero, price = solved["elementos"][1]["b"], solved["elementos"][2]["b"]
+    assert abs((price[0] - hero[0]) - (52 - 30)) < 8  # preço continua junto do produto (o grupo anda junto)
+
+
+def test_scene_with_blank_band_is_regenerated():
+    img = Image.new("RGB", (1080, 1350), (120, 90, 60))
+    d = ImageDraw.Draw(img)
+    for i in range(0, 1080, 30):
+        d.line((i, 0, i, 1000), fill=(30, 20, 10), width=6)
+    d.rectangle((0, 1000, 1080, 1350), fill=(255, 255, 255))  # quarto de baixo branco chapado
+    r = cena.verify(img, {"cenario": {"objetos": []}}, {"elementos": [], "zonas_objetos": []})
+    assert any(p[0] == "area_vazia" for p in r["problemas"]) and cena.decide(r, 1) == "regerar"

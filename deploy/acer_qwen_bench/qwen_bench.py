@@ -163,72 +163,117 @@ def start_server(model, ngl, ctx):
     return None, round(time.time() - t0, 1)
 
 
+def comfy_idle():
+    """ComfyUI ligado e SEM nada na fila (nem rodando, nem esperando)."""
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8188/queue", timeout=5) as r:
+            q = json.loads(r.read())
+        return not q.get("queue_running") and not q.get("queue_pending")
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def stop(proc):
+    proc.terminate()
+    try:
+        proc.wait(20)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+
+
+def load(model, ctx, ngls):
+    for ngl in ngls:  # tudo na GPU; se não couber, divide entre GPU e RAM
+        proc, load_s = start_server(model, ngl, ctx)
+        if proc:
+            return proc, load_s, ngl
+        print(f"não carregou com -ngl {ngl}; tentando menos camadas na GPU", flush=True)
+    return None, None, None
+
+
+def plan(msgs):
+    body = {"messages": msgs, "temperature": 0.6, "max_tokens": 900, "top_p": 0.9, "chat_template_kwargs": {"enable_thinking": False}}
+    t0 = time.time()
+    try:
+        r = post("/v1/chat/completions", body, timeout=600)
+        tm = r.get("timings") or {}
+        return {"s": round(time.time() - t0, 1), "texto": r["choices"][0]["message"].get("content") or "",
+                "tokens_prompt": (r.get("usage") or {}).get("prompt_tokens"), "tokens_saida": (r.get("usage") or {}).get("completion_tokens"),
+                "tok_s": round(tm.get("predicted_per_second") or 0, 1), "prompt_ms": round(tm.get("prompt_ms") or 0)}
+    except Exception as exc:  # noqa: BLE001
+        return {"s": round(time.time() - t0, 1), "erro": f"{type(exc).__name__}: {exc}"[:300], "texto": ""}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baixar", action="store_true")
-    ap.add_argument("--com-4b", action="store_true", help="com --baixar: baixa também o Qwen3-4B (reserva)")
+    ap.add_argument("--com-4b", action="store_true", help="com --baixar: baixa também o Qwen3-4B")
     ap.add_argument("--modelo", default="Qwen3-8B-Q4_K_M.gguf")
     ap.add_argument("--ctx", type=int, default=6144)
     ap.add_argument("--casos", nargs="*")
+    ap.add_argument("--saida", default="resultados_qwen.json")
+    ap.add_argument("--com-comfyui-ocioso", action="store_true",
+                    help="mede o modelo AO LADO do ComfyUI carregado e parado (fila vazia, agente parado). Nada é gerado no "
+                         "ComfyUI e ele não é descarregado; serve para saber se o modelo cabe sem tirar o gerador da GPU")
+    ap.add_argument("--sob-demanda", action="store_true",
+                    help="carrega, planeja e descarrega o modelo a CADA briefing (tempo total real de um uso por arte)")
     args = ap.parse_args()
     if args.baixar:
         setup({"Qwen3-4B-Q4_K_M.gguf"} if args.com_4b else set())
         return
-    # nunca junto com o gerador de imagens
-    if port_open(8188):
-        raise SystemExit("ComfyUI ativo em 127.0.0.1:8188: feche-o antes (os dois modelos não cabem juntos em 6 GB).")
     if agent_running():
         raise SystemExit("Agente do SiteGenius (workers.acer_agent) ativo: pare-o antes do teste e reinicie depois.")
+    if args.com_comfyui_ocioso:
+        if not port_open(8188) or not comfy_idle():
+            raise SystemExit("Este modo exige o ComfyUI ligado, com o modelo carregado e a fila vazia.")
+        ngls = (99,)  # ao lado do ComfyUI: só vale se couber INTEIRO na GPU (sem apertar a RAM do gerador)
+    else:
+        if port_open(8188):
+            raise SystemExit("ComfyUI ativo em 127.0.0.1:8188: feche-o (ou use --com-comfyui-ocioso só com o 4B).")
+        ngls = (99, 30, 24, 16)
     msgs = json.load(open(os.path.join(HERE, "mensagens.json"), encoding="utf-8"))
     names = args.casos or list(msgs)
     base_vram, total_vram = gpu()
     base_ram = ram_free_mb()
     print(f"VRAM usada antes: {base_vram}/{total_vram} MB; RAM livre: {base_ram} MB", flush=True)
-
-    proc, load_s, ngl = None, None, None
-    for ngl in (99, 30, 24, 16):  # tudo na GPU; se não couber, divide entre GPU e RAM
-        proc, load_s = start_server(args.modelo, ngl, args.ctx)
-        if proc:
-            break
-        print(f"não carregou com -ngl {ngl}; tentando menos camadas na GPU", flush=True)
-    if not proc:
-        raise SystemExit("o modelo não carregou (ver servidor_ngl*.log)")
-    after_load_vram, _ = gpu()
-    print(f"carregado com -ngl {ngl} em {load_s}s; VRAM usada: {after_load_vram} MB", flush=True)
-
-    out = {"modelo": args.modelo, "llama_cpp": LLAMA_TAG, "ngl": ngl, "ctx": args.ctx, "carga_s": load_s,
-           "vram_antes_mb": base_vram, "vram_total_mb": total_vram, "vram_carregado_mb": after_load_vram,
+    out_path = os.path.join(HERE, args.saida)
+    out = {"modelo": args.modelo, "llama_cpp": LLAMA_TAG, "ctx": args.ctx, "modo": "com_comfyui_ocioso" if args.com_comfyui_ocioso
+           else "sob_demanda" if args.sob_demanda else "carregado", "vram_antes_mb": base_vram, "vram_total_mb": total_vram,
            "ram_livre_antes_mb": base_ram, "casos": {}}
     sampler = Sampler()
     sampler.start()
+    proc = None
     try:
+        if not args.sob_demanda:
+            proc, load_s, ngl = load(args.modelo, args.ctx, ngls)
+            if not proc:
+                raise SystemExit("o modelo não carregou (ver servidor_ngl*.log)" + (" — não cabe ao lado do ComfyUI" if args.com_comfyui_ocioso else ""))
+            out.update({"ngl": ngl, "carga_s": load_s, "vram_carregado_mb": gpu()[0]})
+            print(f"carregado com -ngl {ngl} em {load_s}s; VRAM usada: {out['vram_carregado_mb']} MB", flush=True)
         for name in names:
-            body = {"messages": msgs[name], "temperature": 0.6, "max_tokens": 900, "top_p": 0.9,
-                    "chat_template_kwargs": {"enable_thinking": False}}
             t0 = time.time()
-            try:
-                r = post("/v1/chat/completions", body, timeout=600)
-                text = r["choices"][0]["message"].get("content") or ""
-                tm = r.get("timings") or {}
-                case = {"s": round(time.time() - t0, 1), "texto": text, "tokens_prompt": (r.get("usage") or {}).get("prompt_tokens"),
-                        "tokens_saida": (r.get("usage") or {}).get("completion_tokens"),
-                        "tok_s": round(tm.get("predicted_per_second") or 0, 1), "prompt_ms": round(tm.get("prompt_ms") or 0)}
-            except Exception as exc:  # noqa: BLE001
-                case = {"s": round(time.time() - t0, 1), "erro": f"{type(exc).__name__}: {exc}"[:300], "texto": ""}
+            if args.sob_demanda:
+                proc, load_s, ngl = load(args.modelo, args.ctx, ngls)
+                if not proc:
+                    out["casos"][name] = {"erro": "não carregou", "texto": ""}
+                    continue
+            case = plan(msgs[name])
+            if args.sob_demanda:
+                stop(proc)
+                proc = None
+                case.update({"carga_s": load_s, "ngl": ngl, "total_s": round(time.time() - t0, 1)})
+            if args.com_comfyui_ocioso:
+                case["comfyui_ok"] = comfy_idle()  # o gerador continua respondendo e parado
             out["casos"][name] = case
-            print(name, case["s"], "s", case.get("tok_s"), "tok/s", case.get("erro", ""), flush=True)
-            json.dump(out, open(os.path.join(HERE, "resultados_qwen.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            print(name, case.get("s"), "s", case.get("tok_s"), "tok/s", case.get("total_s", ""), case.get("erro", ""), flush=True)
+            json.dump(out, open(out_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     finally:
         sampler.stop.set()
         sampler.join(3)
-        proc.terminate()
-        try:
-            proc.wait(20)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+        if proc:
+            stop(proc)
     out.update({"vram_pico_mb": sampler.vram, "ram_servidor_pico_mb": sampler.ram, "ram_livre_depois_mb": ram_free_mb()})
-    json.dump(out, open(os.path.join(HERE, "resultados_qwen.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print("resultado em", os.path.join(HERE, "resultados_qwen.json"))
+    json.dump(out, open(out_path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print("resultado em", out_path)
 
 
 if __name__ == "__main__":

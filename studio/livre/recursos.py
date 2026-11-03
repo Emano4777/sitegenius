@@ -85,6 +85,12 @@ def font_css(keys):
     """@font-face só das fontes usadas (a peça fica leve)."""
     out = []
     for k in sorted(set(keys)):
+        if str(k).startswith("g:"):  # família do catálogo do Google Fonts (baixada sob demanda)
+            from . import fontes_google  # noqa: PLC0415
+            face = fontes_google.font_face(k[2:])
+            if face:
+                out.append(face)
+            continue
         if k not in FONTS:
             continue
         p = font_path(k)

@@ -10,7 +10,7 @@ import unicodedata
 
 from studio import htmlflyer
 
-from . import recursos
+from . import efeitos, recursos
 
 ZONES_TITLE = ("topo", "base", "esquerda", "direita", "centro")
 ZONES_HERO = ("centro", "esquerda", "direita")
@@ -19,7 +19,7 @@ OTHERS_REL = ("fila_base", "coluna_lateral", "grade", "arco")
 PROPS_SIDE = ("esquerda", "direita", "ambos", "atras", "nenhum")
 SURFACES = ("pedestal", "bancada", "mesa", "prateleira", "nenhuma")
 PRICE_STYLES = ("faixa", "etiqueta", "explosao", "circulo", "bloco")
-SEAL_SHAPES = ("estrela", "circulo", "fita", "etiqueta")
+SEAL_SHAPES = ("estrela", "circulo", "fita", "etiqueta", "carimbo", "balao", "hexagono", "escudo")
 _BAD = re.compile(r"\d|r\$|%|grátis|gratis|garantid|melhor preço do|o mais barato", re.I)
 _PROP_BAD = re.compile(r"embalag|pacote|logo|marca|r[óo]tulo|texto|letreiro|placa|letra|pre[çc]o|cartaz|etiqueta|caixa d[eo] ", re.I)
 
@@ -31,16 +31,21 @@ Responda SOMENTE com JSON compacto (sem espaços):
  "layout":{"titulo":"topo|base|esquerda|direita|centro","heroi":"centro|esquerda|direita",
   "preco":"abaixo_heroi|ao_lado_heroi|sobre_heroi|base","demais":"fila_base|coluna_lateral|grade|arco",
   "objetos":"esquerda|direita|ambos|atras|nenhum"},
- "titulo":{"fonte":"<chave>","ef":"<estilo>","cor":"#hex","cor2":"#hex","txt":"só se o briefing não tem título: até 4 palavras"},
+ "titulo":{"fonte_desc":{"classe":"serifa|sem_serifa|display|manuscrita|slab","peso":"leve|normal|pesado|ultra","largura":"condensada|normal|larga","personalidade":["2-3 palavras: impacto, elegante, retro, tecnologico, divertido, acolhedor, artesanal, luxo, rustico..."]},
+  "efeito":{"preenchimento":{"tipo":"solido|gradiente|metalico","cores":["#hex"],"angulo":0-360},"contornos":[{"espessura":0.01-0.1,"cor":"#hex"}],
+   "sombras":[{"x":-0.2-0.2,"y":-0.2-0.3,"desfoque":0-0.4,"cor":"#hex","opacidade":0-1}],"profundidade":{"camadas":0-12,"direcao":0-360,"cor":"#hex"},
+   "brilho":{"cor":"#hex","intensidade":0-1},"inclinacao":-12-12,"rotacao":-6-6,"curva":0-1,"espacamento":-0.03-0.25} (só as propriedades que quiser),
+  "cor":"#hex","cor2":"#hex","txt":"só se o briefing não tem título: até 4 palavras"},
  "chamada":{"txt":"até 4 palavras, sem números/preços/datas/promessas, diferente do título","fonte":"<chave>","ef":"<estilo>","cor":"#hex","cor2":"#hex"} ou null,
- "selo":{"txt":"até 3 palavras","f":"estrela|circulo|fita|etiqueta","cor":"#hex","cor2":"#hex"} ou null,
+ "selo":{"txt":"até 3 palavras","f":"estrela|circulo|fita|etiqueta|carimbo|balao|hexagono|escudo","cor":"#hex","cor2":"#hex"} ou null,
  "preco":{"estilo":"faixa|etiqueta|explosao|circulo|bloco","fonte":"<chave>","bg":"#hex","fg":"#hex"},
  "nomes":{"fonte":"<chave>","cor":"#hex"},
  "icones":["até 3 da lista"],
  "cenario":{"ambiente":"descrição visual do fundo (cores, luz, clima, materiais)","superficie":"pedestal|bancada|mesa|prateleira|nenhuma",
   "objetos":["até 3 objetos decorativos ligados ao tema/produto, SEM embalagens, marcas ou textos"],"luz":"#hex da luz dominante"}}
 "tom" = a personalidade desta campanha, lida do pedido (não do segmento): a fonte do título deve combinar com ele.
-Fontes (escolha pela personalidade do tom; combine 2-3 contrastantes; título e chamada com fontes diferentes): {FONTES}
+Título: DESCREVA a fonte (fonte_desc) e o efeito por propriedades; o Studio escolhe a família num catálogo com mais de
+mil fontes. Para chamada e nomes, use uma chave: {FONTES}
 Estilos de escrita: neon, metal, 3d, adesivo, gradiente, contorno, faixa, arco, italico, sombra (título e chamada com estilos diferentes).
 Ícones: {ICONES}
 Princípios: hierarquia forte (no varejo o preço principal e o produto herói dominam; em serviços/institucional, o título e a
@@ -183,10 +188,28 @@ def _vary_type(raw, briefing, recent):
     return {**raw, "titulo": out, **({"chamada": ch} if ch else {})}, tone
 
 
+def _dynamic_title(raw, briefing, recent):
+    """Fonte do catálogo amplo (descrita pelo diretor) e efeito por propriedades. Sem descrição: nada muda."""
+    tit = raw.get("titulo") if isinstance(raw.get("titulo"), dict) else {}
+    desc = tit.get("fonte_desc")
+    out = {}
+    if isinstance(desc, dict):
+        try:
+            from . import fontes_google  # noqa: PLC0415
+            pick = fontes_google.choose(desc, recent=[f[2:] for f in (recent or {}).get("fontes", [])[:6] if str(f).startswith("g:")],
+                                        seed=_seed(briefing))
+        except Exception:  # noqa: BLE001 — catálogo indisponível: segue com o catálogo local
+            pick = None
+        if pick:
+            out.update({"fonte": "g:" + pick["familia"], "peso": pick["peso"], "fonte_motivo": pick["motivo"]})
+    return out
+
+
 def normalize(raw, briefing, photo_quality, recent=None):
     """Plano canônico e seguro, com padrões sensatos para o que faltar. Nunca altera dados comerciais.
     recent: fontes/efeitos das últimas artes (variedade entre peças)."""
     raw = raw if isinstance(raw, dict) else {}
+    dyn = _dynamic_title(raw, briefing, recent)
     raw, tone = _vary_type(raw, briefing, recent)
     prods = briefing.get("produtos") or []
     n = len(prods)
@@ -237,8 +260,8 @@ def normalize(raw, briefing, photo_quality, recent=None):
     if se:
         txt = _short(se.get("txt"), 3)
         if txt and reg.add(txt):
-            selo = {"txt": txt, "forma": _enum(se.get("f"), SEAL_SHAPES, "estrela"), "cor": htmlflyer._hex(se.get("cor"), "#ffd400"),
-                    "cor2": htmlflyer._hex(se.get("cor2"), "#111111")}
+            selo = _vary_seal({"txt": txt, "forma": _enum(se.get("f"), SEAL_SHAPES, "estrela"), "cor": htmlflyer._hex(se.get("cor"), "#ffd400"),
+                               "cor2": htmlflyer._hex(se.get("cor2"), "#111111")}, raw, briefing, recent)
 
     pr = raw.get("preco") if isinstance(raw.get("preco"), dict) else {}
     preco = {"estilo": _enum(pr.get("estilo"), PRICE_STYLES, "faixa"),
@@ -275,13 +298,57 @@ def normalize(raw, briefing, photo_quality, recent=None):
         "layout": {"titulo": title_zone, "heroi": _enum(lay.get("heroi"), ZONES_HERO, "centro"),
                    "preco": _enum(lay.get("preco"), PRICE_REL, "abaixo_heroi"),
                    "demais": _enum(lay.get("demais"), OTHERS_REL, "fila_base"), "objetos": props},
-        "titulo": {"txt": titulo_txt, **_style(raw.get("titulo"), "anton", "sombra", "#ffffff", "#d71920")},
+        "titulo": _title_style(raw, titulo_txt, dyn, briefing),
         "loja": loja_line, "chamada": chamada, "selo": selo, "preco": preco, "nomes": nomes, "icones": icones,
         "cenario": {"ambiente": re.sub(r"\s+", " ", str(cen.get("ambiente") or "")).strip()[:260],
                     "superficie": _enum(cen.get("superficie"), SURFACES, "pedestal" if n == 1 else "bancada" if n else "nenhuma"),
                     "objetos": objetos, "luz": htmlflyer._hex(cen.get("luz"), "#ffd27a")},
         "textos": list(reg.seen),
     }
+
+
+def _hue(hx):
+    h = htmlflyer._hex(hx, "#ffffff")
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    mx, mn = max(r, g, b), min(r, g, b)
+    if mx - mn < 0.15:
+        return "neutro"
+    hue = ((g - b) / (mx - mn)) % 6 if mx == r else (b - r) / (mx - mn) + 2 if mx == g else (r - g) / (mx - mn) + 4
+    return int(hue * 60 // 40)
+
+
+def _vary_seal(selo, raw, briefing, recent):
+    """Selo sem repetir as últimas artes: outra forma (o diretor escolheu a família visual; a forma gira) e, se a cor
+    repetir, uma cor da PRÓPRIA paleta da arte. Inclinação também varia."""
+    seed = _seed(briefing)
+    last = list((recent or {}).get("selos") or [])[:3]
+    if selo["forma"] in [x[0] for x in last if x]:
+        free = [f for f in SEAL_SHAPES if f not in [x[0] for x in last if x]]
+        selo["forma"] = free[seed % len(free)] if free else selo["forma"]
+    if _hue(selo["cor"]) in [_hue(x[1]) for x in last if x]:
+        pal = []
+        for sec, keys in (("preco", ("bg",)), ("titulo", ("cor2", "cor")), ("chamada", ("cor",))):
+            d = raw.get(sec) if isinstance(raw.get(sec), dict) else {}
+            pal += [htmlflyer._hex(d.get(k), "") for k in keys if d.get(k)]
+        pal = [c for c in pal if c and _hue(c) not in [_hue(x[1]) for x in last if x] and _hue(c) != "neutro"]
+        if pal:
+            selo["cor"] = pal[0]
+            selo["cor2"] = htmlflyer._on(pal[0])
+    selo["giro"] = (-12, -7, -4, 5, 9)[seed % 5]
+    return selo
+
+
+def _title_style(raw, txt, dyn, briefing):
+    st = {"txt": txt, **_style(raw.get("titulo"), "anton", "sombra", "#ffffff", "#d71920"), **dyn}
+    tit = raw.get("titulo") if isinstance(raw.get("titulo"), dict) else {}
+    if isinstance(tit.get("efeito"), dict):
+        st["efx"] = efeitos.normalize(tit["efeito"], st["cor"], st["cor2"])
+        if st["efx"]["preenchimento"]["cores"]:
+            st["cor"] = st["efx"]["preenchimento"]["cores"][0]
+        st["ef"] = "arco" if st["efx"]["curva"] >= 0.45 and len(txt) <= 16 else "propriedades"
+    elif dyn:  # fonte do catálogo amplo sem efeito descrito: receita do estilo nomeado, com variação
+        st["efx"] = efeitos.preset(st["ef"], st["cor"], st["cor2"], _seed(briefing))
+    return st
 
 
 def _contrast_hex(a, b):

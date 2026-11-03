@@ -6,7 +6,7 @@ import math
 
 from studio import htmlflyer
 
-from . import recursos
+from . import efeitos, recursos
 
 
 def _burst(points=18):
@@ -19,6 +19,8 @@ def _burst(points=18):
 
 
 def _fam(key):
+    if str(key).startswith("g:"):
+        return key[2:]
     return recursos.FONTS.get(key, recursos.FONTS["anton"])[1]
 
 
@@ -73,8 +75,10 @@ def _price_html(p, st, emphasis):
 def _scrim(text_color):
     """Suporte visual suave SEM caixa: halo difuso que acompanha as letras (escuro atrás de letra clara, claro atrás
     de letra escura). Separa o texto do fundo sem placa nem retângulo."""
-    c = "10,10,14" if htmlflyer._luma(htmlflyer._hex(text_color, "#ffffff")) > 128 else "255,255,255"
-    return (f"filter:drop-shadow(0 0 6px rgba({c},.95)) drop-shadow(0 0 16px rgba({c},.8)) drop-shadow(0 0 34px rgba({c},.6));")
+    if htmlflyer._luma(htmlflyer._hex(text_color, "#ffffff")) > 128:
+        return "filter:drop-shadow(0 0 6px rgba(10,10,14,.95)) drop-shadow(0 0 16px rgba(10,10,14,.8)) drop-shadow(0 0 34px rgba(10,10,14,.6));"
+    # halo claro mais contido (um brilho largo vira "nuvem" branca e parece remendo)
+    return "filter:drop-shadow(0 0 3px rgba(255,255,255,.95)) drop-shadow(0 0 9px rgba(255,255,255,.6));"
 
 
 def _shade(hx, f):
@@ -107,6 +111,8 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
             if recursos.FONTS.get(font, ("", "", "", False))[3]:
                 txt = txt.upper()
             ef = e.get("ef_forcado") or st.get("ef", "sombra")  # o reparo pode trocar um efeito ilegível
+            efx = None if e.get("ef_forcado") else st.get("efx")  # efeito descrito por propriedades (efeitos.py)
+            weight = f"font-weight:{int(st['peso'])};" if st.get("peso") else ""
             ring = e.get("reforco")  # contorno de contraste posto pelo reparo de legibilidade
             if ef == "arco":
                 inner = (f'<svg viewBox="0 0 1000 320" preserveAspectRatio="none" style="width:100%;height:100%;overflow:visible">'
@@ -118,7 +124,8 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
                 out.append(f'<div class="l" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}">{inner}</div>')
             else:
                 plate = _scrim(st.get("cor") if e["papel"] != "titulo" else e.get("cor_forcada") or st["cor"]) if e.get("placa") else ""
-                fx = _text_fx(ef, st["cor"], st["cor2"])
+                fx = efeitos.css(efx, e["b"][3] * size[1] / 100) if efx else _text_fx(ef, st["cor"], st["cor2"])
+                fx += weight
                 if ring:
                     fx += f"-webkit-text-stroke:calc(var(--hpx)*.05) {ring};paint-order:stroke fill;"
                 out.append(f'<div class="l txt fit" data-k="{key}" data-cor="{st["cor"]}" style="{box}{hidden}font-family:\'{_fam(font)}\';'
@@ -155,11 +162,15 @@ def build(plan, solved, briefing, photos_uri, scene_uri, size, hide_text=False):
         elif t == "selo":
             shape = {"estrela": f"clip-path:{_burst(16)};", "circulo": "border-radius:50%;",
                      "fita": "clip-path:polygon(0 0,100% 0,94% 50%,100% 100%,0 100%,6% 50%);",
-                     "etiqueta": "border-radius:14px;transform:skewX(-10deg);"}[e["forma"]]
-            out.append(f'<div class="l selo" data-k="{key}" style="{box}transform:rotate(-8deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.5)) '
+                     "etiqueta": "border-radius:14px;transform:skewX(-10deg);",
+                     "carimbo": f"border-radius:50%;border:5px dashed {e['cor2']};outline:3px solid {e['cor']};outline-offset:4px;",
+                     "balao": "border-radius:22px;clip-path:polygon(0 0,100% 0,100% 74%,46% 74%,26% 100%,30% 74%,0 74%);",
+                     "hexagono": "clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);",
+                     "escudo": "clip-path:polygon(0 0,100% 0,100% 58%,50% 100%,0 58%);border-radius:10px;"}.get(e["forma"], "border-radius:50%;")
+            out.append(f'<div class="l selo" data-k="{key}" style="{box}transform:rotate({e.get("giro", -8)}deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.5)) '
                        f'drop-shadow(0 0 16px {e["cor"]}88)"><div style="position:absolute;inset:0;background:radial-gradient(circle at 35% 30%,'
                        f'#fff8 0,transparent 45%),{e["cor"]};{shape}"></div><div class="fit" style="position:relative;width:70%;height:58%;'
-                       f'display:flex;align-items:center;justify-content:center;{hidden}font-family:\'Kanit\';color:{e["cor2"]};text-align:center;'
+                       f'display:flex;align-items:center;justify-content:center;{hidden}font-family:\'{_fam(plan["preco"]["fonte"])}\';color:{e["cor2"]};text-align:center;'
                        f'line-height:.92;font-size:calc(var(--hpx)*.3);text-transform:uppercase">{html.escape(e["txt"])}</div></div>')
             used_fonts.add("kanit")
         elif t == "icone":

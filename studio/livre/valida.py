@@ -45,18 +45,32 @@ def measure(doc, size, screenshot=None, extra_shots=()):
             urls.append("file:///" + path.replace("\\", "/"))
         procs = [subprocess.Popen(flags + [f"--window-size={size[0] + 160},{size[1] + 210}", f"--user-data-dir={d}/u0", "--dump-dom", urls[0]],
                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)]
-        shots = ([(urls[0], screenshot)] if screenshot else []) + [(u, x[1]) for u, x in zip(urls[1:], extra_shots)]
+        shots = ([(urls[0], os.path.abspath(screenshot))] if screenshot else []) +             [(u, os.path.abspath(x[1])) for u, x in zip(urls[1:], extra_shots)]  # Chrome resolve caminho relativo noutra pasta
         for j, (u, target) in enumerate(shots):
             procs.append(subprocess.Popen(flags + [f"--window-size={size[0]},{size[1]}", f"--user-data-dir={d}/u{j + 1}",
                                                    f"--screenshot={target}", u], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
         out = procs[0].communicate(timeout=120)[0].decode("utf-8", "replace")
         for pr in procs[1:]:
             pr.wait(timeout=120)
+        for j, (u, target) in enumerate(shots):  # captura incompleta (vários Chrome ao mesmo tempo): refaz sozinha
+            if not _png_ok(target):
+                subprocess.run(flags + [f"--window-size={size[0]},{size[1]}", f"--user-data-dir={d}/r{j}", f"--screenshot={target}", u],
+                               capture_output=True, timeout=120)
     a = out.find('<pre id="qa"')
     if a < 0:
         return []
     a = out.find(">", a) + 1
     return json.loads(_html.unescape(out[a:out.find("</pre>", a)]))
+
+
+def _png_ok(path):
+    from PIL import Image  # noqa: PLC0415
+    try:
+        with Image.open(path) as im:
+            im.load()
+        return True
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _contrast(hex_color, lum):
@@ -172,6 +186,21 @@ def check(items, solved, size, bg_img=None, n_products=0, legivel=None):
     return probs
 
 
+def _k(e):
+    return f'{e["papel"]}:{e.get("produto", "")}'
+
+
+def _bg_lum(scene, rect):
+    if scene is None or not rect:
+        return None
+    W, H = scene.size
+    x, y, w, h = rect
+    crop = scene.crop((int(max(0, x) * W / 100), int(max(0, y) * H / 100), max(1, int(min(100, x + w) * W / 100)),
+                       max(1, int(min(100, y + h) * H / 100)))).convert("L")
+    px = sorted(crop.get_flattened_data())
+    return px[len(px) // 2] if px else None
+
+
 def _palette_pick(palette, scene, rect, e):
     """Cor da paleta do plano com o maior contraste contra o fundo REAL sob o texto (pior caso entre claros e escuros)."""
     if scene is None or not rect or not palette:
@@ -223,12 +252,16 @@ def repair(solved, probs, items, size, scene=None):
             if step == 0:
                 e["_leg"] = 1
                 col = _palette_pick(solved.get("paleta") or [], scene, rects.get(k), e)
+                bg = _bg_lum(scene, rects.get(k))
+                if bg is not None:  # o contorno separa a letra do FUNDO (não da própria letra)
+                    e["_reforco_cor"] = "#111114" if bg > 140 else "#ffffff"
                 if col:
                     if e["papel"] == "titulo":
                         e["cor_forcada"] = col
                     else:
                         e["cor"] = col
-                    e["_reforco_cor"] = "#111114" if htmlflyer._luma(col) >= 128 else "#ffffff"
+                    if _ef(e) in ("metal", "gradiente", "neon", "contorno", "propriedades") and e["tipo"] == "texto":
+                        e["ef_forcado"] = "sombra"  # a cor nova vale para a letra inteira (efeitos com brilho branco a anulavam)
                     done += 1
                     continue
                 step = 1
@@ -241,6 +274,16 @@ def repair(solved, probs, items, size, scene=None):
                 if _ef(e) == "arco":
                     e["ef_forcado"] = "adesivo"; e["_saiu_do_arco"] = True
                 e["placa"] = True
+                done += 1
+        elif code == "sobreposicao" and {k.split(":")[0], str(det).split(":")[0]} <= {"titulo", "loja", "chamada"}                 and by.get(k) and by.get(det):
+            # dentro do cabeçalho: empilha pelo desenho MEDIDO (letras reais podem passar da caixa planejada)
+            upper, lower = sorted((by[k], by[det]), key=lambda x: x["b"][1])
+            ur, lr = rects.get(_k(upper), upper["b"]), rects.get(_k(lower), lower["b"])
+            dy = ur[1] + ur[3] + 0.6 - lr[1]
+            if dy > 0:
+                for x in solved["elementos"]:  # quem está abaixo no cabeçalho desce junto (a ordem se mantém)
+                    if x["papel"] in ("loja", "chamada") and x["b"][1] >= lower["b"][1] - 0.01:
+                        x["b"][1] += dy
                 done += 1
         elif code == "sobreposicao":
             a, b = by.get(k), by.get(det)

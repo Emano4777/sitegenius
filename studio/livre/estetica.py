@@ -138,8 +138,8 @@ def check(items, solved, size, smap=None, plan=None):
                 if frac > (0.22 if pk.startswith("heroi") else 0.32):
                     probs.append(("preco_sobre_produto", k, round(frac, 2)))
         for nk in (f"nome:{prod}", f"nome_heroi:{prod}"):
-            if nk in rect:
-                ox, oy = overlap(r, rect[nk])
+            if nk in rect:  # encostar também conta: o nome precisa de respiro do preço (desenho medido)
+                ox, oy = overlap([r[0] - 0.4, r[1] - 0.7, r[2] + 0.8, r[3] + 1.4], rect[nk])
                 if ox * oy > 0.08 * rect[nk][2] * rect[nk][3]:
                     probs.append(("preco_sobre_nome", k, nk))
     # 3) excesso decorativo: ícones demais, ou ícone colado em texto
@@ -248,14 +248,18 @@ def repair(solved, probs, items, size, smap=None, plan=None):
                     dy = pr[1] - 0.6 - (nr[1] + nr[3])
                 photo = next((rect[x] for x in (f"heroi:{k.split(':')[1]}", f"produto:{k.split(':')[1]}") if x in rect), None)
 
-                def bad(d):  # o nome nunca vai para fora da peça nem para cima da foto do produto
-                    nb = [n["b"][0], n["b"][1] + d, n["b"][2], n["b"][3]]
+                busy_rects = [rect.get(_key(x), x["b"]) for x in solved["elementos"]
+                              if x is not n and x is not e and x["tipo"] not in ("icone", "produto")]
+
+                def bad(d):  # nunca fora da peça, sobre a foto do produto ou em cima de outro bloco (sem vaivém)
+                    nb = [nr[0], nr[1] + d, nr[2], nr[3]]
                     if nb[1] + nb[3] > 100 - M + 1 or nb[1] < M - 1:
                         return True
                     if photo:
                         ox, oy = overlap(nb, photo)
-                        return ox * oy > 0.2 * nb[2] * nb[3]
-                    return False
+                        if ox * oy > 0.2 * nb[2] * nb[3]:
+                            return True
+                    return _collides(nb, busy_rects)
                 if bad(dy):
                     alt = (pr[1] - 0.6 - (nr[1] + nr[3])) if dy > 0 else (pr[1] + pr[3] + 0.6 - nr[1])  # outro lado
                     if bad(alt):

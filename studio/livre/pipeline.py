@@ -12,7 +12,7 @@ from PIL import Image, ImageOps
 
 from studio import composer, htmlflyer
 
-from . import cena, estetica, layout, plano, render, valida
+from . import cena, estetica, layout, otimiza, plano, render, valida
 
 
 def photo_info(data):
@@ -126,7 +126,10 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
     # leitura do cenário: o cabeçalho procura a região mais calma perto do planejado (antes de desenhar)
     t = time.time()
     smap = estetica.scene_map(scene)
-    moves = estetica.place(solved, smap)
+    try:  # layout dinâmico: os grupos procuram a melhor solução espacial no cenário real
+        moves = otimiza.refine(solved, smap, size, seed=plano._seed(briefing))
+    except Exception:  # noqa: BLE001 — sem otimizador, o reposicionamento simples do cabeçalho continua valendo
+        moves = estetica.place(solved, smap)
     solved["paleta"] = [plan["titulo"]["cor"], plan["titulo"].get("cor2"), (plan["chamada"] or {}).get("cor"),
                         (plan["chamada"] or {}).get("cor2"), plan["preco"]["bg"], plan["preco"]["fg"],
                         (plan["selo"] or {}).get("cor"), plan["cenario"]["luz"], "#ffffff", "#1e1e22"]
@@ -147,8 +150,13 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
         items = valida.measure(doc, size, screenshot=shot if keys else None, extra_shots=extra) or []
         legivel = None
         if items and keys and os.path.exists(shot) and os.path.exists(bare):
-            with Image.open(shot) as a, Image.open(bare) as b:
-                legivel = valida.ink(a, b, items, size, keys)
+            for _ in range(3):  # o Chrome pode ainda estar terminando de gravar a captura
+                try:
+                    with Image.open(shot) as a, Image.open(bare) as b:
+                        legivel = valida.ink(a, b, items, size, keys)
+                    break
+                except (OSError, ValueError):
+                    time.sleep(0.6)
         probs = valida.check(items, solved, size, scene, len(briefing.get("produtos") or []), legivel)
         probs += estetica.check(items, solved, size, smap, plan)
         history.append([list(p) for p in probs])

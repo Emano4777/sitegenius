@@ -12,3 +12,4 @@ flask_session/
 workers/.timings.json
 workers/bench_*
 resultados_teste_real/
+studio/livre/fontes_cache/

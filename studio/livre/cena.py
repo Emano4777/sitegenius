@@ -88,6 +88,15 @@ def verify(img, plan, solved, ocr=None, official_texts=()):
     for t in texts:
         # texto inventado pelo gerador: confunde a mensagem e pode contradizer os textos oficiais
         issues.append(("texto_inventado", t["texto"], t["b"]))
+    g = np.asarray(img.convert("L").resize((120, 150)), dtype=np.float32)
+    mean = g.mean(axis=1)
+    # linha sem detalhe E chapada em branco/preto puro: imagem incompleta (degradê suave de parede/céu não conta)
+    flat = (g.std(axis=1) < 2.0) & ((mean > 246) | (mean < 8))
+    for band in (flat[:], flat[::-1]):
+        run = int(np.argmax(~band)) if (~band).any() else len(band)
+        if run > len(band) * 0.15:
+            issues.append(("area_vazia", round(run / len(band), 2)))
+            break
     sal = _saliency(img)
     base = float(np.median(sal))
     for e in solved["elementos"]:
@@ -105,7 +114,8 @@ def decide(report, attempt, max_attempts=2):
     """Regerar quando o texto inventado é grande ou disputa espaço com os textos oficiais; senão corrigir na imagem."""
     # grande = mais de 1,2% da área da peça ou letras com mais de 4,5% da altura (b em % de largura/altura)
     big = [t for t in report["textos"] if t["b"][2] * t["b"][3] / 100 > 1.2 or t["b"][3] > 4.5]
-    if (big or len([p for p in report["problemas"] if p[0] == "zona_de_texto_poluida"]) >= 2) and attempt < max_attempts:
+    empty = any(p[0] == "area_vazia" for p in report["problemas"])
+    if (big or empty or len([p for p in report["problemas"] if p[0] == "zona_de_texto_poluida"]) >= 2) and attempt < max_attempts:
         return "regerar"
     if report["textos"]:
         return "corrigir"
