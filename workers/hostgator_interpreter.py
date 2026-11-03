@@ -169,8 +169,9 @@ Decida o que preservar, o que mudar e a ferramenta certa. Responda SOMENTE com J
  "plano": {"entendimento": "o que o cliente quer, uma frase",
    "preservar": ["o que fica igual"], "mudar": [{"elemento": "fundo|simbolo|tipografia|texto|cores|composicao|estilo|objeto|luz",
    "como": "..."}],
-   "estrategia": "so_texto|editar_leve|trocar_fundo|reestilizar|recriar",
-   "fundo": "só em trocar_fundo: o novo fundo em INGLÊS, sem o elemento principal",
+   "estrategia": "so_texto|editar_leve|trocar_fundo|recolorir|reestilizar|recriar",
+   "fundo": "o fundo novo em INGLÊS, sem o elemento principal (se o fundo muda)",
+   "cores_novas": ["cores pedidas, da mais escura para a mais clara (nome em português ou #hex)"],
    "textos_finais": [{"texto": "", "papel": "titulo|subtitulo|descricao|preco|cta|marca|contato", "posicao": "auto"}],
    "criterios": ["2 a 4 verificações VISUAIS objetivas, em português"]}}
 Estratégias (escolha pelo efeito visual necessário):
@@ -178,7 +179,8 @@ Estratégias (escolha pelo efeito visual necessário):
  trocar_fundo = o elemento principal fica e o fundo vira OUTRO de verdade; reestilizar = mesma ideia, visual bem
  diferente (cores, estilo, fundo, acabamento); recriar = imagem nova do zero mantendo marca/textos (use quando o
  cliente não gostou, reclamou que nada mudou ou pediu algo bem diferente). Mudança grande NUNCA é editar_leve.
- Trocar as cores/paleta da arte é reestilizar (retoque leve não muda cores). Em reestilizar e recriar, o
+ recolorir = trocar a paleta de cores mantendo exatamente formas, símbolo e composição (preencha cores_novas).
+ Em reestilizar e recriar, o
  prompt_visual descreve EXPLICITAMENTE cada elemento a preservar (ex.: "a blue cloud icon"), senão ele se perde.
  Critérios: só o que o cliente pediu e o que você decidiu preservar; não invente elementos que não existem.
 Textos: o gerador não escreve letras; o Studio aplica os textos com fontes reais. "textos_finais" = a lista COMPLETA de

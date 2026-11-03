@@ -101,6 +101,108 @@ def ollama_vision(image_bytes, prompt):
         return None
 
 
+def ollama_chat(messages, images=None, num_predict=500, temperature=0.4):
+    """Chamada ao modelo já carregado (mesmos parâmetros do intérprete). images vai na última mensagem."""
+    keep = os.environ.get("SG_OLLAMA_KEEP_ALIVE", "30m")
+    msgs = [dict(m) for m in messages]
+    if images:
+        msgs[-1]["images"] = images
+    payload = {"model": os.environ["SG_OLLAMA_MODEL"], "stream": False, "format": "json", "think": False,
+               "keep_alive": int(keep) if keep.lstrip("-").isdigit() else keep,
+               "options": {"temperature": temperature, "num_predict": num_predict,
+                           "num_ctx": int(os.environ["SG_OLLAMA_NUM_CTX"]),
+                           "num_thread": int(os.environ.get("SG_OLLAMA_NUM_THREAD", "2"))},
+               "messages": msgs}
+    url = os.getenv("SG_OLLAMA_URL", "http://127.0.0.1:11434")
+    req = urllib.request.Request(url + "/api/chat", data=json.dumps(payload).encode(),
+                                 headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=int(os.getenv("SG_VISION_TIMEOUT", "240"))) as resp:
+        data = json.loads(resp.read())
+    try:
+        out = json.loads(data["message"]["content"])
+        return out if isinstance(out, dict) else None
+    except (ValueError, KeyError):
+        return None
+
+
+def render_html(page, html_doc, size):
+    page.set_viewport_size({"width": size[0], "height": size[1]})
+    page.set_content(html_doc, wait_until="load", timeout=30000)
+    try:
+        page.wait_for_selector("body[data-ready='1']", timeout=10000)
+    except Exception:  # noqa: BLE001 — sem o ajuste de texto, a captura ainda vale
+        pass
+    return page.screenshot(type="jpeg", quality=92, clip={"x": 0, "y": 0, "width": size[0], "height": size[1]})
+
+
+def process_flyer_design(site, job):
+    """Direção de arte: plano do modelo -> montagem no Chromium -> avaliação estética (visão) -> até 2 refinamentos."""
+    from playwright.sync_api import sync_playwright  # noqa: PLC0415
+
+    from studio import artdirector, htmlflyer  # noqa: PLC0415
+
+    payload = job["payload"]
+    briefing = payload["briefing"]
+    names = [p["nome"] for p in briefing.get("produtos") or []]
+    photos = {}
+    for p in briefing.get("produtos") or []:
+        if p.get("asset_id"):
+            try:
+                photos[p["nome"]] = htmlflyer.photo_data_uri(site.call("GET", f"/assets/{p['asset_id']}", raw=True, timeout=90))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("foto de %s indisponível: %s", p["nome"], exc)
+    ref = payload.get("referencia")
+    base = artdirector.design_from_reference(ref) if ref else htmlflyer.normalize({})
+    t0 = time.time()
+    planned = None
+    try:
+        planned = ollama_chat(artdirector.design_messages(briefing, ref, payload.get("instrucoes") or "",
+                                                          payload.get("design_anterior"), payload.get("semente") or 1),
+                              num_predict=450, temperature=0.6)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("plano do design falhou: %s", exc)
+    design = artdirector.merge(base, planned or {}, names)
+    for k in ("paleta",):  # com referência, as cores medidas valem mais que as sugeridas
+        if ref and base.get(k):
+            design[k] = {**design[k], **{c: base[k][c] for c in ("primaria", "secundaria")}}
+    size = htmlflyer.SIZES.get(briefing.get("formato"), htmlflyer.SIZES["feed_4x5"])
+    report = {"plano_s": round(time.time() - t0, 1), "rodadas": []}
+    best = None
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch(headless=True, args=["--disable-dev-shm-usage", "--no-zygote", "--disable-gpu"])
+        try:
+            page = browser.new_page()
+            for round_no in range(3):
+                image = render_html(page, htmlflyer.build(briefing, photos, design), size)
+                critique = None
+                try:
+                    t1 = time.time()
+                    critique = ollama_chat([{"role": "system", "content": artdirector.CRITIQUE_PROMPT},
+                                            {"role": "user", "content": "Pedido do cliente: " + (payload.get("instrucoes") or
+                                                                                                "encarte profissional")}],
+                                           images=[base64.b64encode(image).decode()], num_predict=300, temperature=0.2)
+                    report["rodadas"].append({"nota": (critique or {}).get("nota"), "s": round(time.time() - t1, 1),
+                                              "problemas": (critique or {}).get("problemas", [])[:4]})
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("avaliação estética falhou: %s", exc)
+                try:
+                    score = float((critique or {}).get("nota"))
+                except (TypeError, ValueError):
+                    score = 6.0
+                if best is None or score > best[0]:
+                    best = (score, image, dict(design), critique)
+                if score >= 8 or round_no == 2 or not (critique or {}).get("ajustes"):
+                    break
+                design = artdirector.merge(design, critique["ajustes"], names)
+        finally:
+            browser.close()
+    score, image, design, critique = best
+    log.info("encarte: nota %.1f após %d rodada(s)", score, len(report["rodadas"]))
+    site.call("POST", f"/jobs/{job['id']}/complete", {"imagem": base64.b64encode(image).decode(), "design": design,
+                                                      "nota": score, "problemas": (critique or {}).get("problemas", [])[:4],
+                                                      "relatorio": report}, timeout=120)
+
+
 def process_layout_ref(site, job):
     from studio import refstyle  # noqa: PLC0415
 
@@ -308,6 +410,8 @@ def main(argv=None):
                 started = time.time()
                 if mode == "layout_ref":
                     process_layout_ref(site, job)
+                elif mode == "flyer_design":
+                    process_flyer_design(site, job)
                 elif mode == "websearch":
                     process_websearch(site, job)
                 else:

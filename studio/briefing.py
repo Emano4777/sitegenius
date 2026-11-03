@@ -345,6 +345,10 @@ def normalize_briefing(data, user_texts=None, owned_asset_ids=None, trust_prices
                      "composicao": _clean_composition(lay.get("composicao")),
                      "semente": int(lay.get("semente")) if str(lay.get("semente") or "").isdigit() else 1,
                      "gerar_apos_analise": lay.get("gerar_apos_analise") is True}
+    if isinstance(lay.get("design"), dict):
+        from .htmlflyer import normalize as _normalize_design  # noqa: PLC0415
+
+        out["layout"]["design"] = _normalize_design(lay["design"])
     ref = lay.get("referencia") if isinstance(lay.get("referencia"), dict) else None
     if ref and _clean_id(ref.get("asset_id")) and (not owned_asset_ids or _clean_id(ref.get("asset_id")) in owned
                                                    or ref.get("estado") == "pronta"):

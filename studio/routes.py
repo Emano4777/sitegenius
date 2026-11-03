@@ -760,6 +760,77 @@ CLAIM_SENTENCE = re.compile(r"[^.!?\n]*\b(gerando|vou gerar|estou gerando|criand
                             re.IGNORECASE)
 
 
+def start_art_direction(conv, user_id, final, signature):
+    """Encarte pelo diretor de arte (HostGator): plano do modelo, montagem no Chromium, avaliação estética e refinamento.
+    A mensagem fica "pendente" até a arte chegar (o cliente vê o andamento; nada é afirmado antes)."""
+    running = get_conn().one("SELECT id FROM sg_jobs WHERE conversation_id = ? AND gen_type = 'flyer_ai' AND status IN "
+                             "('queued', 'claimed', 'running')", (conv["id"],))
+    if running:
+        return "Já estou criando o seu encarte; ele aparece aqui assim que ficar pronto."
+    layout = final.get("layout") or {}
+    msg_id = new_id()
+    add_message(conv["id"], "assistant", "Criando o seu encarte: direção de arte, montagem e revisão visual da composição "
+                                         "(leva de 1 a 3 minutos)…", status="pending", message_id=msg_id)
+    comp = layout.get("composicao") or {}
+    instructions = " ".join(x for x in [layout.get("instrucoes") or "",
+                                         ("Pedidos de composição: " + ", ".join(f"{k}={v}" for k, v in comp.items()))
+                                         if comp else ""] if x)
+    payload = {"mode": "flyer_design", "conversation_id": conv["id"], "assistant_message_id": msg_id, "briefing": final,
+               "asset_ids": [p["asset_id"] for p in final.get("produtos") or [] if p.get("asset_id")],
+               "referencia": (layout.get("referencia") or {}).get("spec") if layout.get("modelo") == "referencia" else None,
+               "instrucoes": instructions[:600], "design_anterior": layout.get("design"),
+               "semente": int(layout.get("semente") or 1), "assinatura": signature}
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, payload, gen_type, created_at, updated_at) "
+        "VALUES (?, ?, ?, 'interpret', 'queued', ?, 'flyer_ai', ?, ?)",
+        (new_id(), user_id, conv["id"], dumps(payload), now(), now()),
+    )
+    return ""
+
+
+def handle_flyer_design(job, payload, data):
+    """Arte pronta (já revisada pelo diretor de arte): vira o resultado da conversa, com os dados conferidos."""
+    from . import htmlflyer  # noqa: PLC0415
+
+    conv = get_conn().one("SELECT * FROM sg_conversations WHERE id = ?", (payload["conversation_id"],))
+    g.user_id = conv["user_id"]
+    import base64  # noqa: PLC0415
+
+    try:
+        image = sanitize_image(base64.b64decode(data.get("imagem") or ""), 12 * 1024 * 1024, 40_000_000, 4096)
+    except (ImageRejected, ValueError):
+        side_job_failed(payload)
+        return
+    final = payload["briefing"]
+    asset_id = store_asset(conv["user_id"], "result", *image)
+    job_id, ts = new_id(), now()
+    design = htmlflyer.normalize(data.get("design") if isinstance(data.get("design"), dict) else {})
+    try:
+        nota = round(float(data.get("nota")), 1)
+    except (TypeError, ValueError):
+        nota = None
+    rec = {"version": 2, "gen_type": "flyer", "briefing": final, "size": [image[2], image[3]],
+           "assinatura": payload.get("assinatura"), "design": design, "nota": nota,
+           "relatorio": data.get("relatorio") if isinstance(data.get("relatorio"), dict) else None}
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, progress, payload, status_message, result, "
+        "schema_version, gen_type, aspect_ratio, render_mode, created_at, updated_at, started_at, finished_at) "
+        "VALUES (?, ?, ?, 'render', 'done', 100, ?, 'Pronto', ?, 2, 'flyer', ?, 'layout', ?, ?, ?, ?)",
+        (job_id, conv["user_id"], conv["id"], dumps(rec)[:200000], dumps({"asset_id": asset_id}), final.get("formato"),
+         ts, ts, ts, ts),
+    )
+    current = loads(conv["briefing"]) or final
+    lay = {**(current.get("layout") or {}), "design": design, "gerado_assinatura": payload.get("assinatura")}
+    save_briefing(conv["id"], {**current, "layout": lay, "gerado": True})
+    rounds = len((rec["relatorio"] or {}).get("rodadas") or [])
+    no_photo = [p["nome"] for p in final.get("produtos") or [] if not p.get("asset_id")]
+    text = (f"Pronto! Criei o encarte com {len(final.get('produtos') or [])} produto(s), nomes e preços exatamente como "
+            f"estão no briefing. Revisei a composição {rounds} vez(es)" + (f" (nota final {nota:g}/10)" if nota is not None else "")
+            + "." + (f" Sem foto (aparece só o nome): {', '.join(no_photo)}." if no_photo else "")
+            + " Pode pedir ajustes por aqui (cores, destaque, organização, outra versão).")
+    set_message(payload["assistant_message_id"], conv["id"], text, job_id)
+
+
 def start_reference_analysis(conv, briefing, asset_ids, generate_after, texto=""):
     """Envia a(s) referência(s) para a análise visual (ferramentas da HostGator). Devolve o briefing atualizado."""
     asset_ids = [asset_ids] if isinstance(asset_ids, str) else list(asset_ids)[:3]
@@ -983,7 +1054,7 @@ def flyer_previews(conv, briefing):
             "— cores, produto em destaque, formato. Se quiser outras, peça “outros estilos”."), attachments, briefing
 
 
-def generate_flyer(conv, user_id, briefing):
+def generate_flyer(conv, user_id, briefing, local=False):
     """Gera o encarte com o layout escolhido (composição no servidor: fotos, nomes e preços exatos do briefing)."""
     ok, motivo = bf.ready_for_render(briefing)
     if not ok:
@@ -1000,13 +1071,18 @@ def generate_flyer(conv, user_id, briefing):
     layout["modelo"] = layout.get("modelo") or ("referencia" if ref.get("spec") else "criativo")
     layout["gerar_apos_analise"] = False
     final = {**briefing, "layout": layout}
-    signature = hashlib.sha256(dumps({k: final.get(k) for k in ("produtos", "layout", "loja", "titulo", "formato",
-                                                                  "validade", "logo_asset_id")}).encode()).hexdigest()[:24]
+    visible_layout = {k: v for k, v in layout.items() if k not in ("design", "gerado_assinatura", "previas",
+                                                                    "gerar_apos_analise", "instrucoes")}
+    signature = hashlib.sha256(dumps({**{k: final.get(k) for k in ("produtos", "loja", "titulo", "formato", "validade",
+                                                                   "logo_asset_id")}, "layout": visible_layout}).encode()
+                               ).hexdigest()[:24]
     last = get_conn().one("SELECT id, payload, created_at FROM sg_jobs WHERE conversation_id = ? AND gen_type = 'flyer' "
                           "AND status = 'done' ORDER BY created_at DESC LIMIT 1", (conv["id"],))
     if last and (loads(last["payload"], {}) or {}).get("assinatura") == signature and now() - last["created_at"] < 900:
         return ("Esse encarte já está pronto logo acima — nada mudou desde a última geração. Quer outra versão? "
                 "É só pedir “outra versão” ou dizer o que mudar."), None
+    if not local and not layout.get("fundo_ia") and workers_online("tools"):
+        return start_art_direction(conv, user_id, final, signature), None
     if layout.get("fundo_ia"):
         # Fundo gerado pelo Acer (Q3, sem textos nem produtos); o encarte é montado aqui quando o fundo chegar.
         fmt = bf.FORMATS.get(final.get("formato"), bf.FORMATS["feed_4x5"])
@@ -1393,6 +1469,11 @@ SIDE_FAILURE = {
 def side_job_failed(payload):
     """Tarefas auxiliares (conferência, análise de referência, busca web) que falham: a conversa segue com honestidade."""
     mode = payload.get("mode")
+    if mode == "flyer_design":
+        conv = get_conn().one("SELECT * FROM sg_conversations WHERE id = ?", (payload["conversation_id"],))
+        text, job_id = generate_flyer(conv, conv["user_id"], payload["briefing"], local=True)
+        set_message(payload["assistant_message_id"], conv["id"], text, job_id)
+        return True
     if mode not in SIDE_FAILURE:
         return False
     if payload.get("assistant_message_id") and payload.get("conversation_id"):
@@ -1698,6 +1779,64 @@ def text_edit_job(conv, user_id, texto, previous_spec, plan=None, record=None):
     return job_id
 
 
+def recolor_art(data, colors):
+    """Troca a paleta preservando formas: mapa de gradiente pela luminosidade (escuro -> claro) nas cores pedidas.
+    Mantém o contraste e os detalhes; a transparência e a composição ficam idênticas."""
+    from PIL import Image, ImageOps  # noqa: PLC0415
+
+    img = Image.open(io.BytesIO(data)).convert("RGB")
+    cols = sorted([tuple(c) for c in colors], key=lambda c: 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2])
+    darkest = tuple(int(v * 0.18) for v in cols[0])
+    lightest = tuple(int(v + (255 - v) * 0.75) for v in cols[-1])
+    stops = [darkest] + cols + [lightest]
+    lut = []
+    for ch in range(3):
+        for i in range(256):
+            t = i / 255 * (len(stops) - 1)
+            k = min(int(t), len(stops) - 2)
+            f = t - k
+            lut.append(int(stops[k][ch] + (stops[k + 1][ch] - stops[k][ch]) * f))
+    gray = ImageOps.autocontrast(img.convert("L"), cutoff=1)
+    mapped = Image.merge("RGB", [gray.point(lut[c * 256:(c + 1) * 256]) for c in range(3)])
+    out = io.BytesIO()
+    mapped.save(out, "PNG")
+    return out.getvalue()
+
+
+def recolor_job(conv, user_id, texto, previous_spec, spec):
+    """“Recolorir”: nova arte a partir da anterior (sem gerador), textos reaplicados e conferência visual."""
+    row = last_result_row(conv["id"])
+    result = (loads(row["result"], {}) or {}) if row else {}
+    art = get_conn().one("SELECT * FROM sg_assets WHERE id = ? AND user_id = ?", (result.get("art_asset_id"), user_id))
+    if not art:
+        return None
+    new_art = sanitize_image(recolor_art(asset_bytes(art), spec["cores"]), 16 * 1024 * 1024, 40_000_000, 4096)
+    art_id = store_asset(user_id, "art", *new_art)
+    full = {**previous_spec, "text_plan": spec.get("text_plan") or previous_spec.get("text_plan"),
+            "pedido_ajuste": spec.get("pedido_ajuste"), "prompt_original": texto, "parent_job_id": row["id"]}
+    full.pop("job_id", None)
+    full.pop("recompor", None)
+    if full.get("text_plan"):
+        asset_id, report = apply_texts(user_id, new_art[0], full)
+    else:
+        asset_id, report = store_asset(user_id, "result", *new_art), {}
+    job_id, ts = new_id(), now()
+    payload = {"version": 2, "gen_type": "art_edit", "size": (loads(row["payload"], {}) or {}).get("size"), "spec": full}
+    get_conn().run(
+        "INSERT INTO sg_jobs (id, user_id, conversation_id, kind, status, progress, payload, status_message, result, "
+        "schema_version, gen_type, prompt_original, prompt_visual, style, aspect_ratio, seed, render_mode, parent_job_id, "
+        "created_at, updated_at, started_at, finished_at) "
+        "VALUES (?, ?, ?, 'render', 'done', 100, ?, 'Pronto', ?, 2, 'art_edit', ?, ?, ?, ?, ?, 'cores', ?, ?, ?, ?, ?)",
+        (job_id, user_id, conv["id"], dumps(payload), dumps({"asset_id": asset_id, "art_asset_id": art_id,
+                                                              "validacao_texto": report}),
+         texto, full.get("prompt_visual"), full.get("style"), full.get("aspect_ratio"), full.get("seed"), row["id"],
+         ts, ts, ts, ts),
+    )
+    save_spec(conv["id"], {**full, "job_id": job_id})
+    schedule_evaluation(get_conn().one("SELECT * FROM sg_jobs WHERE id = ?", (job_id,)), {"asset_id": asset_id})
+    return job_id
+
+
 def size_feedback(old_plan, new_plan, old_report, new_report):
     """Pedido de texto maior/menor que não mudou de verdade (já no limite): avisa o cliente com sinceridade."""
     before, after = old_report.get("tamanhos") or {}, new_report.get("tamanhos") or {}
@@ -1838,6 +1977,15 @@ def apply_creative_decision(conv, acao, resposta, spec, message_id, insert, text
         else:
             set_message(message_id, conv["id"], problem or resposta, job_id)
         return job_id
+    if acao == "recolorir":
+        problem = render_quota_problem(g.user_id)
+        job_id = None if problem else recolor_job(conv, g.user_id, texto, loads(conv.get("spec"), None) or {}, spec)
+        text = problem or (resposta if job_id else "Não consegui trocar as cores desta vez. Pode me dizer de novo?")
+        if insert:
+            add_message(conv["id"], "assistant", text, message_id=message_id, job_id=job_id)
+        else:
+            set_message(message_id, conv["id"], text, job_id)
+        return job_id
     if acao == "perguntar":
         save_spec(conv["id"], spec)
     else:
@@ -1957,7 +2105,7 @@ def creative_from_model(payload, model_answer):
         acao, resposta, spec = creative.plan_outcome(
             plano, {**(model_answer or {}), "prompt_visual": spec["recompor"]["prompt_completo"]}, payload.get("text", ""),
             payload.get("options"), payload.get("previous_spec"), payload.get("previous_result_id"),
-            conversation_texts(conv["id"]))
+            conversation_texts(conv["id"]), composite=False)
     apply_creative_decision(conv, acao, resposta, spec, payload["assistant_message_id"], False, payload.get("text", ""))
 
 
@@ -2193,9 +2341,10 @@ def api_create_job(conversation_id):
     if not (briefing.get("layout") or {}).get("fundo_ia"):
         # Layout escolhido pela conversa: composição imediata no servidor (mesmo resultado do chat).
         text, job_id = generate_flyer(conv, g.user_id, briefing)
-        add_message(conv["id"], "assistant", text, job_id=job_id)
+        if text:
+            add_message(conv["id"], "assistant", text, job_id=job_id)
         if not job_id:
-            return jsonify({"ok": True, "job": None, "mensagem": text}), 201
+            return jsonify({"ok": True, "job": None, "mensagem": text or "Criando o seu encarte; acompanhe na conversa."}), 201
         return jsonify({"ok": True, "job": job_view(conn.one("SELECT * FROM sg_jobs WHERE id = ?", (job_id,)))}), 201
 
     asset_ids = sorted(owned)
@@ -2527,8 +2676,8 @@ def worker_claim():
     candidates = conn.all(
         "SELECT id FROM sg_jobs WHERE kind = ? AND status = 'queued' AND (gen_type IS NULL OR gen_type NOT IN "
         "('reference_edit', 'reference_read') OR ? = 1) AND (? = 0 OR gen_type IN ('reference_edit', 'reference_read')) "
-        "AND (gen_type IS NULL OR gen_type NOT IN ('layout_ref', 'websearch') OR ? = 1) "
-        "AND (? = 0 OR gen_type IN ('layout_ref', 'websearch')) "
+        "AND (gen_type IS NULL OR gen_type NOT IN ('layout_ref', 'websearch', 'flyer_ai') OR ? = 1) "
+        "AND (? = 0 OR gen_type IN ('layout_ref', 'websearch', 'flyer_ai')) "
         # Mensagens do cliente antes das conferências (a conversa nunca espera uma avaliação).
         "ORDER BY CASE WHEN gen_type = 'evaluate' THEN 1 ELSE 0 END, created_at LIMIT 5",
         (kind, 1 if capable else 0, 1 if set(body.get("somente") or []) & {"reference_edit", "reference_read"} else 0,
@@ -2693,6 +2842,11 @@ def worker_complete(job_id):
     # Interpretação: nunca confiar no modelo, tudo passa pela validação.
     data = request.get_json(silent=True) or {}
     payload = loads(job["payload"], {})
+    if payload.get("mode") == "flyer_design":
+        conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",
+                 (now(), now(), dumps({"nota": data.get("nota"), "relatorio": data.get("relatorio")})[:8000], job["id"]))
+        handle_flyer_design(job, payload, data)
+        return jsonify({"ok": True})
     if payload.get("mode") == "websearch":
         conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, finished_at = ?, updated_at = ?, result = ? WHERE id = ?",
                  (now(), now(), dumps({"notas": data.get("notas")})[:8000], job["id"]))
@@ -2758,7 +2912,8 @@ def worker_complete(job_id):
         g.user_id = job["user_id"]
         conv_row = conn.one("SELECT * FROM sg_conversations WHERE id = ?", (conversation_id,))
         text, job_id = generate_flyer(conv_row, job["user_id"], normalized)
-        resposta = text if not normalized["pendencias"] or job_id else f"{resposta}\n\n{text}"
+        if text:
+            resposta = text if not normalized["pendencias"] or job_id else f"{resposta}\n\n{text}"
     conn.run(
         "UPDATE sg_messages SET content = ?, status = 'ok', job_id = ? WHERE id = ? AND conversation_id = ?",
         (resposta, job_id, payload["assistant_message_id"], conversation_id),
@@ -2819,7 +2974,8 @@ def schedule_evaluation(job, result):
     try:
         payload_job = loads(job["payload"], {}) or {}
         spec = payload_job.get("spec") or {}
-        if payload_job.get("gen_type") not in ("free_image", "text_edit") or spec.get("encarte") or not job.get("conversation_id"):
+        if payload_job.get("gen_type") not in ("free_image", "text_edit", "art_edit") or spec.get("encarte") or \
+                not job.get("conversation_id"):
             return
         if not interpreter_available() or not result.get("asset_id"):
             return

@@ -624,12 +624,13 @@ def _same_scene(a, b):
 
 
 CLAIM_DONE = re.compile(r"\b(pronto|feito|conclu[ií]d|j[aá] (troquei|mudei|alterei|fiz)|aqui est[aá])\b", re.IGNORECASE)
-STRATEGIES = ("so_texto", "editar_leve", "trocar_fundo", "reestilizar", "recriar")
+STRATEGIES = ("so_texto", "editar_leve", "trocar_fundo", "recolorir", "reestilizar", "recriar")
 STRATEGY_DENOISE = {"editar_leve": 0.55, "reestilizar": 0.86}
 ESCALATE = {"editar_leve": "reestilizar", "trocar_fundo": "reestilizar", "reestilizar": "recriar", "recriar": "recriar",
-            "so_texto": "so_texto"}
+            "so_texto": "so_texto", "recolorir": "reestilizar"}
 STRATEGY_LABEL = {"so_texto": "ajustar só os textos na mesma arte", "editar_leve": "fazer um retoque leve na arte",
                   "trocar_fundo": "manter o elemento principal e criar um fundo novo",
+                  "recolorir": "trocar as cores mantendo exatamente as formas e a composição",
                   "reestilizar": "refazer o visual com bastante liberdade, mantendo a ideia",
                   "recriar": "criar uma versão nova do zero"}
 
@@ -647,7 +648,8 @@ def clean_plan(plano):
         if isinstance(m, dict) and (m.get("elemento") or m.get("como")):
             mudar.append({"elemento": clean(m.get("elemento"), 30), "como": clean(m.get("como"), 200)})
     textos = plano.get("textos_finais")
-    return {"entendimento": clean(plano.get("entendimento"), 300), "estrategia": plano["estrategia"],
+    cores = [c for c in (parse_color(x) for x in (plano.get("cores_novas") or [])[:4]) if c]
+    return {"entendimento": clean(plano.get("entendimento"), 300), "estrategia": plano["estrategia"], "cores_novas": cores,
             "preservar": _clean_list(plano.get("preservar"), 8), "mudar": mudar, "fundo": clean(plano.get("fundo"), 600),
             "textos_finais": [t for t in textos if isinstance(t, dict) and clean(t.get("texto"), 140)][:8]
             if isinstance(textos, list) else None,
@@ -687,7 +689,40 @@ def prefer_final_texts(decision, data, text, previous_spec, user_texts):
             "esperado": [{"texto": f} for f in finals]}
 
 
-def plan_outcome(plano, data, text, options, previous_spec, previous_result_id, user_texts, attempt=1):
+COLOR_NAMES = {"vermelh": (215, 25, 32), "amarel": (255, 204, 0), "azul": (0, 110, 200), "verde": (0, 150, 80),
+               "pret": (18, 18, 20), "branc": (250, 250, 250), "dourad": (214, 180, 96), "laranja": (255, 128, 0),
+               "rosa": (240, 80, 150), "roxo": (110, 40, 190), "roxa": (110, 40, 190), "lilas": (180, 140, 230),
+               "cinza": (150, 150, 156), "vinho": (120, 20, 40), "marrom": (110, 70, 40), "bege": (235, 222, 200),
+               "turquesa": (0, 190, 190), "ciano": (0, 200, 230), "violeta": (140, 60, 220), "prata": (192, 196, 204),
+               "magenta": (220, 30, 160), "coral": (255, 110, 90), "neon": (60, 255, 140), "salmao": (250, 128, 114),
+               "orange": (255, 128, 0), "purple": (110, 40, 190), "red": (215, 25, 32), "blue": (0, 110, 200),
+               "green": (0, 150, 80), "yellow": (255, 204, 0), "black": (18, 18, 20), "white": (250, 250, 250)}
+
+
+def parse_color(value):
+    """"#ff8800", "laranja", "roxo escuro" -> (r, g, b) ou None."""
+    v = strip_accents(str(value or "")).lower().strip()
+    m = re.fullmatch(r"#?([0-9a-f]{6})", v)
+    if m:
+        return tuple(int(m.group(1)[i:i + 2], 16) for i in (0, 2, 4))
+    for key, rgb in COLOR_NAMES.items():
+        if key in v:
+            if "escur" in v:
+                return tuple(int(c * 0.6) for c in rgb)
+            if "clar" in v:
+                return tuple(int(c + (255 - c) * 0.45) for c in rgb)
+            return rgb
+    return None
+
+
+def keeps_subject(plano):
+    """O plano preserva o elemento principal (e não pede para mudá-lo)? Então ele é mantido pixel a pixel."""
+    changed = " ".join(strip_accents((m.get("elemento") or "") + " " + (m.get("como") or "")).lower() for m in plano["mudar"])
+    return bool(plano["preservar"]) and not re.search(r"simbolo|icone|logo\b|objeto|produto|pessoa|personagem|elemento principal",
+                                                     changed)
+
+
+def plan_outcome(plano, data, text, options, previous_spec, previous_result_id, user_texts, attempt=1, composite=True):
     """Executa o plano do modelo com a ferramenta certa. Nada é afirmado como feito: a resposta diz o que VAI ser feito
     e o resultado é conferido visualmente depois (avaliação)."""
     previous_spec = previous_spec or {}
@@ -722,6 +757,13 @@ def plan_outcome(plano, data, text, options, previous_spec, previous_result_id, 
         if not plan:
             return "perguntar", "Quais textos devem aparecer na arte? Me diga exatamente como escrever.", {**previous_spec}
         return "ajustar_texto", reply, {"text_plan": plan, "pedido_ajuste": record}
+    if est == "recolorir":
+        if len(plano.get("cores_novas") or []) < 1 or not previous_result_id:
+            plano = {**plano, "estrategia": "reestilizar"}
+            est = "reestilizar"
+        else:  # ferramenta determinística: formas e composição idênticas, só a paleta muda
+            return "recolorir", reply, {"cores": [list(c) for c in plano["cores_novas"]], "text_plan": plan,
+                                        "pedido_ajuste": record}
     visual = clean(data.get("prompt_visual"), 1200) or previous_spec.get("prompt_visual") or clean(text, 600)
     style = (options.get("estilo") if options.get("estilo") in STYLES and options.get("estilo") != "auto"
              else data.get("estilo") if data.get("estilo") in STYLES else previous_spec.get("style"))
@@ -730,6 +772,11 @@ def plan_outcome(plano, data, text, options, previous_spec, previous_result_id, 
     common = dict(prompt_original=text, style=style, aspect=aspect, quality=options.get("qualidade"),
                   user_texts=user_texts, parent_job_id=previous_spec.get("job_id"), fixed_plan=plan,
                   notes=clean(data.get("descricao_referencias"), 300))
+    if composite and previous_result_id and est in ("reestilizar", "recriar") and keeps_subject(plano):
+        # O elemento principal fica exatamente como está (recortado); só o resto é gerado de novo.
+        est = "trocar_fundo"
+        plano = {**plano, "fundo": plano["fundo"] or f"{visual}, background scene only, empty center"}
+        record["estrategia_executada"] = "trocar_fundo"
     if est == "trocar_fundo" and previous_result_id:
         background = plano["fundo"] or visual
         spec = build_spec(prompt_visual=background, **common)

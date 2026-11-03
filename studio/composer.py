@@ -417,14 +417,24 @@ def _reorder(out, hero_index):
     return out  # o destaque é o primeiro slot; quem chama ordena os produtos (destaque primeiro)
 
 
+def _tile_photo_area(cw, ch, aspect=0.8):
+    side = _fit_area(cw * SIDE_SPLIT, ch * 0.9, aspect)
+    stack = _fit_area(cw * 0.9, ch * (1 - STACK_PRICE - STACK_NAME) * 0.92, aspect)
+    return max(side if cw * (1 - SIDE_SPLIT) > ch * 0.35 else 0, stack)
+
+
 def _grid(n, area, gap):
+    """Linhas x colunas que dão a MAIOR foto por produto (e sobra pouco espaço vazio)."""
     x0, y0, x1, y1 = area
     W, H = x1 - x0, y1 - y0
     best = None
-    for cols in range(1, 5):
+    for cols in range(1, 6):
         rows = math.ceil(n / cols)
         cw, ch = (W - gap * (cols - 1)) / cols, (H - gap * (rows - 1)) / rows
-        score = min(cw, ch * 1.05) - (cols * rows - n) * W * 0.04
+        if cw < W * 0.18:
+            continue
+        empty = (cols * rows - n) / (cols * rows)
+        score = _tile_photo_area(cw, ch) * (1 - 0.6 * empty)
         if best is None or score > best[0]:
             best = (score, cols, rows, cw, ch)
     _, cols, rows, cw, ch = best
@@ -438,6 +448,51 @@ def _grid(n, area, gap):
 
 
 # --------------------------------------------------------------------------------------------- produto
+SIDE_SPLIT = 0.56     # lado a lado: foto à esquerda até 56% da largura
+STACK_PRICE = 0.30    # empilhado: faixa do preço
+STACK_NAME = 0.14     # empilhado: faixa do nome
+
+
+def _fit_area(box_w, box_h, aspect):
+    if box_w <= 0 or box_h <= 0:
+        return 0.0
+    return min(box_w, box_h * aspect) * min(box_h, box_w / aspect)
+
+
+def side_beats_stack(w, h, aspect, offer):
+    """Foto ao lado (preço à direita) ou empilhada (preço embaixo): a que deixa a foto MAIOR, sem apertar o preço."""
+    side = _fit_area(w * SIDE_SPLIT, h * 0.9, aspect)
+    rest = h * (1 - STACK_PRICE - STACK_NAME - (0.09 if offer else 0)) * 0.92
+    stack = _fit_area(w * 0.9, rest, aspect)
+    return side > stack * 1.05 and w * (1 - SIDE_SPLIT) > h * 0.35
+
+
+def discount_label(price, price_de):
+    """“-33%” calculado dos preços reais (nunca inventado); sem preço antigo, “OFERTA”."""
+    from .briefing import price_to_cents  # noqa: PLC0415
+
+    now_c = price_to_cents((price or "").replace("R$", "").strip())
+    old_c = price_to_cents((price_de or "").replace("R$", "").strip())
+    if now_c and old_c and old_c > now_c:
+        pct = int(round((old_c - now_c) * 100 / old_c))
+        if 5 <= pct <= 90:
+            return f"-{pct}%"
+    return "OFERTA"
+
+
+def sticker(tile, product, design, ph_box, size):
+    d = ImageDraw.Draw(tile)
+    r = size * 0.13
+    cx, cy = ph_box[2] - r * 0.9, ph_box[1] + r * 0.95
+    color = tup(design["preco"].get("selo_cor"), (215, 25, 32))
+    if luma(color) > 170:
+        color = (215, 25, 32)
+    d.polygon(burst(cx, cy, r, r * 0.8, 16, 0.3), fill=color + (255,))
+    text = discount_label(product.get("preco"), product.get("preco_de"))
+    f = fit(text, "anton", 400, r * 1.3, r * 0.75)
+    d.text((cx, cy), text, font=f, fill=contrast_on(color), anchor="mm")
+
+
 def product_tile(product, photo, design, w, h, hero=False, badge=False):
     """Produto (RGBA w x h): foto recortada, nome e preço na posição do design (direita/abaixo/sobre)."""
     w, h = int(w), int(h)
@@ -458,20 +513,24 @@ def product_tile(product, photo, design, w, h, hero=False, badge=False):
     oferta = product.get("oferta") or ""
     escala = design["preco"].get("escala", 0.42) * (1.1 if hero else 1)
     off_h = 0
-    if pos == "direita" and w > h * 0.9:
-        ph_box = (pad, pad, w * 0.56, h - pad)
-        pr_h = min(h * escala * 1.5, h * 0.58)
-        off_h = h * 0.13 if oferta else 0
-        name_box = (w * 0.56, pad, w - pad, h - pad - pr_h - off_h - h * 0.03)
-        pr_box = (w * 0.5, h - pad - pr_h, w - pad, h - pad)
+    if pos != "sobre":
+        aspect = (cut.width / cut.height) if cut is not None else 1.0
+        pos = "direita" if side_beats_stack(w, h, aspect, bool(oferta)) else "abaixo"
+    if pos == "direita":
+        split = SIDE_SPLIT
+        ph_box = (pad, pad, w * split, h - pad)
+        pr_h = min(h * 0.5, (w * (1 - split)) * 0.62)
+        off_h = h * 0.12 if oferta else 0
+        name_box = (w * split + pad * 0.5, pad, w - pad, h - pad - pr_h - off_h - h * 0.02)
+        pr_box = (w * split - pad * 0.5, h - pad - pr_h, w - pad * 0.5, h - pad)
     elif pos == "sobre":
         ph_box = (pad, pad, w - pad, h * 0.78)
         pr_h = h * escala
         pr_box = (w * 0.38, h - pad - pr_h, w - pad, h - pad)
         name_box = (pad, h * 0.78, w * 0.4, h - pad)
     else:  # abaixo: foto, nome, (oferta), preço — cada um na sua faixa, sem sobreposição
-        pr_h = h * min(0.36, max(0.28, escala * 0.75))
-        name_h = h * 0.15
+        pr_h = min(h * STACK_PRICE, w * 0.42)
+        name_h = h * STACK_NAME
         gap = h * 0.02
         ph_box = (pad, pad, w - pad, h - pad - pr_h - name_h - gap * 2 - (h * 0.09 if oferta else 0))
         name_box = (pad, ph_box[3] + gap, w - pad, ph_box[3] + gap + name_h)
@@ -517,11 +576,10 @@ def product_tile(product, photo, design, w, h, hero=False, badge=False):
         f = fit(oferta, "poppins", 800, (ob[2] - ob[0]) * 0.92, oh * 0.72)
         d.text(((ob[0] + ob[2]) / 2, (ob[1] + ob[3]) / 2), oferta, font=f, fill=contrast_on(oc), anchor="mm")
     # Preço
-    pdesign = design
-    if badge and design["preco"].get("estilo") == "numeros":
-        pdesign = {**design, "preco": {**design["preco"], "estilo": "explosao"}}
-    pt = price_tile(product["preco"], product.get("preco_de"), unit, pdesign, pr_box[2] - pr_box[0], pr_box[3] - pr_box[1], hero)
+    pt = price_tile(product["preco"], product.get("preco_de"), unit, design, pr_box[2] - pr_box[0], pr_box[3] - pr_box[1], hero)
     tile.alpha_composite(pt, (int(pr_box[0]), int(pr_box[1])))
+    if badge:  # selo de destaque no canto da foto; o preço mantém o mesmo tamanho dos outros (leitura uniforme)
+        sticker(tile, product, design, ph_box, min(w, h))
     return tile
 
 
@@ -587,8 +645,8 @@ def render(briefing, assets, design, width=None):
     hero_name = (briefing.get("layout") or {}).get("destaque")
     hero_idx = next((i for i, p in enumerate(products) if hero_name and p["nome"].lower() == str(hero_name).lower()), None)
     tipo = design["arranjo"].get("tipo")
-    if hero_idx is None and tipo in ("destaque", "tabloide", "assimetrica") and len(products) >= 3:
-        hero_idx = 0
+    if hero_idx is None and tipo in ("destaque", "assimetrica") and len(products) >= 3:
+        hero_idx = 0  # "tabloide" só tem destaque quando a referência ou o cliente pedem
     if hero_idx is not None:
         products.insert(0, products.pop(hero_idx))
         hero_idx = 0
@@ -635,7 +693,7 @@ def from_reference(spec, briefing=None, seed=1):
         "cabecalho": None,
         "tarja": None,
         "conteudo": {"fundo": content_bg, "moldura": spec.get("moldura")},
-        "arranjo": {"tipo": "tabloide", "angulo": 0},
+        "arranjo": {"tipo": "tabloide" if visual.get("hierarquia") == "um_destaque" else "grade", "angulo": 0},
         "produto": {"cartao": None if spec.get("produtos", {}).get("recortados", True) else [255, 255, 255],
                     "forma": "livre", "sombra": True},
         "preco": {"estilo": "numeros" if preco.get("selo_fracao", 0) < 0.6 else

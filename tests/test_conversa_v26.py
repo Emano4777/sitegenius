@@ -96,10 +96,20 @@ def test_reference_analysis_then_automatic_generation(tmp_path):
     data = user.get(f"/studio/api/conversations/{conv}").get_json()
     lay = data["briefing"]["layout"]
     assert lay["modelo"] == "referencia" and lay["referencia"]["estado"] == "pronta"
+    assert "Criando o seu encarte" in data["mensagens"][-1]["texto"] and data["mensagens"][-1]["status"] == "pending"
+    # Diretor de arte (HostGator): recebe briefing + referência, devolve a arte já revisada.
+    art = site.call("POST", "/claim", {"capacidades": ["tools"], "somente": ["tools"]})["job"]
+    assert art["payload"]["mode"] == "flyer_design" and art["payload"]["referencia"]["cabecalho"]["principal"] == [199, 32, 28]
+    import base64
+    site.call("POST", f"/jobs/{art['id']}/complete", {"imagem": base64.b64encode(image_bytes("JPEG", (1080, 1350))).decode(),
+                                                      "design": {"grade": "uniforme"}, "nota": 8.5,
+                                                      "relatorio": {"rodadas": [{"nota": 6}, {"nota": 8.5}]}})
+    data = user.get(f"/studio/api/conversations/{conv}").get_json()
     flyer = [j for j in data["jobs"] if j["tipo"] == "flyer"]
     assert len(flyer) == 1 and flyer[0]["status"] == "done"  # gerou sozinho, uma vez
+    assert "nota final 8.5/10" in data["mensagens"][-1]["texto"] and data["mensagens"][-1]["job_id"] == flyer[0]["id"]
     text = next(m["texto"] for m in data["mensagens"] if m["texto"].startswith("Analisei a sua referência"))
-    assert "cabeçalho colorido" in text and "Pronto! Gerei o encarte" in text
+    assert "cabeçalho colorido" in text
     data = send(user, conv, "pode gerar")  # nada mudou: não duplica
     assert len([j for j in data["jobs"] if j["tipo"] == "flyer"]) == 1 and "já está pronto" in data["mensagens"][-1]["texto"]
 
@@ -157,3 +167,35 @@ def test_two_references_layout_from_one_colors_from_other(tmp_path):
     data = send(user, conv, "agora usa as cores da primeira imagem")
     ref = data["briefing"]["layout"]["referencia"]
     assert ref["papeis"]["cores"] == 0 and ref["spec"]["cabecalho"]["principal"] == [200, 30, 30]
+
+
+def test_art_tools_preserve_subject_recolor_and_html_layout():
+    import io
+    from PIL import Image
+    from studio import artdirector, creative, htmlflyer, routes
+    base = {"entendimento": "", "estrategia": "reestilizar", "preservar": ["a nuvem azul"], "fundo": "",
+            "mudar": [{"elemento": "fundo", "como": "circuitos"}, {"elemento": "tipografia", "como": "tech"}],
+            "textos_finais": None, "criterios": [], "cores_novas": []}
+    assert creative.keeps_subject(base)  # muda fundo/fonte, preserva a nuvem -> recorte, nunca redesenho
+    assert not creative.keeps_subject({**base, "mudar": [{"elemento": "simbolo", "como": "3D"}]})
+    assert creative.parse_color("roxo escuro") == (66, 24, 114) and creative.parse_color("#FF8800") == (255, 136, 0)
+    # Recolorir: formas iguais, paleta nova.
+    img = Image.new("RGB", (60, 60), (240, 240, 240))
+    img.paste((20, 60, 160), (10, 10, 50, 50))
+    out = Image.open(io.BytesIO(routes.recolor_art(img.tobytes() and _png(img), [(110, 40, 190), (255, 128, 0)]))).convert("RGB")
+    dark, light = out.getpixel((30, 30)), out.getpixel((2, 2))
+    assert dark[2] > dark[1] and light[0] > light[2]  # escuro -> roxo, claro -> laranja
+    # Montagem HTML: todos os produtos e preços exatos, sem destaque inventado.
+    b = {"formato": "story", "loja": "Loja X", "titulo": "Ofertas", "produtos": [
+        {"nome": "Arroz 5kg", "preco": "R$ 24,90", "preco_de": "R$ 29,90"}, {"nome": "Feijão", "preco": "R$ 8,49"}]}
+    page = htmlflyer.build(b, {}, {"destaque": "Produto que não existe", "paleta": {"primaria": "nada"}})
+    assert "Arroz 5kg" in page and ">24<" in page and ",90" in page and "Feijão" in page and "-17%" in page
+    design = artdirector.merge(htmlflyer.normalize({}), {"destaque": "Outro", "grade": "mosaico", "x": 1}, ["Arroz 5kg"])
+    assert design["destaque"] is None and design["grade"] == "mosaico" and "x" not in design
+
+
+def _png(img):
+    import io
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
