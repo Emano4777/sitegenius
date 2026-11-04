@@ -69,6 +69,62 @@ def prompt(plan, solved, briefing):
     return re.sub(r"\s{2,}", " ", text).strip()
 
 
+_EN_POS = {"à esquerda": "left", "à direita": "right", "no centro": "center"}
+_EN_V = {"no alto": "upper", "embaixo": "lower", "no meio": "middle"}
+_TRIGGERS = re.compile(r"\b(text|texts|letter\w*|word\w*|typograph\w*|font\w*|logo\w*|label\w*|sign\w*|poster\w*|advert\w*|"
+                       r"brand\w*|packag\w*|product\w*|price\w*|banner\w*|caption\w*|headline\w*|title\w*|written|writing|"
+                       r"texto\w*|letra\w*|palavra\w*|marca\w*|embalage\w*|produto\w*|pre[çc]o\w*|cartaz\w*|placa\w*|"
+                       r"etiqueta\w*|r[óo]tulo\w*|textual|callout\w*|grid|guide\w*|layout\w*|infograph\w*|magazine\w*|"
+                       r"editorial|menu\w*|flyer\w*|leaflet\w*|catalog\w*|sale\w*|discount\w*|offer\w*)\b", re.I)
+
+
+def _area(box):
+    x, y, w, h = box
+    cx, cy = x + w / 2, y + h / 2
+    hz = "left" if cx < 36 else "right" if cx > 64 else "center"
+    vt = "upper" if cy < 36 else "lower" if cy > 64 else "middle"
+    return f"{vt} {hz}" if hz != "center" else f"{vt} area"
+
+
+def prompt_klein(plan, solved, briefing):
+    """Prompt do cenário para o FLUX.2 Klein: só o que a cena DEVE ter, em inglês, sem nenhuma palavra que puxe escrita
+    (no FLUX, negar "texto"/"embalagem" tende a fazê-los aparecer). Áreas dos textos viram superfícies calmas; as bordas
+    ganham detalhes do ambiente para a cena não ficar vazia. Genérico: vem do plano e da geometria."""
+    cen = plan["cenario"]
+    els = solved["elementos"]
+    parts = [plan.get("direcao_visual") or "", f"Commercial still life photography, {_format_words(briefing).split(' ')[0]} framing"]
+    if cen.get("ambiente"):
+        parts.append(f"setting: {cen['ambiente']}")
+    if not cen.get("ambiente") and not plan.get("direcao_visual"):
+        # plano sem cena descrita: a cena evoca o segmento e o tom (o gerador decide os elementos), nunca fica vazia
+        mood = plan.get("tom") or "inviting"
+        parts.append(f"a beautiful {mood} real-world setting that evokes {briefing.get('segmento') or 'the business'}, "
+                     f"with tasteful props and textures of that world, layered depth and natural storytelling")
+    hero = next((e for e in els if e["papel"] == "heroi"), None)
+    if cen["superficie"] != "nenhuma" and hero:
+        parts.append(f"a clean empty {cen['superficie']} surface in the {_area(hero['b'])}, bare and uncluttered, ready for an object")
+    zones = solved["zonas_objetos"] or []
+    for j, obj in enumerate(cen["objetos"]):
+        z = zones[j % len(zones)] if zones else None
+        parts.append(f"{obj} in the {_area(z)}" if z else obj)
+    calm = sorted({_area(e["b"]) for e in els if e["papel"] in ("titulo", "preco_principal", "lista")})[:2]
+    if calm:
+        parts.append("soft, smooth, evenly lit plain backdrop in the " + " and ".join(calm[:3]) +
+                     ", with gentle gradient and depth of field")
+    parts.append("rich environmental details and atmosphere toward the edges and corners")
+    if cen.get("luz"):
+        parts.append(f"dominant light color {cen['luz']}")
+    parts.append("cinematic lighting, high detail, sharp focus, professional color grading")
+    text = ". ".join(p.strip(" .,") for p in parts if p)
+    for name in sorted({p["nome"] for p in briefing.get("produtos") or []} | {briefing.get("loja") or ""}, key=len, reverse=True):
+        if name and len(name) > 3:
+            text = re.sub(re.escape(name), "", text, flags=re.I)
+    # remove qualquer frase que ainda cite escrita, embalagem ou produto
+    text = " ".join(s for s in re.split(r"(?<=[.;,])\s+", text) if not _TRIGGERS.search(s))
+    text = re.sub(r"[,;]\s*(?=\.|$)", "", text)  # vírgula solta onde uma frase foi removida
+    return re.sub(r"\s{2,}", " ", text).strip(" .,") + "."
+
+
 def full_prompt(plan, briefing):
     """Abordagem A (geração completa): o gerador tenta desenhar a arte INTEIRA, com os textos exatos entre aspas.
     Só para comparação: a fidelidade dos textos é medida depois por OCR."""

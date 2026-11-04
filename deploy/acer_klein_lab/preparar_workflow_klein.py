@@ -2,7 +2,8 @@
 marca {{PROMPT}}, {{WIDTH}}, {{HEIGHT}} e {{SEED}} pelos tipos dos nós e acrescenta a super-resolução na GPU
 (Real-ESRGAN x4 + redução a ~1,4 MP com ImageScaleBy, o maior tamanho que cabe no envio de 4 MB da fila atual).
 
-Uso: python preparar_workflow_klein.py klein_api.json klein_modelo_agente.json [--sem-ampliacao]
+Uso: python preparar_workflow_klein.py klein_api.json klein_modelo_agente.json [--sem-ampliacao] [--ate-1-4mp]
+Padrão: amplia até o tamanho FINAL pedido ({{FINAL_WIDTH}} x {{FINAL_HEIGHT}}), com envio direto ao Cloudinary.
 """
 import json
 import sys
@@ -11,7 +12,7 @@ UPSCALE_MODEL = "RealESRGAN_x4plus.pth"
 SCALE_BY = 0.29  # depois do x4 do Real-ESRGAN: ~1,4 MP para gerações de ~1 MP
 
 
-def main(src, dst, upscale=True):
+def main(src, dst, upscale=True, final=True):
     wf = json.load(open(src, encoding="utf-8"))
     texts = [(k, n) for k, n in wf.items() if isinstance(n.get("inputs", {}).get("text"), str)]
     if not texts:
@@ -37,10 +38,15 @@ def main(src, dst, upscale=True):
         nid = max(int(x) for x in wf if x.isdigit()) + 1
         wf[str(nid)] = {"class_type": "UpscaleModelLoader", "inputs": {"model_name": UPSCALE_MODEL}}
         wf[str(nid + 1)] = {"class_type": "ImageUpscaleWithModel", "inputs": {"upscale_model": [str(nid), 0], "image": src_img}}
-        # ImageScaleBy existe há anos com as mesmas entradas (ImageScaleToTotalPixels ganhou entrada obrigatória nova e
-        # foi recusado pelo ComfyUI do Acer). Gerações de ~1 MP x4 = ~16 MP; x0,29 -> ~1,4 MP (cabe no envio de 4 MB).
-        wf[str(nid + 2)] = {"class_type": "ImageScaleBy",
-                            "inputs": {"image": [str(nid + 1), 0], "upscale_method": "lanczos", "scale_by": SCALE_BY}}
+        if final:
+            # tamanho FINAL exato pedido pelo cliente (4K inclusive); o agente envia direto ao Cloudinary o que for grande
+            wf[str(nid + 2)] = {"class_type": "ImageScale",
+                                "inputs": {"image": [str(nid + 1), 0], "upscale_method": "lanczos", "width": "{{FINAL_WIDTH}}",
+                                           "height": "{{FINAL_HEIGHT}}", "crop": "center"}}
+        else:
+            # sem envio direto: ~1,4 MP (cabe no envio de 4 MB). ImageScaleBy tem as mesmas entradas há anos.
+            wf[str(nid + 2)] = {"class_type": "ImageScaleBy",
+                                "inputs": {"image": [str(nid + 1), 0], "upscale_method": "lanczos", "scale_by": SCALE_BY}}
         wf[save]["inputs"]["images"] = [str(nid + 2), 0]
     wf[save]["inputs"]["filename_prefix"] = "sglab_klein"
     json.dump(wf, open(dst, "w", encoding="utf-8"), indent=1)
@@ -48,4 +54,4 @@ def main(src, dst, upscale=True):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], "--sem-ampliacao" not in sys.argv)
+    main(sys.argv[1], sys.argv[2], "--sem-ampliacao" not in sys.argv, "--ate-1-4mp" not in sys.argv)

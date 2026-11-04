@@ -23,21 +23,51 @@ def hexrgb(h, a=1.0):
     return int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255, a
 
 
-def _line(text, font_file, family, weight):
+_CACHE = {}
+
+
+def _esc(t):
+    return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _svg_lines(lines):
+    """UMA chamada ao Pango para várias linhas (cada uma com a sua família): no Windows cada chamada custa ~2 s.
+    lines: [(texto, família, negrito)]. Devolve uma lista de glifos por linha (na mesma ordem)."""
     fd, path = tempfile.mkstemp(suffix=".svg")
     os.close(fd)
-    w = "BOLD" if (weight or 400) >= 650 else "NORMAL"
-    safe = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    fam = family.replace("'", "")
-    # family literal na marcação (nomes como "Archivo Black" não viram peso)
-    manimpango.MarkupUtils.text2svg(text=f"<span font_family='{fam}'>{safe}</span>", font=fam, slant="NORMAL", weight=w, size=100, _=0,
-                                    disable_liga=False, file_name=path, START_X=0, START_Y=150, width=max(400, 90 * len(text) + 200),
-                                    height=400, justify=False, indent=0, line_spacing=-1, alignment=None, pango_width=None)
+    markup = "\n".join(f"<span font_family='{fam.replace(chr(39), '')}'{' weight=\"bold\"' if bold else ''}>{_esc(t)}</span>"
+                       for t, fam, bold in lines)
+    width = max(400, max(90 * len(t) for t, _, _ in lines) + 200)
+    manimpango.MarkupUtils.text2svg(text=markup, font=lines[0][1].replace("'", ""), slant="NORMAL", weight="NORMAL", size=100, _=0,
+                                    disable_liga=False, file_name=path, START_X=0, START_Y=150, width=width,
+                                    height=260 * len(lines) + 300, justify=False, indent=0, line_spacing=-1, alignment=None,
+                                    pango_width=None)
     svg = open(path, encoding="utf-8").read()
     os.remove(path)
     defs = dict(re.findall(r'<g id="(glyph-[\d-]+)">\s*<path d="([^"]*)"', svg))
-    uses = re.findall(r'<use xlink:href="#(glyph-[\d-]+)" x="([-\d.e]+)" y="([-\d.e]+)"', svg)
-    return [(defs[g], float(x), float(y)) for g, x, y in uses if g in defs and defs[g].strip()]
+    uses = [(g, float(x), float(y)) for g, x, y in re.findall(r'<use xlink:href="#(glyph-[\d-]+)" x="([-\d.e]+)" y="([-\d.e]+)"', svg)]
+    rows = {}
+    for g, x, y in uses:  # cada linha tem a sua linha de base (y)
+        key = round(y, 1)
+        rows.setdefault(key, []).append((defs.get(g, ""), x, y))
+    ordered = [rows[k] for k in sorted(rows)]
+    out = []
+    for gl in ordered:
+        out.append([(d, x, y) for d, x, y in gl if d.strip()])
+    return out if len(out) == len(lines) else None
+
+
+def prefetch(lines):
+    """Uma chamada ao Pango por linha ainda não vista (juntar linhas numa chamada só embaralha a ordem delas)."""
+    for c in dict.fromkeys(l for l in lines if l[0].strip() and l not in _CACHE):
+        _CACHE[c] = (_svg_lines([c]) or [[]])[0]
+
+
+def _line(text, font_file, family, weight):
+    key = (text, family, (weight or 400) >= 650)
+    if key not in _CACHE:
+        prefetch([key])
+    return _CACHE.get(key, [])
 
 
 def _bbox(gl):
@@ -49,30 +79,21 @@ def _bbox(gl):
     return (min(xs), min(ys), max(xs), max(ys)) if xs else (0, 0, 1, 1)
 
 
-def _line(text, font_file, family, weight):
-    fd, path = tempfile.mkstemp(suffix=".svg")
-    os.close(fd)
-    w = "BOLD" if (weight or 400) >= 650 else "NORMAL"
-    safe = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    fam = family.replace("'", "")
-    # família literal na marcação (nomes como "Archivo Black" não viram peso)
-    manimpango.MarkupUtils.text2svg(text=f"<span font_family='{fam}'>{safe}</span>", font=fam, slant="NORMAL", weight=w, size=100, _=0,
-                                    disable_liga=False, file_name=path, START_X=0, START_Y=150, width=max(400, 90 * len(text) + 200),
-                                    height=400, justify=False, indent=0, line_spacing=-1, alignment=None, pango_width=None)
-    svg = open(path, encoding="utf-8").read()
-    os.remove(path)
-    defs = dict(re.findall(r'<g id="(glyph-[\d-]+)">\s*<path d="([^"]*)"', svg))
-    uses = re.findall(r'<use xlink:href="#(glyph-[\d-]+)" x="([-\d.e]+)" y="([-\d.e]+)"', svg)
-    return [(defs[g], float(x), float(y)) for g, x, y in uses if g in defs and defs[g].strip()]
+def _family(font_file, family):
+    """Nome da família como está DENTRO do arquivo (o CSS pode usar um apelido); registra a fonte no Pango."""
+    if not font_file:
+        return family
+    if font_file not in _REG:
+        manimpango.register_font(font_file)
+        _REG.add(font_file)
+    from PIL import ImageFont  # noqa: PLC0415
+    return ImageFont.truetype(font_file, 20).getname()[0]
 
 
-def _bbox(gl):
-    xs, ys = [], []
-    for d, x, y in gl:
-        nums = [float(v) for v in re.findall(r"[-\d.e]+", d)]
-        xs += [x + v for v in nums[0::2]]  # no tamanho 100 os glifos já vêm em pixels
-        ys += [y + v for v in nums[1::2]]
-    return (min(xs), min(ys), max(xs), max(ys)) if xs else (0, 0, 1, 1)
+def _candidates(text):
+    words = text.split()
+    return [text] + ([" ".join(words[:k]) + "\n" + " ".join(words[k:]) for k in range(1, len(words))]
+                     if len(words) > 1 and "\n" not in text else [])
 
 
 def glyphs(text, font_file, family, weight=None):
@@ -80,9 +101,7 @@ def glyphs(text, font_file, family, weight=None):
     if font_file and font_file not in _REG:
         manimpango.register_font(font_file)
         _REG.add(font_file)
-    if font_file:  # nome da família como está DENTRO do arquivo (o CSS pode usar um apelido)
-        from PIL import ImageFont  # noqa: PLC0415
-        family = ImageFont.truetype(font_file, 20).getname()[0]
+    family = _family(font_file, family)
     out, y_off = [], 0.0
     for ln in text.split("\n"):
         gl = _line(ln, font_file, family, weight)
@@ -131,16 +150,20 @@ def to_pil(surf):
 
 
 def shadow_of(img, dx, dy, blur, rgba):
-    a = img.getchannel("A")
+    """Sombra/brilho só na área da camada (rápido: o desfoque não percorre a peça inteira)."""
+    W, H = img.size
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    bb = img.getchannel("A").getbbox()
+    if not bb:
+        return out
+    pad = int(blur * 3 + abs(dx) + abs(dy) + 4)
+    x0, y0, x1, y1 = max(0, bb[0] - pad), max(0, bb[1] - pad), min(W, bb[2] + pad), min(H, bb[3] + pad)
+    a = img.getchannel("A").crop((x0, y0, x1, y1))
     if blur > 0.5:
         a = a.filter(ImageFilter.GaussianBlur(blur))
-    col = Image.new("RGBA", img.size, tuple(int(c * 255) for c in rgba[:3]) + (0,))
+    col = Image.new("RGBA", a.size, tuple(int(c * 255) for c in rgba[:3]) + (0,))
     col.putalpha(a.point(lambda v: int(v * rgba[3])))
-    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    out.alpha_composite(col, (int(dx), int(dy)) if dx >= 0 and dy >= 0 else (0, 0))
-    if dx < 0 or dy < 0:
-        out = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        out.paste(col, (int(dx), int(dy)), col)
+    out.paste(col, (x0 + int(dx), y0 + int(dy)), col)
     return out
 
 
@@ -234,7 +257,7 @@ def draw_price(canvas, el, W, H):
     surf, ctx = layer(W, H)
     st = el["estilo"]
     if st == "explosao" or st == "circulo":
-        cx, cy, r = x + w / 2, y + h / 2, min(w, h) * (0.62 if st == "explosao" else 0.55)
+        cx, cy, r = x + w / 2, y + h / 2, min(w, h) * 0.5  # o retângulo medido já é a forma inteira
         if st == "circulo":
             ctx.arc(cx, cy, r, 0, 2 * math.pi)
         else:
@@ -252,6 +275,11 @@ def draw_price(canvas, el, W, H):
     canvas.alpha_composite(bg)
     # R$ pequeno, inteiro grande, centavos no alto (mesma leitura do nosso compositor)
     bx, by_, bw, bh = el["b"]
+    if el.get("de"):  # preço antigo no alto, dentro da forma; o preço novo logo abaixo
+        draw_simple(canvas, {**el, "texto": "de " + el["de"], "b": [bx + bw * 0.2, by_ + bh * 0.1, bw * 0.6, bh * 0.18]}, W, H, el["fg"], shadow=False)
+        by_, bh = by_ + bh * 0.26, bh * 0.66
+    if st in ("explosao", "circulo"):  # texto dentro do círculo inscrito
+        bx, bw = bx + bw * 0.16, bw * 0.68
     parts = [("R$", 0.30, 0.42), (el["inteiro"], 1.0, 0.0), ((el["centavos"] or "") + (" " + el["sufixo"] if el["sufixo"] else ""), 0.40, 0.0)]
     runs = []
     for txt, rel, drop in parts:
@@ -275,9 +303,7 @@ def draw_price(canvas, el, W, H):
         ctx.set_source_rgba(*hexrgb(el["fg"]))
         ctx.fill()
         canvas.alpha_composite(to_pil(surf))
-    if el.get("de"):
-        draw_simple(canvas, {**el, "texto": "de " + el["de"], "b": [el["b"][0], el["b"][1] - el["b"][3] * 0.3, el["b"][2], el["b"][3] * 0.26]},
-                    W, H, "#ffffff")
+
 
 
 def draw_product(canvas, el, W, H):
@@ -318,6 +344,10 @@ def draw_list(canvas, el, W, H):
 
 def draw_seal(canvas, el, W, H):
     x, y, w, h = (el["b"][0] * W / 100, el["b"][1] * H / 100, el["b"][2] * W / 100, el["b"][3] * H / 100)
+    if el.get("so_texto"):  # a forma já está na base: só o texto do selo
+        draw_simple(canvas, {**el, "b": [el["b"][0] + el["b"][2] * 0.15, el["b"][1] + el["b"][3] * 0.25, el["b"][2] * 0.7,
+                                         el["b"][3] * 0.5]}, W, H, el["cor2"], shadow=False)
+        return
     surf, ctx = layer(W, H)
     cx, cy = x + w / 2, y + h / 2
     ctx.translate(cx, cy); ctx.rotate(math.radians(el.get("giro", -8))); ctx.translate(-cx, -cy)
@@ -345,7 +375,21 @@ def render(spec_path, out_path):
     t0 = time.time()
     spec = json.load(open(spec_path, encoding="utf-8"))
     W, H = spec["tamanho"]
-    canvas = Image.open(spec["cenario"]).convert("RGBA").resize((W, H), Image.LANCZOS)
+    canvas = Image.open(spec["cenario"]).convert("RGBA").resize((W, H), Image.LANCZOS)  # base sem textos (ou cenário)
+    want = []
+    for el in spec["elementos"]:
+        fam = _family(el.get("fonte"), el.get("familia") or "Sans")
+        bold = (el.get("peso") or 400) >= 650
+        texts = []
+        if el["tipo"] in ("texto", "nome", "info", "selo") and el.get("texto"):
+            texts += [ln for c in _candidates(el["texto"]) for ln in c.split("\n")]
+        if el["tipo"] == "preco":
+            texts += ["R$", el["inteiro"], (el["centavos"] or "") + (" " + el["sufixo"] if el["sufixo"] else ""), "de " + el["de"] if el.get("de") else ""]
+        if el["tipo"] == "lista":
+            fp = _family(el.get("fonte_preco"), el.get("familia_preco") or "Sans")
+            want += [(a, fam, False) for a, _ in el["linhas"]] + [(b, fp, False) for _, b in el["linhas"]]
+        want += [(t, fam, bold) for t in texts if t and t.strip()]
+    prefetch(want)
     for el in spec["elementos"]:
         t = el["tipo"]
         if t == "texto":

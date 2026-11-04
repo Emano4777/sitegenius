@@ -195,7 +195,11 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
         png = os.path.join(workdir, "arte.png")
         t = time.time()
         doc = render.build(plan, solved, briefing, uris, scene_uri, size)
-        items = valida.measure(doc, size, screenshot=png) or items
+        # a mesma peça SEM os textos (cenário, fotos, ícones, formas): base para finalizar a tipografia com outro
+        # renderizador (Pango/Cairo) exatamente no espaço que a validação mediu e aprovou
+        base = os.path.join(workdir, "base_sem_texto.png")
+        items = valida.measure(doc, size, screenshot=png,
+                               extra_shots=[(render.build(plan, solved, briefing, uris, scene_uri, size, hide_text=True), base)]) or items
         open(os.path.join(workdir, "arte.html"), "w", encoding="utf-8").write(doc)
         scene.save(os.path.join(workdir, "cenario.jpg"), quality=90)
         tm["render_final_s"] = round(time.time() - t, 1)
@@ -203,5 +207,6 @@ def run(briefing, photos, director, scene_gen, ocr=None, workdir=None, max_scene
     return {"plano": plan, "geometria": solved, "prompt_cenario": cena.prompt(plan, solved, briefing),
             "cenario": scene_report, "decisoes_cenario": decisions, "problemas_por_rodada": history,
             "problemas_finais": history[-1] if history else [], "metricas": valida.metrics(items, size, len(briefing.get("produtos") or [])),
-            "tempos": tm, "png": png, "plano_bruto": raw_text, "posicionamento_cenario": moves,
+            "tempos": tm, "png": png, "plano_bruto": raw_text, "posicionamento_cenario": moves, "medidas": items,
+            "base_sem_texto": os.path.join(workdir, "base_sem_texto.png") if workdir else None,
             "avaliacao_estetica": valida.aesthetic_hook(png, plan)}

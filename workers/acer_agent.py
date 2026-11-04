@@ -65,6 +65,7 @@ from studio.worker_client import WorkerClient  # noqa: E402
 
 log = logging.getLogger("acer_agent")
 PLACEHOLDERS = ("{{PROMPT}}", "{{SEED}}", "{{WIDTH}}", "{{HEIGHT}}")
+DIRECT_UPLOAD_BYTES = int(os.getenv("SG_DIRECT_UPLOAD_BYTES", str(3_500_000)))  # acima disso, envio direto ao Cloudinary
 LATENT_NODES = ("EmptySD3LatentImage", "EmptyLatentImage", "EmptyFlux2LatentImage")
 HERE = os.path.dirname(os.path.abspath(__file__))
 TIMINGS_FILE = os.path.join(HERE, ".timings.json")
@@ -94,8 +95,10 @@ def loopback_only(url):
     return url.rstrip("/")
 
 
-def fill_workflow(template, prompt, seed, width, height):
-    values = {"{{PROMPT}}": prompt, "{{SEED}}": seed, "{{WIDTH}}": width, "{{HEIGHT}}": height}
+def fill_workflow(template, prompt, seed, width, height, final=None):
+    final = final or (width, height)  # tamanho final pedido (workflows com super-resolução usam {{FINAL_WIDTH}})
+    values = {"{{PROMPT}}": prompt, "{{SEED}}": seed, "{{WIDTH}}": width, "{{HEIGHT}}": height,
+              "{{FINAL_WIDTH}}": int(final[0]), "{{FINAL_HEIGHT}}": int(final[1])}
 
     def walk(node):
         if isinstance(node, dict):
@@ -355,8 +358,8 @@ class Comfy:
                     log.warning("nó %s não aceita 'device'; codificador continua no dispositivo padrão", ct)
         return workflow
 
-    def build(self, prompt, seed, width, height, init_image=None, denoise=1.0, steps=None, clip_device=None):
-        workflow = set_steps(fill_workflow(self.template, prompt, int(seed), int(width), int(height)), steps)
+    def build(self, prompt, seed, width, height, init_image=None, denoise=1.0, steps=None, clip_device=None, final=None):
+        workflow = set_steps(fill_workflow(self.template, prompt, int(seed), int(width), int(height), final), steps)
         workflow = self.apply_clip_device(workflow, clip_device or os.getenv("SG_COMFY_CLIP_DEVICE", "default"))
         if init_image:
             workflow = to_img2img(workflow, init_image, denoise)
@@ -587,8 +590,8 @@ def ticker(report, expected_total, expected_vae=None, min_interval=4.0, heartbea
     return tick
 
 
-def generate(comfy, history, report, prompt, seed, width, height, steps, init_name=None, denoise=1.0, stage="Gerando"):
-    workflow = comfy.build(prompt, seed, width, height, init_name, denoise, steps)
+def generate(comfy, history, report, prompt, seed, width, height, steps, init_name=None, denoise=1.0, stage="Gerando", final=None):
+    workflow = comfy.build(prompt, seed, width, height, init_name, denoise, steps, final=final)
     steps = steps or workflow_steps(workflow)
     tick = ticker(report, history.expected(width, height, steps), history.expected(width, height, steps, "vae"))
     image, gen = comfy.run(workflow, tick)
@@ -622,7 +625,7 @@ def process_free_image(client, job, comfy, history):
         timings.update(comfy.memory())
         report(8, "Iniciando no Acer", None, {"etapa": "load"})
         image, gen = generate(comfy, history, report, payload["prompt"], payload["seed"], width, height,
-                              payload.get("steps"), init_name, payload.get("denoise", 1.0))
+                              payload.get("steps"), init_name, payload.get("denoise", 1.0), final=payload.get("final_size"))
         memory_note = gen.pop("memoria", "")
         timings.update(gen)
     else:
@@ -632,10 +635,24 @@ def process_free_image(client, job, comfy, history):
     report(97, "Enviando a imagem", timings, {"etapa": "send"})
     if composed:
         result = client.complete_composed(job_id, _art_jpeg(image), *composed)
+    elif hasattr(client, "complete_direct") and (len(image) > DIRECT_UPLOAD_BYTES or _max_side(image) > 2048):
+        # imagem grande (ex.: 4K): direto ao armazenamento (o envio normal passa pelo Vercel: 4 MB e lado de 2048 px).
+        # PNG até 9 MB; acima disso JPEG 95 (o plano do Cloudinary aceita até 10 MB por imagem)
+        data, mime = (image, "image/png") if len(image) <= 9_000_000 else (_art_jpeg(image), "image/jpeg")
+        result = client.complete_direct(job_id, data, mime) or client.complete_image(job_id, image)
     else:
         result = client.complete_image(job_id, image)
     log.info("tarefa %s concluída em %.1fs (asset %s; %s) %s", job_id[:8], timings["total_worker_s"],
              result.get("asset_id", "")[:8], memory_note, json.dumps({k: round(v, 1) for k, v in timings.items()}))
+
+
+def _max_side(data):
+    from PIL import Image  # noqa: PLC0415
+    try:
+        with Image.open(io.BytesIO(data)) as im:
+            return max(im.size)
+    except Exception:  # noqa: BLE001
+        return 0
 
 
 def _art_jpeg(data):

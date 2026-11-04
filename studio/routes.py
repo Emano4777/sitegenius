@@ -3070,6 +3070,57 @@ def worker_complete(job_id):
     return jsonify({"ok": True})
 
 
+DIRECT_MAX_SIDE = 8192
+DIRECT_MAX_PIXELS = 40_000_000
+DIRECT_MAX_BYTES = 40 * 1024 * 1024
+
+
+@bp.post("/worker/jobs/<job_id>/upload-direct")
+@worker_required
+def worker_upload_direct(job_id):
+    """Autorização de envio DIRETO ao Cloudinary para uma imagem grande deste trabalho (não passa pelo Vercel)."""
+    job = worker_job(job_id)
+    if job["kind"] != "render":
+        return error("Tarefa inválida.")
+    asset_id = new_id()
+    up = storage.signed_upload(asset_id)
+    if not up:
+        return error("envio direto indisponível", 404)
+    timings = loads(job.get("timings"), {}) or {}
+    timings["envio_direto_asset"] = asset_id  # só este asset pode ser confirmado por este trabalho
+    get_conn().run("UPDATE sg_jobs SET timings = ?, updated_at = ? WHERE id = ?", (dumps(timings), now(), job["id"]))
+    return jsonify({"ok": True, "asset_id": asset_id, **up})
+
+
+@bp.post("/worker/jobs/<job_id>/complete-direct")
+@worker_required
+def worker_complete_direct(job_id):
+    """Fecha o trabalho com a imagem enviada direto: confere no Cloudinary formato, dimensões e tamanho antes de aceitar."""
+    job = worker_job(job_id)
+    data = request.get_json(silent=True) or {}
+    timings = loads(job.get("timings"), {}) or {}
+    asset_id = str(data.get("asset_id") or "")
+    if not asset_id or asset_id != timings.get("envio_direto_asset"):
+        return error("asset não autorizado para este trabalho", 403)
+    info = storage.resource(asset_id)
+    if not info:
+        return error("imagem não encontrada no armazenamento", 409)
+    w, h = int(info["width"] or 0), int(info["height"] or 0)
+    if info["format"] not in storage.DIRECT_FORMATS or not w or not h or max(w, h) > DIRECT_MAX_SIDE or w * h > DIRECT_MAX_PIXELS \
+            or int(info["bytes"] or 0) > DIRECT_MAX_BYTES:
+        return error("imagem recusada", 422)
+    mime = "image/png" if info["format"] == "png" else "image/jpeg"
+    conn = get_conn()
+    conn.run("INSERT INTO sg_assets (id, user_id, kind, mime, size, width, height, sha256, source_url, license, attribution, data, "
+             "storage_key, created_at) VALUES (?, ?, 'result', ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, ?)",
+             (asset_id, job["user_id"], mime, int(info["bytes"] or 0), w, h, str(info.get("etag") or ""), info["key"], now()))
+    result = {"asset_id": asset_id, "envio": "direto"}
+    conn.run("UPDATE sg_jobs SET status = 'done', progress = 100, status_message = 'Pronto', result = ?, finished_at = ?, "
+             "updated_at = ? WHERE id = ?", (dumps(result), now(), now(), job["id"]))
+    schedule_evaluation(job, result)
+    return jsonify({"ok": True, "asset_id": asset_id})
+
+
 @bp.post("/worker/jobs/<job_id>/complete-composed")
 @worker_required
 def worker_complete_composed(job_id):

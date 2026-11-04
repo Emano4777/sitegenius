@@ -57,3 +57,21 @@ PE0 e marcados como tal.
 ## Rollback
 Fechar a janela do agente do laboratório e apagar `C:\IA-Imagens\klein-lab` (e `comfyui-lab`). Na PE0/Vercel:
 apagar o deploy de teste e o schema `sitegenius_lab`. Nada de produção foi alterado.
+
+## Rodada 2 (prompt adaptado ao Klein + 4K com envio direto) — 04/11/2026
+O que mudou:
+- **Endereço fixo do laboratório:** `https://sitegenius-studio-lab.vercel.app`. Atualize `segredos\lab_url.txt` com ele.
+- **Envio direto:** imagens grandes (com lado maior que 2048 px ou mais de 3,5 MB) vão direto do Acer ao Cloudinary,
+  na pasta `sitegenius-lab`. A autorização vale para um único arquivo daquele trabalho, e o servidor confere
+  formato e dimensões antes de aceitar. O 4K de teste (3840×2160) já passou por esse caminho.
+- **Tamanho final no workflow:** o workflow do Klein amplia até o tamanho final exato pedido.
+
+No Acer:
+1. Copiar da PE0 as pastas `workers\` e `studio\` do repositório para `C:\IA-Imagens\klein-lab\agente\`. É a cópia do
+   laboratório; o agente de produção continua com o código dele.
+2. Gerar o workflow de novo com o conversor atualizado:
+   `& $py preparar_workflow_klein.py klein_api.json klein_modelo_agente.json`
+   O padrão agora é ampliar até o tamanho final. Se o ComfyUI pedir `resolution_steps` em algum nó, mantenha o ajuste
+   que já foi feito.
+3. Atualizar `segredos\lab_url.txt` para `https://sitegenius-studio-lab.vercel.app`.
+4. Pausar o agente de produção, rodar `rodar_agente_lab.ps1` até a fila esvaziar (5 trabalhos) e religar a produção.

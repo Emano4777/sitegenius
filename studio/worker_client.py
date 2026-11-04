@@ -80,6 +80,18 @@ class WorkerClient:
         resp.raise_for_status()
         return resp.json()
 
+    def complete_direct(self, job_id, image_bytes, mime="image/png"):
+        """Imagem grande: pede a autorização, envia DIRETO ao Cloudinary e confirma. None se o servidor não oferece."""
+        resp = self.request("POST", f"/jobs/{job_id}/upload-direct", b"{}")
+        if resp.status_code in (404, 405):
+            return None
+        resp.raise_for_status()
+        up = resp.json()
+        ext = "png" if mime == "image/png" else "jpg"
+        sent = requests.post(up["url"], data=up["fields"], files={"file": (f"arte.{ext}", image_bytes, mime)}, timeout=(10, 300))
+        sent.raise_for_status()
+        return self._json("POST", f"/jobs/{job_id}/complete-direct", {"asset_id": up["asset_id"]}).json()
+
     def complete_composed(self, job_id, art_bytes, final_bytes, report):
         """Arte limpa + peça final com os textos (composta e validada no Acer, com leitura visual local)."""
         payload = {"arte": base64.b64encode(art_bytes).decode(), "final": base64.b64encode(final_bytes).decode(),
