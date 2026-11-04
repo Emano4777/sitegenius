@@ -432,3 +432,13 @@ def test_generation_plan_never_stretches():
         assert gw * gh <= formato.GEN_MAX_PIXELS and gw % 64 == 0 and gh % 64 == 0
         assert abs(gw / gh - final[0] / final[1]) < 0.08  # mesma proporção (sem deformar)
         assert g["metodo"] == ("nativo" if g["fator"] <= 1.05 else "super_resolucao_2x" if g["fator"] <= 2.05 else "super_resolucao_4x")
+
+
+def test_klein_scene_prompt_is_positive_single_scene_and_never_empty():
+    b, info, plan, solved = solve_case("supermercado", "varios", PLANS["supermercado"])
+    plan = {**plan, "direcao_visual": "Bold editorial poster with price callouts in a grid layout, warm light.", "tom": "impacto"}
+    p = cena.prompt_klein(plan, solved, b)
+    assert not cena._TRIGGERS.search(p)  # nada que puxe escrita, cartaz, grade de layout, preço ou embalagem
+    assert "single continuous scene" in p and "high-energy" in p and "upper area and" not in p
+    empty = {**plan, "direcao_visual": "", "cenario": {**plan["cenario"], "ambiente": "", "objetos": []}}
+    assert "environment that evokes" in cena.prompt_klein(empty, solved, b)  # plano sem cena: a cena nunca fica vazia

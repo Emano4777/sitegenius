@@ -78,6 +78,21 @@ _TRIGGERS = re.compile(r"\b(text|texts|letter\w*|word\w*|typograph\w*|font\w*|lo
                        r"editorial|menu\w*|flyer\w*|leaflet\w*|catalog\w*|sale\w*|discount\w*|offer\w*)\b", re.I)
 
 
+TONE_EN = {  # tom declarado pelo diretor -> atmosfera em inglês (o Klein entende melhor; nunca é estilo fixo por segmento)
+    "impacto": "bold high-energy mood, dramatic contrast, vivid saturated accents, dynamic light",
+    "urgente": "intense urgent mood, strong contrast, glowing accents, motion energy",
+    "sofisticado": "sophisticated refined mood, elegant materials, controlled soft light",
+    "elegante": "elegant luxurious mood, soft glow, premium textures, calm composition",
+    "moderno": "clean modern mood, crisp light, minimal contemporary materials",
+    "tecnologico": "futuristic high-tech mood, cool glow, sleek reflective surfaces",
+    "divertido": "playful cheerful mood, bright colors, lively light",
+    "acolhedor": "warm cozy inviting mood, golden soft light, friendly textures",
+    "natural": "fresh natural mood, daylight, organic textures and greenery",
+    "festivo": "festive celebratory mood, sparkling lights, rich colors",
+    "artesanal": "handcrafted rustic mood, warm light, natural wood and craft textures",
+}
+
+
 def _area(box):
     x, y, w, h = box
     cx, cy = x + w / 2, y + h / 2
@@ -92,14 +107,16 @@ def prompt_klein(plan, solved, briefing):
     ganham detalhes do ambiente para a cena não ficar vazia. Genérico: vem do plano e da geometria."""
     cen = plan["cenario"]
     els = solved["elementos"]
-    parts = [plan.get("direcao_visual") or "", f"Commercial still life photography, {_format_words(briefing).split(' ')[0]} framing"]
+    # uma cena única e contínua: pedir áreas "em cima e embaixo" fazia o Klein gerar duas imagens empilhadas
+    parts = [plan.get("direcao_visual") or "", f"One single continuous scene, one camera shot, {_format_words(briefing).split(' ')[0]} framing",
+             TONE_EN.get(plan.get("tom") or "", "")]
     if cen.get("ambiente"):
         parts.append(f"setting: {cen['ambiente']}")
     if not cen.get("ambiente") and not plan.get("direcao_visual"):
         # plano sem cena descrita: a cena evoca o segmento e o tom (o gerador decide os elementos), nunca fica vazia
-        mood = plan.get("tom") or "inviting"
-        parts.append(f"a beautiful {mood} real-world setting that evokes {briefing.get('segmento') or 'the business'}, "
-                     f"with tasteful props and textures of that world, layered depth and natural storytelling")
+        # objetos genéricos sem superfície para rótulo (frascos e caixas vinham com escritos inventados)
+        parts.append(f"a beautiful real-world environment that evokes {briefing.get('segmento') or 'the business'}, built from "
+                     f"natural materials, plants, fabrics, light and architecture of that world, layered depth")
     hero = next((e for e in els if e["papel"] == "heroi"), None)
     if cen["superficie"] != "nenhuma" and hero:
         parts.append(f"a clean empty {cen['superficie']} surface in the {_area(hero['b'])}, bare and uncluttered, ready for an object")
@@ -107,10 +124,10 @@ def prompt_klein(plan, solved, briefing):
     for j, obj in enumerate(cen["objetos"]):
         z = zones[j % len(zones)] if zones else None
         parts.append(f"{obj} in the {_area(z)}" if z else obj)
-    calm = sorted({_area(e["b"]) for e in els if e["papel"] in ("titulo", "preco_principal", "lista")})[:2]
-    if calm:
-        parts.append("soft, smooth, evenly lit plain backdrop in the " + " and ".join(calm[:3]) +
-                     ", with gentle gradient and depth of field")
+    calm = sorted({_area(e["b"]) for e in els if e["papel"] in ("titulo", "preco_principal", "lista")})
+    if calm:  # espaço livre descrito como respiro da MESMA cena (não como painéis separados)
+        parts.append("generous open negative space with a softly blurred, evenly lit background around the subject, "
+                     "shallow depth of field")
     parts.append("rich environmental details and atmosphere toward the edges and corners")
     if cen.get("luz"):
         parts.append(f"dominant light color {cen['luz']}")

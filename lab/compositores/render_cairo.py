@@ -174,7 +174,7 @@ def draw_text(canvas, el, W, H):
         return
     best = None
     words = text.split()
-    cands = [text] + ([" ".join(words[:k]) + "\n" + " ".join(words[k:]) for k in range(1, len(words))] if len(words) > 1 and "\n" not in text else [])
+    cands = [text] if el.get("linha_unica") else [text] + ([" ".join(words[:k]) + "\n" + " ".join(words[k:]) for k in range(1, len(words))] if len(words) > 1 and "\n" not in text else [])
     for cand in cands:  # uma ou duas linhas: a que deixa a letra maior dentro da caixa
         gl, (x0, y0, x1, y1) = glyphs(cand, el.get("fonte"), el.get("familia"), el.get("peso"))
         if not gl:
@@ -185,7 +185,7 @@ def draw_text(canvas, el, W, H):
     if not best:
         return
     s, gl, (x0, y0, x1, y1) = best
-    ox = x + (w - (x1 - x0) * s) / 2 - x0 * s
+    ox = (x - x0 * s) if el.get("alinhar") == "esquerda" else x + (w - (x1 - x0) * s) / 2 - x0 * s
     oy = y + (h - (y1 - y0) * s) / 2 - y0 * s
     fx = el.get("efeito") or {"preenchimento": {"tipo": "solido", "cores": [el.get("cor", "#fff")]}, "contornos": [], "sombras": []}
     size = (y1 - y0) * s / max(1, text.count("\n") + 1)
@@ -278,8 +278,9 @@ def draw_price(canvas, el, W, H):
     if el.get("de"):  # preço antigo no alto, dentro da forma; o preço novo logo abaixo
         draw_simple(canvas, {**el, "texto": "de " + el["de"], "b": [bx + bw * 0.2, by_ + bh * 0.1, bw * 0.6, bh * 0.18]}, W, H, el["fg"], shadow=False)
         by_, bh = by_ + bh * 0.26, bh * 0.66
-    if st in ("explosao", "circulo"):  # texto dentro do círculo inscrito
-        bx, bw = bx + bw * 0.16, bw * 0.68
+    if st in ("explosao", "circulo"):  # texto dentro do círculo inscrito (secundário: aproveita mais a forma, como no nosso)
+        inner = 0.68 if el.get("principal") else 0.84
+        bx, bw = bx + bw * (1 - inner) / 2, bw * inner
     parts = [("R$", 0.30, 0.42), (el["inteiro"], 1.0, 0.0), ((el["centavos"] or "") + (" " + el["sufixo"] if el["sufixo"] else ""), 0.40, 0.0)]
     runs = []
     for txt, rel, drop in parts:
@@ -290,7 +291,8 @@ def draw_price(canvas, el, W, H):
     if runs:
         base_h = max(r[1][3] - r[1][1] for r in runs if r[2] == 1.0) if any(r[2] == 1.0 for r in runs) else 100
         total_w = sum((r[1][2] - r[1][0]) * r[2] for r in runs) + base_h * 0.08 * (len(runs) - 1)
-        s_ = min(bw * W / 100 * 0.86 / max(1, total_w), bh * H / 100 * 0.8 / max(1, base_h))
+        fill = (0.86, 0.8) if el.get("principal") else (0.94, 0.9)  # preço secundário pequeno: ocupa mais a caixa
+        s_ = min(bw * W / 100 * fill[0] / max(1, total_w), bh * H / 100 * fill[1] / max(1, base_h))
         cx = bx * W / 100 + (bw * W / 100 - total_w * s_) / 2
         top = by_ * H / 100 + (bh * H / 100 - base_h * s_) / 2
         surf, ctx = layer(W, H)
@@ -336,10 +338,17 @@ def draw_list(canvas, el, W, H):
     rh = el["b"][3] / n
     for i, (name, price) in enumerate(el["linhas"]):
         ry = el["b"][1] + i * rh
-        draw_simple(canvas, {**el, "texto": name, "b": [el["b"][0] + el["b"][2] * 0.04, ry + rh * 0.2, el["b"][2] * 0.6, rh * 0.6]},
-                    W, H, "#1e1e22", shadow=False)
-        draw_simple(canvas, {**el, "texto": price, "fonte": el["fonte_preco"], "familia": el["familia_preco"],
-                             "b": [el["b"][0] + el["b"][2] * 0.7, ry + rh * 0.15, el["b"][2] * 0.26, rh * 0.7]}, W, H, el["bg"], shadow=False)
+        # mesmo desenho do nosso compositor: nome numa linha, à esquerda; preço num selo colorido à direita
+        draw_simple(canvas, {**el, "texto": name, "linha_unica": True, "alinhar": "esquerda",
+                             "b": [el["b"][0] + el["b"][2] * 0.04, ry + rh * 0.25, el["b"][2] * 0.6, rh * 0.5]}, W, H, "#1e1e22", shadow=False)
+        bx, by_, bw, bh = el["b"][0] + el["b"][2] * 0.72, ry + rh * 0.16, el["b"][2] * 0.24, rh * 0.68
+        surf, ctx = layer(W, H)
+        rounded(ctx, bx * W / 100, by_ * H / 100, bw * W / 100, bh * H / 100, min(bw * W / 100, bh * H / 100) * 0.25)
+        ctx.set_source_rgba(*hexrgb(el["bg"]))
+        ctx.fill()
+        canvas.alpha_composite(to_pil(surf))
+        draw_simple(canvas, {**el, "texto": price, "fonte": el["fonte_preco"], "familia": el["familia_preco"], "linha_unica": True,
+                             "b": [bx + bw * 0.06, by_ + bh * 0.1, bw * 0.88, bh * 0.8]}, W, H, el["fg"], shadow=False)
 
 
 def draw_seal(canvas, el, W, H):

@@ -53,7 +53,7 @@ def coletar():
     os.environ["SG_CLOUDINARY_URL"] = f"cloudinary://{cl['CLOUDINARY_API_KEY']}:{cl['CLOUDINARY_API_SECRET']}@{cl['CLOUDINARY_CLOUD_NAME']}"
     from studio import storage  # noqa: PLC0415
     c = lab_jobs.conn()
-    for j in c.all("SELECT * FROM sg_jobs WHERE prompt_original LIKE '%_B2' ORDER BY created_at"):
+    for j in c.all("SELECT * FROM sg_jobs WHERE prompt_original LIKE ? ORDER BY created_at", ("%_B2",)):
         out = lab_jobs.FILA / "saida" / j["prompt_original"]
         if (out / "metricas.json").exists() or j["status"] not in ("done", "failed"):
             continue
