@@ -44,6 +44,7 @@ Uso:
 """
 import argparse
 import copy
+import re
 import io
 import json
 import logging
@@ -115,9 +116,19 @@ def fill_workflow(template, prompt, seed, width, height, final=None):
     return walk(template)
 
 
+def fixed_steps(workflow):
+    """Workflows destilados (LoRA Lightning/Turbo/Hyper) só funcionam com as etapas para as quais foram treinados:
+    nesses casos o perfil do servidor não muda as etapas. SG_COMFY_FIXED_STEPS=1 força o mesmo comportamento."""
+    if os.getenv("SG_COMFY_FIXED_STEPS") == "1":
+        return True
+    names = " ".join(str(v) for n in workflow.values() if "lora" in str(n.get("class_type", "")).lower()
+                     for v in (n.get("inputs") or {}).values())
+    return bool(re.search(r"lightning|turbo|hyper|lcm", names, re.I))
+
+
 def set_steps(workflow, steps):
-    """Aplica o número de passos do perfil (Rápido/Qualidade) em todos os KSampler."""
-    if not steps:
+    """Aplica o número de passos do perfil (Rápido/Qualidade) em todos os KSampler (menos em workflows destilados)."""
+    if not steps or fixed_steps(workflow):
         return workflow
     for node in workflow.values():
         if node.get("class_type") == "KSampler":

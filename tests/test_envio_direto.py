@@ -64,3 +64,11 @@ def test_workflow_final_size_placeholders():
     out = acer_agent.fill_workflow(wf, "p", 1, 1344, 768, final=(3840, 2160))
     assert out["1"]["inputs"]["width"] == 1344 and out["2"]["inputs"] == {"width": 3840, "height": 2160}
     assert acer_agent.fill_workflow(wf, "p", 1, 512, 512)["2"]["inputs"] == {"width": 512, "height": 512}
+
+
+def test_distilled_lightning_workflow_keeps_its_own_steps():
+    wf = {"1": {"class_type": "LoraLoaderModelOnly", "inputs": {"lora_name": "Qwen-Image-Lightning-4steps-V1.0.safetensors"}},
+          "2": {"class_type": "KSampler", "inputs": {"steps": 4}}}
+    assert acer_agent.set_steps(wf, 9)["2"]["inputs"]["steps"] == 4  # perfil do servidor não quebra o Lightning
+    plain = {"2": {"class_type": "KSampler", "inputs": {"steps": 8}}}
+    assert acer_agent.set_steps(plain, 9)["2"]["inputs"]["steps"] == 9

@@ -255,3 +255,11 @@ def test_model_reply_with_technical_words_is_replaced():
     assert creative.friendly_reply("Vou usar o modelo Qwen com seed 42", "Padrão.") == "Padrão."
     assert creative.friendly_reply("Gerando o prompt na GPU", "Padrão.") == "Padrão."
     assert creative.friendly_reply("Entendi! Vou criar um farol ao entardecer.", "Padrão.") == "Entendi! Vou criar um farol ao entardecer."
+
+
+def test_go_anyway_never_turns_a_priced_flyer_into_free_image():
+    from studio import creative
+    t = "Encarte do Mercado Bom Preço com fundo criado por IA: Café Pilão 500g 17,90; Arroz Tio João 5kg 27,90. Pode gerar."
+    assert creative.classify(t, False) == "ad_composite"
+    assert creative.classify("pode gerar", False) == "go_anyway"
+    assert creative.classify("tanto faz, gere assim mesmo", True) == "go_anyway"

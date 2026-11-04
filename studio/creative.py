@@ -169,21 +169,26 @@ def quoted_texts(text):
 def classify(text, has_previous_image=False, conversation_mode=None):
     """Intenção do pedido: free_image | ad_composite | edit | regenerate | go_anyway."""
     t = _norm(text)
-    if re.search(_GO_ANYWAY, t):
+    if re.search(_GO_ANYWAY, t) and not _is_ad(t, conversation_mode):
+        # "pode gerar" no fim de um pedido de encarte com produtos e preços não transforma o encarte em imagem livre
         return "go_anyway"
     if has_previous_image and re.search(_REGENERATE, t):
         return "regenerate"
     if has_previous_image and re.search(_EDIT, t):
         return "edit"
-    # Preço digitado = encarte: o preço só entra pela composição determinística, nunca pelo modelo de imagem.
-    if conversation_mode == "ad" or re.search(strip_accents(_AD_WORDS), t):
+    if _is_ad(t, conversation_mode):
         return "ad_composite"
+    return "free_image"
+
+
+def _is_ad(t, conversation_mode=None):
+    """Preço digitado = encarte: o preço só entra pela composição determinística, nunca pelo modelo de imagem."""
+    if conversation_mode == "ad" or re.search(strip_accents(_AD_WORDS), t):
+        return True
     prices = [m.start() for m in re.finditer(_PRICE, t)]
     # Preço "solto" depois do nome do produto (ex.: "Guaraná 2L 7,99") é lista de produtos: encarte.
     listed = any(not re.search(r"(r\$\s*|preco\W{0,3}|por\s|apenas\s|so\s|de\s)$", t[max(0, i - 12):i]) for i in prices)
-    if prices and (len(prices) > 2 or listed or not re.search(_SINGLE_PIECE, t)):
-        return "ad_composite"
-    return "free_image"
+    return bool(prices and (len(prices) > 2 or listed or not re.search(_SINGLE_PIECE, t)))
 
 
 def missing_info(text, has_references):

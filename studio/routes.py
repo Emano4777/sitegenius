@@ -1765,6 +1765,12 @@ def apply_texts(user_id, art_bytes, spec):
     return store_asset(user_id, "result", data, "image/jpeg", width, height), report
 
 
+# troca com o valor novo dito na mensagem ("muda o preço para R$ 17,90", "troca o título para Brunch"): as regras
+# aplicam exatamente; pedidos vagos ("ficou pequeno") continuam com o modelo
+EXPLICIT_TEXT_VALUE = re.compile(r"\b(mud|troc|alter|corrig|substitu|coloc|p[õo]e|bota)\w*\b[^\n]{0,60}?\b(para|pra|por)\b\s*"
+                                 r"(r\$\s*\d|\d{1,5}[.,]\d{2}|[\"“'«]|[A-ZÀ-Ý])", re.IGNORECASE)
+
+
 def is_text_only_edit(texto, previous_spec):
     """Ajuste só de texto sobre a criação anterior (sem gerar de novo). Pedido novo ("crie…") nunca entra aqui."""
     if not previous_spec or not (previous_spec.get("text_plan") or {}).get("blocos") or previous_spec.get("pending"):
@@ -2176,7 +2182,10 @@ def creative_message(conv, texto, attachments, options, previous_result):
                                                                texto, conversation_texts(conv["id"]))
             apply_creative_decision(conv, acao, resposta, spec, assistant_id, True, texto)
             return jsonify({"ok": True}), 201
-    if previous_result and not references and not interpreter_available() and is_text_only_edit(texto, previous_spec):
+    if previous_result and not references and is_text_only_edit(texto, previous_spec) and             (not interpreter_available() or EXPLICIT_TEXT_VALUE.search(texto)):
+        # Só textos/preços mudam (conferido pelas regras): mesma arte, textos refeitos, sem gerar de novo — também com o
+        # modelo disponível (ele chegou a regerar a cena para uma simples troca de preço). Se as regras não aplicarem,
+        # o pedido segue para o modelo como antes.
         problem = render_quota_problem(g.user_id)
         job_id = None if problem else text_edit_job(conv, g.user_id, texto, previous_spec)
         if job_id or problem:
